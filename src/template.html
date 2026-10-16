@@ -1328,7 +1328,7 @@ const fmtRp = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtQty = q => String(Math.round(q * 100) / 100).replace('.', ',');
 /* Weight steppers always show one decimal (0,5 / 1,0 / 2,5) so the number keeps the same width. */
 const fmtStep = (q, o) => !q ? '' : (o && o.u === 'kg' && Math.abs(q * 10 - Math.round(q * 10)) < 1e-9 ? q.toFixed(1).replace('.', ',') : fmtQty(q));
-const QTY_MAX = o => (o && o.u === 'kg' ? 10 : 99);
+const QTY_MAX = o => (o && o.u === 'kg' ? (ledger.cfg && +ledger.cfg.mx > 0 ? +ledger.cfg.mx : 10) : 99);
 function fmtMeasure(w, v) {
   const out = [];
   if (w > 0) out.push(w < 1 ? Math.round(w * 1000) + ' g' : fmtQty(w) + ' kg');
@@ -2525,7 +2525,7 @@ function publicLedger() {
   });
   const add = {}; Object.keys(ledger.add || {}).forEach(id => { const a = clone(ledger.add[id]); (a.o || []).forEach(op => { delete op.pr; delete op.sp; }); delete a.x; add[id] = a; });
   const sups = {}; Object.keys(ledger.sups || {}).forEach(id => { const s = ledger.sups[id] || {}; sups[id] = { name: s.what || s.name, short: s.short, what: s.what || s.name, h: s.h }; });
-  const cfg = {}; if (ledger.cfg && ledger.cfg.chk) cfg.chk = ledger.cfg.chk; if (myWA) cfg.wa = myWA;
+  const cfg = {}; if (ledger.cfg && ledger.cfg.chk) cfg.chk = ledger.cfg.chk; if (ledger.cfg && +ledger.cfg.mx > 0) cfg.mx = +ledger.cfg.mx; if (myWA) cfg.wa = myWA;
   return { ov, add, cfg, sups, dl: ledger.dl || null };
 }
 async function publishPublic(force) {
@@ -2666,6 +2666,7 @@ function renderLedger() {
     '<section class="lsec"><div class="lsec-h"><b>Sell prices</b><span>What customers pay</span></div>' +
     '<div class="mkrow grid2"><div class="field"><label for="mk-pct">Markup (%)</label><input id="mk-pct" inputmode="decimal" value="' + cfgNow().pct + '"' + (canWrite ? '' : ' disabled') + '><p class="hint">Added on top of the supplier price.</p></div><div class="field"><label for="mk-round">Round prices up to</label><select id="mk-round"' + (canWrite ? '' : ' disabled') + '>' + [100, 500, 1000].map(r => '<option value="' + r + '"' + (cfgNow().round === r ? ' selected' : '') + '>Rp ' + r + '</option>').join('') + '</select><p class="hint">Customer prices end in a round number.</p></div></div>' +
     '<p class="hint lex">Example: supplier price Rp 100.000 becomes <b>' + fmtRp(Math.ceil(100000 * (1 + cfgNow().pct / 100) / cfgNow().round) * cfgNow().round) + '</b> for the customer. Average profit: <b>' + avgMargin() + '%</b>.</p></section>' +
+    '<section class="lsec"><div class="lsec-h"><b>Order limit</b><span>The most a customer can order of one item</span></div><div class="field"><label for="mx-kg">Most kg per item</label><input id="mx-kg" inputmode="decimal" value="' + (+(ledger.cfg && ledger.cfg.mx) > 0 ? ledger.cfg.mx : 10) + '"' + (canWrite ? '' : ' disabled') + '><p class="hint">Items sold by weight. Above this, the customer is asked to message us on WhatsApp. Other items stop at 99.</p></div></section>' +
     '<section class="lsec"><div class="lsec-h"><b>Price check</b><span>Are the supplier prices still correct?</span></div>' +
     '<div class="chkrow' + (priceStale() ? ' stale' : '') + '"><span>Last checked: <b>' + (ledger.cfg && ledger.cfg.chk ? esc(shortDate(ledger.cfg.chk)) : 'never') + '</b></span><button type="button" class="btn ghost sm" data-act="chkprices"' + (canWrite ? '' : ' disabled') + '>I checked today</button></div>' +
     '<p class="hint" style="margin-top:6px">Tap the button after you check the supplier list. Customers see this date.</p></section>' +
@@ -2842,6 +2843,7 @@ document.addEventListener('change', e => {
   else if (t.id === 'mk-pct') { const v = Math.max(0, Math.min(300, parseFloat(String(t.value).replace(',', '.')) || 0)); saveLedger({ cfg: { pct: v } }); renderLedger(); }
   else if (t.id === 'la-sup') { const nb = document.getElementById('la-newsup'); if (nb) { nb.hidden = t.value !== '__new'; if (!nb.hidden) { const i = document.getElementById('la-sname'); if (i) i.focus(); } } }
   else if (t.id === 'dl-free' || t.id === 'dl-min' || t.id === 'dl-cut' || t.matches('input[data-dz], input[data-dd]')) { saveDlFromDom(); }
+  else if (t.id === 'mx-kg') { const v = Math.max(1, Math.min(200, parseFloat(String(t.value).replace(',', '.')) || 10)); saveLedger({ cfg: { mx: v } }); renderLedger(); toast('Limit set to ' + fmtQty(v) + ' kg per item.'); }
   else if (t.id === 'mk-round') { saveLedger({ cfg: { round: +t.value } }); renderLedger(); }
   else if (t.matches('input[data-ld]')) { const k = t.dataset.ld.split('|'); const val = t.value.trim(); if ((k[1] === 'n' || k[1] === 'c') && !val) { toast('That field cannot be empty.'); renderLedgerList(); return; } saveLedger({ ov: { [k[0]]: { [k[1]]: val } } }); }
   else if (t.id === 'importFile') { importFiles(t.files); t.value = ''; }
