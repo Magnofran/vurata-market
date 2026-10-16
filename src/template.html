@@ -4,18 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Fresh fruit, vegetables, meat, frozen food and pantry staples delivered across Bali. Build your order and send it on WhatsApp.">
-<meta name="theme-color" content="#F3F5F3">
-<meta property="og:title" content="Vurata Market">
+<meta name="theme-color" content="#F9FAFB">
+<meta property="og:title" content="Vurata Market | Bali Grocery Delivery">
 <meta property="og:description" content="Fresh, frozen and pantry delivered in Bali. Build your order and send it on WhatsApp.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="https://vurata.com/images/hero.webp">
+<meta name="twitter:card" content="summary_large_image">
 <meta property="og:url" content="https://market.vurata.com/">
 <meta name="robots" content="index, follow">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Vurata Market</title>
+<title>Vurata Market | Bali Grocery Delivery</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: a market ledger. Sticky bar (brand, tabs, sync), picker on the left, live order summary on the right at desktop.
    Three suppliers, three colors, used for bands, chips and receipt bars so a line is never mistaken for another supplier's. */
@@ -924,13 +927,71 @@ body.gated .bar, body.gated .wrap, body.gated .bottombar, body.gated .helpfoot, 
 .loginwrap { min-height: 100vh; display: grid; place-items: center; padding: 20px 16px; } .loginwrap[hidden] { display: none; } .login { width: 100%; max-width: 360px; display: grid; gap: 12px; }
 .login .brand small { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: var(--muted); } .login a { color: var(--ink); }
 .stafffoot { text-align: center; padding: 6px 0 90px; font-size: 12px; } .stafffoot a { color: var(--muted); text-decoration: none; opacity: .7; } .stafffoot a:hover { opacity: 1; text-decoration: underline; }
+
+/* ===== Vurata brand layer: same system as vurata.com (slate ink, ivory and gold, square corners, Cormorant + Inter) ===== */
+:root {
+  --bg: #F9FAFB; --surface: #FFFFFF; --surface-2: #F1F4F8; --ink: #0F172A; --muted: #64748B; --line: #E2E8F0;
+  --gold: #C2A679; --gold-h: #A88D60;
+  --fv: #4B6B3D; --fv-t: #EAF0E6; --mt: #9C4B3E; --mt-t: #F5E8E5; --gr: #2F4A6B; --gr-t: #E6ECF3; --on-sup: #FFFFFF;
+  --warn: #7A5A1E; --warn-t: #F8F0DE; --warn-line: #DCC28A; --danger: #A8392F; --ok: #3E6B3A;
+  --r: 0px; --f-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; --f-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; --f-mono: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1115; --surface: #1A1D23; --surface-2: #22262E; --ink: #F1F5F9; --muted: #94A3B8; --line: #2B2F38; --gold: #D8BD8F; --gold-h: #C2A679;
+    --fv: #8DB07B; --fv-t: #1A2418; --mt: #D98B7D; --mt-t: #2B1B18; --gr: #8FB0D8; --gr-t: #16212F; --on-sup: #0F1115;
+    --warn: #E5C57A; --warn-t: #2A2415; --warn-line: #5C4A17; --danger: #E58A80; --ok: #8DB07B;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1115; --surface: #1A1D23; --surface-2: #22262E; --ink: #F1F5F9; --muted: #94A3B8; --line: #2B2F38; --gold: #D8BD8F; --gold-h: #C2A679;
+  --fv: #8DB07B; --fv-t: #1A2418; --mt: #D98B7D; --mt-t: #2B1B18; --gr: #8FB0D8; --gr-t: #16212F; --on-sup: #0F1115;
+  --warn: #E5C57A; --warn-t: #2A2415; --warn-line: #5C4A17; --danger: #E58A80; --ok: #8DB07B;
+}
+*, *::before, *::after { border-radius: 0 !important; }
+.sync i, .chip .dot, .dot2, .sendseg .no { border-radius: 50% !important; }
+body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; }
+/* wordmark header */
+.brand { display: flex; align-items: center; flex-wrap: wrap; gap: 0 12px; font-size: 0; line-height: 1; }
+.wm img { height: 17px; width: auto; display: block; }
+.wm-d { display: none !important; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wm-l { display: none !important; } :root:not([data-theme="light"]) .wm-d { display: block !important; } }
+:root[data-theme="dark"] .wm-l { display: none !important; } :root[data-theme="dark"] .wm-d { display: block !important; }
+.mk { font-family: var(--f-body); font-size: 10.5px; font-weight: 500; letter-spacing: .32em; text-transform: uppercase; color: var(--muted); padding-left: 12px; border-left: 1px solid var(--gold); line-height: 1.5; }
+.brand small { flex-basis: 100%; margin-top: 7px; font-family: var(--f-body); font-size: 12px; font-weight: 400; color: var(--muted); }
+/* type: Cormorant for headings, Inter for every figure */
+.card h3, .supband .nm, .sup-head h3, .warnbox h3, .opt-h, .empty h3 { font-family: var(--f-display); font-weight: 700; letter-spacing: 0; }
+.card h3 { font-size: 22px; } .supband .nm { font-size: 23px; line-height: 1.15; } .sup-head h3 { font-size: 22px; } .warnbox h3 { font-size: 19px; } .opt-h { font-size: 21px; } .empty h3 { font-size: 27px; }
+.grand b, .bottombar .t b, .stats b { font-family: var(--f-body); font-weight: 600; letter-spacing: -.01em; }
+.grand b { font-size: 24px; } .bottombar .t b { font-size: 19px; } .stats b { font-size: 16px; }
+.num, .price b, .badge, .cq, .lpr, .lprofit, .pre { font-family: var(--f-body); font-variant-numeric: tabular-nums; }
+.pre { font-size: 12.5px; }
+.price b { font-weight: 600; font-size: 14px; }
+.supband .ct, .cat-h .count, .chip small, .lseg button small { font-family: var(--f-body); font-variant-numeric: tabular-nums; }
+/* gold: one accent, used sparingly */
+.tab[aria-selected="true"] { border-bottom-color: var(--gold); }
+.mk, .chkrow b { color: var(--muted); }
+.btn:not(.ghost):not(.danger):not([disabled]) { letter-spacing: .01em; }
+@media (hover: hover) {
+  .btn:not(.ghost):not(.danger):not([disabled]):hover { background: var(--gold); border-color: var(--gold); color: #0F172A; box-shadow: none; transform: none; }
+  .btn.ghost:not([disabled]):hover { border-color: var(--gold); background: transparent; box-shadow: none; transform: none; }
+  .opt.on .stepper button[data-act="inc"]:hover { background: var(--gold); border-color: var(--gold); color: #0F172A; }
+}
+.opt.on .stepper button[data-act="inc"] { background: var(--ink); color: var(--bg); }
+.badge { background: var(--gold); color: #0F172A; }
+.cat-h .picked { background: var(--gold); color: #0F172A; }
+.chip[aria-pressed="true"], .lseg button[aria-pressed="true"], .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.thumb, .fth { background: var(--surface-2); }
+.card, .sup-card, .cats { border-color: var(--line); }
+.stafffoot { padding-top: 14px; font-size: 12px; letter-spacing: .02em; } .stafffoot a { opacity: .8; }
+.login { padding: 28px 24px; } .login .brand { margin-bottom: 4px; }
 </style>
 </head>
 <body>
 
 <div class="bar" id="bar">
   <div class="bar-in">
-    <div class="brandwrap"><div class="brand">Vurata Market<small>Fresh, frozen &amp; pantry delivered in Bali</small></div>
+    <div class="brandwrap"><div class="brand"><span class="wm"><img class="wm-l" src="assets/wordmark-light.svg" alt="Vurata" height="17"><img class="wm-d" src="assets/wordmark-dark.svg" alt="" height="17"></span><span class="mk">Market</span><small>Fresh, frozen &amp; pantry delivered in Bali</small></div>
       <div class="sync" id="sync" data-s="local" role="status"><i></i><span id="syncTxt">Loading</span></div></div>
     <div class="barbtns"><button class="themebtn" id="outBtn" type="button" hidden>Sign out</button><button class="themebtn" id="themeBtn" type="button" aria-label="Change theme">Auto</button></div>
   </div>
@@ -967,8 +1028,8 @@ body.gated .bar, body.gated .wrap, body.gated .bottombar, body.gated .helpfoot, 
 </div>
 
 <div class="helpfoot" id="helpFoot" hidden></div>
-<div class="stafffoot" id="staffFoot" hidden><a href="#staff" id="staffLink">Staff</a></div>
-<div class="loginwrap" id="loginWrap" hidden><form class="card login" id="loginForm" autocomplete="on"><div class="brand">Vurata Market<small>Staff sign in</small></div><div class="field"><label for="lg-email">Email</label><input id="lg-email" type="email" autocomplete="username" required></div><div class="field"><label for="lg-pw">Password</label><input id="lg-pw" type="password" autocomplete="current-password" required></div><p class="hint" id="lgMsg" role="alert"></p><div class="actions full"><button class="btn" type="submit" id="lgGo">Sign in</button></div><p class="hint"><a href="#" id="lgBack">Back to the shop</a></p></form></div>
+<div class="stafffoot" id="staffFoot" hidden><a href="https://vurata.com" target="_blank" rel="noopener">Vurata &middot; Curated Bali Experiences</a><span aria-hidden="true"> &middot; </span><a href="#staff" id="staffLink">Staff</a></div>
+<div class="loginwrap" id="loginWrap" hidden><form class="card login" id="loginForm" autocomplete="on"><div class="brand"><span class="wm"><img class="wm-l" src="assets/wordmark-light.svg" alt="Vurata" height="17"><img class="wm-d" src="assets/wordmark-dark.svg" alt="" height="17"></span><span class="mk">Market</span><small>Staff sign in</small></div><div class="field"><label for="lg-email">Email</label><input id="lg-email" type="email" autocomplete="username" required></div><div class="field"><label for="lg-pw">Password</label><input id="lg-pw" type="password" autocomplete="current-password" required></div><p class="hint" id="lgMsg" role="alert"></p><div class="actions full"><button class="btn" type="submit" id="lgGo">Sign in</button></div><p class="hint"><a href="#" id="lgBack">Back to the shop</a></p></form></div>
 <div class="bottombar" id="bottombar">
   <i class="bbprog" id="bbProg" hidden><u></u></i>
   <div class="t"><b id="bbTotal" class="num">Rp 0</b><span id="bbSub">Nothing picked yet</span></div>
@@ -994,9 +1055,9 @@ const SUPS = {
     "name": "Fresh fruits, vegetables & groceries",
     "short": "Fruit & veg",
     "rgb": [
-      27,
-      127,
-      75
+      75,
+      107,
+      61
     ],
     "phone": "",
     "wa": "",
@@ -1010,9 +1071,9 @@ const SUPS = {
     "name": "Meat processing & raw meat supplier",
     "short": "Meat & seafood",
     "rgb": [
-      179,
-      38,
-      30
+      156,
+      75,
+      62
     ],
     "phone": "",
     "wa": "",
@@ -1026,9 +1087,9 @@ const SUPS = {
     "name": "Frozen food, dairy, groceries & sauces",
     "short": "Frozen & grocery",
     "rgb": [
-      31,
-      95,
-      168
+      47,
+      74,
+      107
     ],
     "phone": "",
     "wa": "",
