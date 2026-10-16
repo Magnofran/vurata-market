@@ -1181,6 +1181,8 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .gic { width: 40px; height: 40px; display: grid; place-items: center; background: var(--surface-2); color: var(--gold-text); } .gic svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .gtx { font-size: 14px; line-height: 1.4; } .gtx b { font-weight: 600; }
 .gwarn { padding: 12px; background: var(--surface-2); } .gwarn.gdone { grid-template-columns: 1fr; }
+.emptyin { display: grid; gap: 14px; width: fit-content; max-width: 100%; justify-items: stretch; } .emptyin p { margin: 0; } .emptyin > .btn { width: 100%; min-height: 48px; } .emptyin .actions { margin: 0; }
+@media (max-width: 560px) { .emptyin { width: 100%; } }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1839,7 +1841,7 @@ function renderOrder(comp) {
     '<div class="field span-all' + (cmode && !reqOk('addr', m) ? ' miss' : '') + '"><label for="m-addr">Deliver to' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><textarea id="m-addr" data-meta="addr" rows="2" placeholder="Delivery address"' + ro + '>' + esc(m.addr) + '</textarea>' + (cmode ? '<div class="pinrow">' + (m.pin ? '<span class="pinok">&#10003; Pin added</span><button type="button" class="linkbtn" data-act="clrpin">Remove</button>' : '<button type="button" class="btn ghost sm" data-act="getpin">Add my pin location</button><span class="hint">' + (ui.pinFail ? 'We cannot read your location here. After you send your order, share it in the same WhatsApp chat: tap <b>+</b>, then <b>Location</b>.' : 'Optional. Helps the driver find you.') + '</span>') + '</div>' : '') + '</div>' +
     '<div class="field span-all"><label for="m-notes">' + (cmode ? 'Notes for your host' : 'Notes for your brother') + '</label><textarea id="m-notes" data-meta="notes" placeholder="' + (cmode ? 'Anything we should know before delivery' : 'Anything he should know before ordering') + '"' + ro + '>' + esc(m.notes) + '</textarea></div></div></div>';
   if (!comp.groups.length) {
-    host.innerHTML = meta + '<div class="card empty"><h3>Nothing in this order yet</h3><p>' + (cmode ? 'Pick items and they appear here with your total worked out.' : 'Pick items from the three supplier lists and they appear here, grouped by supplier, with the math done.') + '</p><div class="actions duo" style="width:100%;max-width:420px"><button class="btn" data-view="pick">Pick items</button>' + (cmode ? '<button class="btn ghost" data-act="opensaved">Saved orders</button>' : '<button class="btn ghost" data-view="share">Past orders</button>') + '</div></div>';
+    host.innerHTML = meta + '<div class="card empty"><h3>Nothing in this order yet</h3><div class="emptyin"><p>' + (cmode ? 'Pick items and they appear here with your total worked out.' : 'Pick items from the three supplier lists and they appear here, grouped by supplier, with the math done.') + '</p><div class="actions duo" style="width:100%"><button class="btn" data-view="pick">Pick items</button>' + (cmode ? '<button class="btn ghost" data-act="opensaved">Saved orders</button>' : '<button class="btn ghost" data-view="share">Past orders</button>') + '</div></div></div>';
     return;
   }
   const warn = comp.warnings.length ? '<div class="warnbox"><h3>' + (cmode ? 'Good to know' : 'Confirm before ordering') + ' (' + comp.warnings.length + ')</h3><ul>' + comp.warnings.map(w => '<li>' + (w.sid ? '<b>' + SUPS[w.sid].short + ':</b> ' : '') + esc(w.text) + '</li>').join('') + '</ul></div>' : '';
@@ -1881,7 +1883,7 @@ function renderOrder(comp) {
 function renderShare(comp) {
   if (cmode) { renderShareC(comp); return; }
   const host = document.getElementById('shareBody');
-  if (!comp.groups.length) { host.innerHTML = '<div class="card empty"><h3>Nothing to share yet</h3><p>Add items first. The summary, the WhatsApp messages and the PDF are built from your order.</p><button class="btn" data-view="pick">Pick items</button></div>' + histHtml(); return; }
+  if (!comp.groups.length) { host.innerHTML = '<div class="card empty"><h3>Nothing to share yet</h3><div class="emptyin"><p>Add items first. The summary, the WhatsApp messages and the PDF are built from your order.</p><button class="btn" data-view="pick">Pick items</button></div></div>' + histHtml(); return; }
   const summary = buildSummary(S, comp);
   const msgs = comp.groups.map(g => {
     const s = SUPS[g.sid]; const text = buildSupplierMsg(S, g, ui.lang);
@@ -2319,7 +2321,7 @@ function customerMessage(state, comp) {
 }
 function renderShareC(comp) {
   const host = document.getElementById('shareBody'); const hw = hostWA || LS.get('mumu-hostwa') || '';
-  if (!comp.groups.length) { host.innerHTML = '<div class="card empty"><h3>Nothing to send yet</h3><p>Pick items first. Your order and total are built from them.</p><button class="btn" data-view="pick">Pick items</button></div>' + histHtml(); return; }
+  if (!comp.groups.length) { host.innerHTML = '<div class="card empty"><h3>Nothing to send yet</h3><div class="emptyin"><p>Pick items first. Your order and total are built from them.</p><button class="btn" data-view="pick">Pick items</button></div></div>' + histHtml(); return; }
   const missing = missingReq(S.meta); const joined = missing.length > 1 ? missing.slice(0, -1).map(x => '<b>' + x + '</b>').join(', ') + ' and <b>' + missing[missing.length - 1] + '</b>' : '<b>' + missing[0] + '</b>';
   if (missing.length) { host.innerHTML = '<div class="card"><div class="msg-head"><h3>Send your order</h3><span class="pill">' + fmtRp(comp.grand) + '</span></div><div class="gate"><b>Almost there.</b> Please fill in ' + joined + ' <i class="req">*</i> before you send.</div><div class="actions full"><button class="btn" data-act="fix">Fill in my details</button></div></div>' + histHtml(); return; }
   if (minGap(comp) > 0) { host.innerHTML = '<div class="card"><div class="msg-head"><h3>Send your order</h3><span class="pill">' + fmtRp(comp.grand) + '</span></div><div class="gate"><b>Almost there.</b> The minimum order is <b>' + fmtRp(dlNow().min) + '</b>. Add <b>' + fmtRp(minGap(comp)) + '</b> more to send it.</div><div class="actions full"><button class="btn" data-view="pick">Add items</button></div></div>' + histHtml(); return; }
@@ -3040,7 +3042,7 @@ async function boot() {
   if (window.SB.recovery) { showLogin('', 'recovery'); return; }
   if (location.hash === '#staff' && !st.admin) { showLogin(st.session ? 'This account does not have staff access.' : ''); return; }
   restoreUi(); if (cmode) ui.loading = true;
-  const firstGr = CATALOG.find(i => i.s === 'gr').c; ui.open['fv|Fruits'] = true; ui.open['mt|Sausages'] = true; ui.open['gr|' + firstGr] = true;
+  
   renderFilters(); renderPick(); showView('pick'); renderAll(false); setSync('local', 'Connecting');
   const [dbc, uc, dc, ac] = await Promise.all([cap('db'), cap('user'), cap('downloads'), cap('assets')]);
   userCap = uc; dlCap = dc; assetsCap = ac;
