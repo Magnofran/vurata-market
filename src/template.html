@@ -988,6 +988,10 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .card h3, .supband .nm, .sup-head h3, .warnbox h3, .opt-h, .empty h3 { font-variant-numeric: lining-nums; font-feature-settings: "lnum"; }
 .stats { grid-template-columns: 1fr 1fr 1.5fr; } .stats b { font-size: 15px; white-space: nowrap; overflow-wrap: normal; }
 .lseg button, .seg button { white-space: nowrap; padding-inline: 2px; font-size: 13px; }
+/* product tiles: quiet grey tile, gold hairline, muted emoji (photos stay in full colour) */
+.thumb, .fth { background: var(--surface-2) !important; border: 1px solid var(--gold); }
+.thumb:not(.img), .fth:not(.img) { filter: grayscale(.45); }
+.thumb.img, .fth.img { filter: none; }
 .login { padding: 28px 24px; } .login .brand { margin-bottom: 4px; }
 </style>
 </head>
