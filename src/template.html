@@ -517,9 +517,9 @@ body.has-bar .toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
 @media (max-width: 520px) { .lchips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .lrow { margin-inline: -16px; padding-inline: 16px; border-top: 1.5px solid var(--line-dark); padding-block: 16px; }
 .lrow:first-of-type { border-top: 0; padding-top: 6px; }
-.lopt2 + .lopt2 { border-top: 1.5px dotted var(--line-dot); padding-top: 12px; margin-top: 4px; }
+.lopt2 + .lopt2 { background: var(--dotline); padding-top: 12px; margin-top: 4px; }
 .item { border-top-color: var(--line-dark); }
-.opt.multi { border-top: 1.5px dotted var(--line-dot); }
+.opt.multi { background: var(--dotline); }
 
 /* ---- edit-details panel stands apart ---- */
 .ldet { margin-top: 14px; padding: 14px; gap: 12px; border-radius: 12px; border: 1px solid var(--line-dark); }
@@ -1025,7 +1025,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
   #orderBody .grid2 > .field:has(#m-pay) { order: 7; } #orderBody .grid2 > .field:has(#m-addr) { order: 8; }
   #orderBody .grid2 > .field:has(#m-notes) { order: 9; grid-column: 1 / -1; }
 }
-.hownote { margin: 14px 0 0; padding-top: 14px; border-top: 1.5px dotted var(--line-dot); font-size: 13px; line-height: 1.55; color: var(--muted); } .hownote b { color: var(--ink); font-weight: 600; }
+.hownote { margin: 14px 0 0; padding-top: 14px; background: var(--dotline); font-size: 13px; line-height: 1.55; color: var(--muted); } .hownote b { color: var(--ink); font-weight: 600; }
 /* free delivery unlocked: the bar turns gold, pulses once, and the note gets a check */
 .bbprog.ok { height: 4px; top: -4px; } .bbprog.ok u { background: var(--gold); }
 .bbprog.pop { animation: bbpop 1s ease-out; }
@@ -1051,7 +1051,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .sentbox { width: min(420px, 100%); max-height: 100%; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-top: 2px solid var(--gold); padding: 24px 22px 22px; display: grid; gap: 14px; }
 .sentbox h3 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; } .sentbox .hint { margin: 0; }
 .sentrows { display: grid; } .sentrows > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; } .sentrows span { color: var(--muted); } .sentrows b { font-weight: 600; text-align: right; }
-.sentsteps { list-style: none; margin: 0; padding: 12px 0 0; border-top: 1.5px dotted var(--line-dot); display: grid; gap: 10px; font-size: 13.5px; line-height: 1.45; } .sentsteps li { display: grid; grid-template-columns: 30px 1fr; align-items: baseline; } .sentsteps i { font-style: normal; color: var(--gold-h); font-weight: 600; font-size: 12px; letter-spacing: .18em; }
+.sentsteps { list-style: none; margin: 0; padding: 12px 0 0; background: var(--dotline); display: grid; gap: 10px; font-size: 13.5px; line-height: 1.45; } .sentsteps li { display: grid; grid-template-columns: 30px 1fr; align-items: baseline; } .sentsteps i { font-style: normal; color: var(--gold-h); font-weight: 600; font-size: 12px; letter-spacing: .18em; }
 .csel { font-size: 12.5px; letter-spacing: -.01em; padding: 0 20px 0 6px; }
 .actions.duo .btn, .actions.full .btn { padding-inline: 12px; }
 /* long names and addresses must stay inside their box */
@@ -1064,8 +1064,8 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .btn.ghost, .themebtn, .stepper button, .chip:not([data-s]):not([aria-pressed="true"]), .lseg, .seg { border-color: var(--line-dark); }
 .btn.ghost[disabled] { border-color: var(--line); }
 .nsteps { list-style: none; margin: 4px 0 0; padding: 0; display: grid; }
-.nsteps li { display: grid; grid-template-columns: 34px 1fr; align-items: baseline; padding: 14px 0; border-top: 1.5px dotted var(--line-dot); }
-.nsteps li:first-child { border-top: 0; padding-top: 6px; } .nsteps li:last-child { padding-bottom: 2px; }
+.nsteps li { display: grid; grid-template-columns: 34px 1fr; align-items: baseline; padding: 14px 0; background: var(--dotline); }
+.nsteps li:first-child { background: none; padding-top: 6px; } .nsteps li:last-child { padding-bottom: 2px; }
 .nsteps i { font-style: normal; color: var(--gold-h); font-weight: 600; font-size: 12px; letter-spacing: .18em; }
 .nsteps li > div { display: grid; gap: 3px; } .nsteps b { font-size: 15px; font-weight: 600; letter-spacing: -.005em; } .nsteps span { font-size: 13.5px; line-height: 1.5; color: var(--muted); }
 /* send view: order recap */
@@ -1073,7 +1073,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .rcap-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding-bottom: 12px; }
 .rcap-who { display: grid; gap: 2px; min-width: 0; } .rcap-who b { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; } .recap .rcap-who span { font-size: 13px; color: var(--muted); }
 .rcap-tot { font-size: 20px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
-.rcap-rows { margin: 0; display: grid; border-top: 1.5px dotted var(--line-dot); }
+.rcap-rows { margin: 0; display: grid; background: var(--dotline); }
 .rcap-rows > div { display: grid; grid-template-columns: 84px 1fr; gap: 10px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); }
 .rcap-rows > div:first-child { border-top: 0; }
 .rcap-rows dt { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
@@ -1086,7 +1086,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .cats .cat, .cats .cat-h, .cats .cat-b, .cats .item { border-radius: 0 !important; }
 .hrow2.cur { border-radius: 0 !important; }
 .lsub { margin: 0 0 4px; font-size: 13.5px; }
-.lsec { margin-top: 18px; padding-top: 18px; border-top: 1.5px dotted var(--line-dot); }
+.lsec { margin-top: 18px; padding-top: 18px; background: var(--dotline); }
 .lsec-h { display: grid; gap: 2px; margin-bottom: 14px; } .lsec-h b { font-size: 15px; font-weight: 700; letter-spacing: -.005em; } .lsec-h span { font-size: 13px; color: var(--muted); }
 #ledCard .grid2 { align-items: start; } #ledCard .field { align-content: start; }
 #ledCard .field input, #ledCard .field select { height: 46px; min-height: 46px; box-sizing: border-box; }
@@ -1094,6 +1094,9 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .lex { margin: 12px 0 0; padding: 10px 12px; background: var(--surface-2); font-size: 13px; line-height: 1.5; color: var(--ink); } .lex b { font-weight: 600; }
 .lact2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; align-items: start; } .lact2 > div { display: grid; gap: 6px; min-width: 0; } .lact2 .btn { width: 100%; min-height: 48px; } .lact2 .hint { margin: 0; font-size: 12.5px; line-height: 1.4; }
 @media (max-width: 380px) { .lact2 { grid-template-columns: minmax(0, 1fr); } }
+/* straight, square-dotted dividers */
+:root { --dotline: linear-gradient(90deg, var(--line-dot) 2px, transparent 2px) left top / 5px 1.5px repeat-x; }
+@media (max-width: 560px) { #ledCard .grid2 { grid-template-columns: minmax(0, 1fr); } }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -2522,7 +2525,7 @@ function renderLedger() {
   const dlOpen = cardOpen('dlCard'); const dlSum = dlc.zones.length + ' area' + (dlc.zones.length === 1 ? '' : 's') + (dlc.min ? ' - minimum ' + fmtRp(dlc.min) : '') + (dlc.free ? ' - free over ' + fmtRp(dlc.free) : '') + (dlc.cutoff ? ' - cutoff ' + (dlc.cutoff > 12 ? dlc.cutoff - 12 : dlc.cutoff) + ' pm' : '');
   const dlCardOpen = '<div class="card" id="dlCard">' + cardHead('dlCard', 'Delivery', true) + '<p class="hint" style="margin-bottom:12px">Customers pick their area and see the delivery fee straight away, before they send. Leave a fee empty to confirm it by message. With no areas listed, no delivery fee is shown.</p>' +
     '<div class="grid2"><div class="field"><label for="dl-min">Smallest order we accept (Rp)</label><input id="dl-min" inputmode="numeric" value="' + (dlc.min || '') + '" placeholder="e.g. 200.000"' + (canWrite ? '' : ' disabled') + '></div><div class="field"><label for="dl-free">Free delivery on orders over (Rp)</label><input id="dl-free" inputmode="numeric" value="' + (dlc.free || '') + '" placeholder="e.g. 600.000"' + (canWrite ? '' : ' disabled') + '></div></div><p class="hint" style="margin:-2px 0 14px">Leave a box empty to switch it off: no minimum, or delivery is never free.</p>' +
-    '<div class="grid2"><div class="field"><label for="dl-cut">Order cutoff</label><select id="dl-cut"' + (canWrite ? '' : ' disabled') + '><option value="0">No cutoff</option>' + [12, 14, 15, 16, 17, 18, 19, 20, 21].map(h => '<option value="' + h + '"' + (dlc.cutoff === h ? ' selected' : '') + '>Before ' + (h > 12 ? h - 12 : h) + ' pm</option>').join('') + '</select></div></div><p class="hint" style="margin:-2px 0 14px">Orders placed after the cutoff are delivered from the day after tomorrow.</p>' +
+    '<div class="grid2" style="grid-template-columns:minmax(0,1fr)"><div class="field"><label for="dl-cut">Order cutoff</label><select id="dl-cut"' + (canWrite ? '' : ' disabled') + '><option value="0">No cutoff</option>' + [12, 14, 15, 16, 17, 18, 19, 20, 21].map(h => '<option value="' + h + '"' + (dlc.cutoff === h ? ' selected' : '') + '>Before ' + (h > 12 ? h - 12 : h) + ' pm</option>').join('') + '</select></div></div><p class="hint" style="margin:-2px 0 14px">Orders placed after the cutoff are delivered from the day after tomorrow.</p>' +
     '<span class="lgl">Days off (no delivery)</span>' + dlc.closed.map(dayRow).join('') + (ui.ddNew ? dayRow({ d: '', n: '' }, dlc.closed.length) : '') + '<div class="actions full" style="margin:2px 0 16px"><button type="button" class="btn ghost" data-act="dadd"' + (canWrite ? '' : ' disabled') + '>Add a day off</button></div>' +
     (dlc.zones.length || ui.dzNew ? '<div class="dzhead"><span>Area</span><span>Fee</span></div>' : '') + dlc.zones.slice(0, (ui.dzAll || ui.dzNew) ? 9999 : 5).map(dzRow).join('') + (dlc.zones.length > 5 && !ui.dzNew ? '<button type="button" class="linkbtn dzmore" data-act="dzall" aria-expanded="' + !!ui.dzAll + '">' + (ui.dzAll ? 'Show fewer areas' : 'Show ' + (dlc.zones.length - 5) + ' more areas') + '</button>' : '') + (ui.dzNew ? dzRow({ n: '', fee: null }, dlc.zones.length) : '') +
     '<div class="actions duo"><button type="button" class="btn ghost" data-act="dzadd"' + (canWrite ? '' : ' disabled') + '>Add an area</button>' + (DL_STARTER.some(x => !dlc.zones.some(z => z.n === x[0])) ? '<button type="button" class="btn" data-act="dzstarter"' + (canWrite ? '' : ' disabled') + '>' + (dlc.zones.length ? 'Add the rest of Bali' : 'Use Bali starter areas') + '</button>' : '') + '</div>' +
