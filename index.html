@@ -1388,7 +1388,7 @@ function compute(state, mode) {
   }
   if (out) warnings.push({ sid: '', text: out + ' line' + (out > 1 ? 's are' : ' is') + ' marked out of stock and not counted in the total.' });
   const estLines = Object.values(groups).reduce((n, g) => n + g.est, 0);
-  if (estLines) warnings.push({ sid: '', text: estLines + ' line' + (estLines > 1 ? 's are' : ' is') + (cmode ? ' priced by weight. Your host weighs them when packing, so you pay the exact weight.' : ' sold by weight (fresh produce or meat). The final bill depends on what is weighed at delivery.') });
+  if (estLines && !cmode) warnings.push({ sid: '', text: estLines + ' line' + (estLines > 1 ? 's are' : ' is') + (cmode ? ' priced by weight. Your host weighs them when packing, so you pay the exact weight.' : ' sold by weight (fresh produce or meat). The final bill depends on what is weighed at delivery.') });
   const list = SUP_ORDER.filter(s => groups[s]).map(s => groups[s]);
   let fee = 0, feeKnown = true, free = false, toFree = 0; const m = state.meta || {}; const zone = m.zone || '';
   if (mode === 'sell' && (zone || +m.fee > 0)) {
