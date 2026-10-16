@@ -1107,6 +1107,14 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .sentbox { position: relative; } .sentbox h3 { padding-right: 36px; }
 .sentx { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border: 0; background: transparent; color: var(--muted); font-size: 26px; line-height: 1; display: grid; place-items: center; cursor: pointer; padding: 0; }
 @media (hover: hover) { .sentx:hover { color: var(--ink); } }
+/* saved orders: each order is clearly its own record */
+.hist { display: grid; gap: 0; }
+.hrow2 { padding: 22px 0 20px; border-top: 1.5px solid color-mix(in srgb, var(--ink) 34%, var(--surface)); }
+.hrow2:first-child { border-top: 0; padding-top: 6px; }
+.hrow2.cur { margin-inline: -2px; padding: 18px 14px 18px 16px; border-top: 0; }
+.hrow2 + .hrow2.cur, .hrow2.cur + .hrow2 { border-top: 0; }
+.hrow2.cur + .hrow2 { margin-top: 6px; border-top: 1.5px solid color-mix(in srgb, var(--ink) 34%, var(--surface)); }
+.hdet { background: var(--dotline); border-top: 0 !important; padding-top: 14px; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1930,7 +1938,7 @@ function saveFavs() {
 }
 function histHtml() {
   const rows = hist.map(h => {
-    const open = !!ui.histOpen[h.id]; const date = new Date(h.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const open = !!ui.histOpen[h.id]; const date = new Date(h.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + new Date(h.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     let det = '';
     if (open) {
       const by = {};
