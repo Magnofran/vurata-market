@@ -18,7 +18,7 @@
 <title>Vurata Market | Bali Grocery Delivery</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: a market ledger. Sticky bar (brand, tabs, sync), picker on the left, live order summary on the right at desktop.
    Three suppliers, three colors, used for bands, chips and receipt bars so a line is never mistaken for another supplier's. */
@@ -934,7 +934,7 @@ body.gated .bar, body.gated .wrap, body.gated .bottombar, body.gated .helpfoot, 
   --gold: #C2A679; --gold-h: #A88D60;
   --fv: #4B6B3D; --fv-t: #EAF0E6; --mt: #9C4B3E; --mt-t: #F5E8E5; --gr: #2F4A6B; --gr-t: #E6ECF3; --on-sup: #FFFFFF;
   --warn: #7A5A1E; --warn-t: #F8F0DE; --warn-line: #DCC28A; --danger: #A8392F; --ok: #3E6B3A;
-  --r: 0px; --f-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; --f-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; --f-mono: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r: 3px; --f-display: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; --f-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; --f-mono: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -948,7 +948,7 @@ body.gated .bar, body.gated .wrap, body.gated .bottombar, body.gated .helpfoot, 
   --fv: #8DB07B; --fv-t: #1A2418; --mt: #D98B7D; --mt-t: #2B1B18; --gr: #8FB0D8; --gr-t: #16212F; --on-sup: #0F1115;
   --warn: #E5C57A; --warn-t: #2A2415; --warn-line: #5C4A17; --danger: #E58A80; --ok: #8DB07B;
 }
-*, *::before, *::after { border-radius: 0 !important; }
+*, *::before, *::after { border-radius: 3px !important; }
 .sync i, .chip .dot, .dot2, .sendseg .no { border-radius: 50% !important; }
 body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; }
 /* wordmark header */
@@ -960,8 +960,8 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .mk { font-family: var(--f-body); font-size: 10.5px; font-weight: 500; letter-spacing: .32em; text-transform: uppercase; color: var(--muted); padding-left: 12px; border-left: 1px solid var(--gold); line-height: 1.5; }
 .brand small { flex-basis: 100%; margin-top: 7px; font-family: var(--f-body); font-size: 12px; font-weight: 400; color: var(--muted); }
 /* type: Cormorant for headings, Inter for every figure */
-.card h3, .supband .nm, .sup-head h3, .warnbox h3, .opt-h, .empty h3 { font-family: var(--f-display); font-weight: 700; letter-spacing: 0; }
-.card h3 { font-size: 22px; } .supband .nm { font-size: 23px; line-height: 1.15; } .sup-head h3 { font-size: 22px; } .warnbox h3 { font-size: 19px; } .opt-h { font-size: 21px; } .empty h3 { font-size: 27px; }
+.card h3, .supband .nm, .sup-head h3, .warnbox h3, .opt-h, .empty h3 { font-family: var(--f-body); font-weight: 700; letter-spacing: -.01em; }
+.card h3 { font-size: 18px; } .supband .nm { font-size: 18px; line-height: 1.25; } .sup-head h3 { font-size: 18px; } .warnbox h3 { font-size: 16px; } .opt-h { font-size: 17px; } .empty h3 { font-size: 22px; }
 .grand b, .bottombar .t b, .stats b { font-family: var(--f-body); font-weight: 600; letter-spacing: -.01em; }
 .grand b { font-size: 24px; } .bottombar .t b { font-size: 19px; } .stats b { font-size: 16px; }
 .num, .price b, .badge, .cq, .lpr, .lprofit, .pre { font-family: var(--f-body); font-variant-numeric: tabular-nums; }
