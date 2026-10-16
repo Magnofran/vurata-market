@@ -1103,6 +1103,10 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .howlink[hidden] { display: none; } .howlink i { font-style: normal; font-size: 18px; font-weight: 400; letter-spacing: 0; color: var(--gold-text); }
 /* The banners sit at the top of the item column so the order panel starts level with them on wide screens. */
 .cols.two > div > .how, .cols.two > div > .dlinfo, .cols.two > div > .howlink { margin-top: 0 !important; margin-bottom: 16px; }
+/* Photo and text read as one row: the photo stretches to the full height of the text block, name on its top edge, price on its bottom edge. */
+.item.single > .thw { align-self: stretch; display: flex; flex-direction: column; } .item.single > .thw .thumb { height: auto; min-height: 54px; flex: 1; }
+.item.single > .main h4 { margin-top: -2px; } .item.single > .price.line { margin-bottom: -2px; align-self: end; }
+@media (max-width: 520px) { .item.single > .thw .thumb { height: auto; min-height: 48px; } }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -1573,6 +1577,7 @@ function applyLedger() {
       if (o.n) it.n = o.n; if (o.e !== undefined && o.e !== null) it.e = o.e; if (o.c) it.c = o.c; if (o.hid) it.hidden = true; if (o.so) it.so = true; if (o.ft) it.ft = true; if (o.img !== undefined && o.img !== null) it.img = o.img ? String(o.img) : '';
     }
     
+    if (it.n) it.n = it.n.charAt(0).toUpperCase() + it.n.slice(1);
     const c = cfgNow(); const sps = o && Array.isArray(o.sp) ? o.sp : [];
     it.o.forEach((op, i) => { const ex = sps[i]; op.spx = ex > 0; const step = op.pr && op.pr < 5000 ? Math.min(c.round, 100) : c.round; op.sp = ex > 0 ? ex : (op.pr ? Math.ceil(op.pr * (1 + c.pct / 100) / step) * step : null); });
     return it;
