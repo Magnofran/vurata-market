@@ -1107,13 +1107,17 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .sentbox { position: relative; } .sentbox h3 { padding-right: 36px; }
 .sentx { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border: 0; background: transparent; color: var(--muted); font-size: 26px; line-height: 1; display: grid; place-items: center; cursor: pointer; padding: 0; }
 @media (hover: hover) { .sentx:hover { color: var(--ink); } }
-/* saved orders: each order is clearly its own record */
-.hist { display: grid; gap: 0; }
-.hrow2 { padding: 22px 0 20px; border-top: 1.5px solid color-mix(in srgb, var(--ink) 34%, var(--surface)); }
-.hrow2:first-child { border-top: 0; padding-top: 6px; }
-.hrow2.cur { margin-inline: -2px; padding: 18px 14px 18px 16px; border-top: 0; }
-.hrow2 + .hrow2.cur, .hrow2.cur + .hrow2 { border-top: 0; }
-.hrow2.cur + .hrow2 { margin-top: 6px; border-top: 1.5px solid color-mix(in srgb, var(--ink) 34%, var(--surface)); }
+/* saved orders: each order is its own bordered ticket */
+.hist { display: grid; gap: 12px; margin-top: 4px; }
+.hrow2 { border: 1px solid var(--line-dark) !important; background: var(--surface); padding: 16px !important; margin: 0 !important; gap: 12px; box-shadow: none !important; }
+.hrow2:first-child { padding-top: 16px !important; }
+.hrow2.cur { border-top: 2px solid var(--gold) !important; background: color-mix(in srgb, var(--gold) 7%, var(--surface)); }
+.hhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.htag { font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.htag.cur { color: #0F172A; background: var(--gold); padding: 3px 8px; }
+.hdate { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hrow2 .htitle { font-size: 17px; font-weight: 700; letter-spacing: -.01em; } .hrow2 .htot { font-size: 17px; font-weight: 700; }
+.hrow2 .hprev { margin: 0; font-size: 14px; line-height: 1.45; } .hcnt { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-right: 10px; }
 .hdet { background: var(--dotline); border-top: 0 !important; padding-top: 14px; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
@@ -1952,8 +1956,9 @@ function histHtml() {
     const names = Object.keys(h.lines || {}).map(k => BY_ID[k.split('|')[0]]).filter(Boolean).map(i => i.n).filter((n, i, arr) => arr.indexOf(n) === i);
     const prev = names.slice(0, 3).join(', ') + (names.length > 3 ? ' + ' + (names.length - 3) + ' more' : '');
     const cur = !!S.meta.draftId && S.meta.draftId === h.id;
-    return '<div class="hrow2' + (cur ? ' cur' : '') + '"><div class="htop">' + (ui.renameId === h.id ? '<input class="hren" data-hren="' + esc(h.id) + '" value="' + esc(h.title || '') + '" maxlength="60" aria-label="Order name">' : '<b class="htitle">' + esc(h.title || 'Order') + '</b>') + '<span class="num htot">' + fmtRp(h.total || 0) + '</span></div>' +
-      '<div class="hmeta">' + (cur ? '<span class="pill cur">Editing now</span>' : '') + '<span>' + date + '</span><span>' + h.count + ' line' + (h.count > 1 ? 's' : '') + '</span>' + (h.kept ? '<span class="pill ok">Saved draft</span>' : h.placed ? '<span class="pill ok">Placed</span>' : '') + '</div>' + (prev ? '<p class="hprev">' + esc(prev) + '</p>' : '') +
+    return '<div class="hrow2' + (cur ? ' cur' : '') + '"><div class="hhead"><span class="htag' + (cur ? ' cur' : '') + '">' + (cur ? 'Editing now' : h.kept ? 'Saved draft' : h.placed ? 'Placed' : 'Past order') + '</span><span class="hdate">' + date + '</span></div>' +
+      '<div class="htop">' + (ui.renameId === h.id ? '<input class="hren" data-hren="' + esc(h.id) + '" value="' + esc(h.title || '') + '" maxlength="60" aria-label="Order name">' : '<b class="htitle">' + esc(h.title || 'Order') + '</b>') + '<span class="num htot">' + fmtRp(h.total || 0) + '</span></div>' +
+      (prev ? '<p class="hprev"><span class="hcnt">' + h.count + ' line' + (h.count > 1 ? 's' : '') + '</span>' + esc(prev) + '</p>' : '') +
       (cur ? '<p class="hint curnote">This is the order in your cart now. Changes are saved here when you tap Save for later.</p><div class="actions duo"><button type="button" class="btn" disabled>Current order</button><button type="button" class="btn ghost" disabled>Add to current</button></div>' : '<div class="actions duo"><button type="button" class="btn" data-act="again" data-id="' + esc(h.id) + '"' + (h.kept ? ' data-edit="1"' : '') + '>' + (h.kept ? 'Open' : 'Order again') + '</button><button type="button" class="btn ghost" data-act="reuse" data-id="' + esc(h.id) + '">Add to current</button></div>') +
       '<div class="hlinks"><button type="button" class="linkbtn" data-act="hopen" data-id="' + esc(h.id) + '">' + (open ? 'Hide items' : 'See items') + '</button><button type="button" class="linkbtn" data-act="hrename" data-id="' + esc(h.id) + '">Rename</button></div>' + det + '</div>';
   }).join('');
