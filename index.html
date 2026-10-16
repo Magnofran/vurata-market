@@ -1156,6 +1156,8 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 /* filter chips fill their row on desktop */
 @media (min-width: 561px) { .chipgrp { flex: 1 1 100%; } .chipgrp .chip { flex: 1 1 auto; justify-content: center; } }
 .dym { margin: 6px 0 0; } .dymbtn { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 3px; }
+.pastebtn { width: 100%; min-height: 48px; margin: 12px 0 4px; }
+@media (hover: hover) { .pastebtn:not([disabled]):hover { background: var(--gold); border-color: var(--gold); color: #0F172A; } }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -2177,7 +2179,7 @@ function nextStep() {
 }
 function overviewHtml() {
   const ns = nextStep();
-  const nx = '<div class="nextstep"><span><i>Next</i>' + esc(ns.t) + '</span>' + (ns.b ? '<button type="button" class="btn sm" ' + (ns.go ? 'data-act="goto" data-t="' + ns.go + '"' : 'data-act="' + ns.act + '"') + '>' + ns.b + '</button>' : '') + '</div>';
+  const nx = '<div class="nextstep"><span><i>Next</i>' + esc(ns.t) + '</span>' + (ns.b ? '<button type="button" class="btn sm" ' + (ns.go ? 'data-act="goto" data-t="' + ns.go + '"' : 'data-act="' + ns.act + '"') + '>' + ns.b + '</button>' : '') + '</div><button type="button" class="btn pastebtn" data-act="pasteorder"' + (canWrite ? '' : ' disabled') + '>Paste order from clipboard</button>';
   if (!cust.length) return nx;
   const n = x => cust.filter(c => c.status === x).length; const toCollect = cust.reduce((t, c) => t + dueOf(c), 0);
   const by = {}; cust.filter(c => c.status !== 'delivered' && c.zone).forEach(c => { const z = zoneLabel(c.zone); by[z] = (by[z] || 0) + 1; }); const byTxt = Object.keys(by).map(z => esc(z) + ' <b>' + by[z] + '</b>').join(' &middot; ');
@@ -2403,6 +2405,12 @@ function renderCustomers() {
   const invOpen = cardOpen('inviteCard'); const pIx = invite.indexOf('<div class="card"><h3>Payment details</h3>'); const inviteFinal = invOpen ? invite.replace('<h3>Invite customers</h3>', cardHead('inviteCard', 'Invite customers', true).replace(/^<div class="msg-head">|<\/div>$/g, '')) : '<div class="card" id="inviteCard">' + cardHead('inviteCard', 'Invite customers', false) + '<p class="hint">Your customer link, QR code and WhatsApp message.</p></div>' + invite.slice(pIx);
   host.innerHTML = overviewHtml() + (cust.length ? '<div class="cjump" role="navigation" aria-label="Jump to">' + [['#custList', 'Orders'], ['#combCard', 'Combined'], ['#driverCard', 'Delivery run'], ['#importCard', 'Import'], ['#salesCard', 'Sales'], ['#inviteCard', 'Invite']].map(x => '<button type="button" class="chip" data-act="goto" data-t="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' : '') + imp + list + comb + driverHtml() + salesHtml() + inviteFinal;
   const ta = document.getElementById('importTxt'); if (ta && prevTxt) ta.value = prevTxt;
+}
+async function pasteOrder() {
+  let txt = null; try { txt = await navigator.clipboard.readText(); } catch (e) { txt = null; }
+  if (txt === null) { ui.impOpen = true; ui.impOpt = 'wa'; renderCustomers(); toast('Paste the customer message into the box.'); setTimeout(() => { const el = document.getElementById('importTxt'); if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); } }, 80); return; }
+  if (!/(?:VM1|MUMU1):/.test(txt)) { toast('No order in your clipboard. Copy the customer WhatsApp message first.'); return; }
+  importCodes(txt);
 }
 async function importCodes(text) {
   if (!canWrite) { toast('This copy is view-only.'); return; }
@@ -2723,6 +2731,7 @@ document.addEventListener('click', e => {
   else if (act === 'picksfromtop') { const top = topSellers(10); if (top.length) { const ids = new Set(top.map(x => x.it.id)); const ov = {}; CATALOG.forEach(it => { if (it.ft && !ids.has(it.id)) ov[it.id] = { ft: false }; }); top.forEach(x => { ov[x.it.id] = { ft: true }; }); saveLedger({ ov }); toast("Today's picks updated."); renderCustomers(); } }
   else if (act === 'showhow') { LS.set('mumu-how', '0'); renderFilters(); }
   else if (act === 'hidehow') { LS.set('mumu-how', '1'); renderFilters(); }
+  else if (act === 'pasteorder') { pasteOrder(); }
   else if (act === 'imptog') { ui.impOpen = !(ui.impOpen === undefined ? !cust.length : ui.impOpen); renderCustomers(); }
   else if (act === 'goto') { if ((b.dataset.t === '#salesCard' || b.dataset.t === '#inviteCard') && !cardOpen(b.dataset.t.slice(1))) { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen[b.dataset.t.slice(1)] = true; renderCustomers(); } if (b.dataset.t === '#importCard' && (ui.impOpen === undefined ? !cust.length : ui.impOpen) === false) { ui.impOpen = true; renderCustomers(); } const el = document.querySelector(b.dataset.t); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); if (/^(INPUT|TEXTAREA)$/.test(el.tagName)) setTimeout(() => el.focus({ preventScroll: true }), 400); } }
   else if (act === 'setdl') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen.dlCard = true; showView('ledger'); const el = document.getElementById('dlCard'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
