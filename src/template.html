@@ -1097,6 +1097,9 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 /* straight, square-dotted dividers */
 :root { --dotline: linear-gradient(90deg, var(--line-dot) 2px, transparent 2px) left top / 5px 1.5px repeat-x; }
 @media (max-width: 560px) { #ledCard .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.howlink { display: flex; width: 100%; align-items: center; justify-content: space-between; margin-top: 12px; padding: 0 16px; min-height: 44px; background: var(--surface); border: 1px solid var(--line-dark); color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; cursor: pointer; }
+.howlink[hidden] { display: none; } .howlink i { font-style: normal; font-size: 18px; font-weight: 400; letter-spacing: 0; color: var(--gold-h); }
+@media (hover: hover) { .howlink:hover { color: var(--ink); border-color: var(--gold); } }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1125,7 +1128,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
   <section id="v-pick" aria-labelledby="t-pick">
     <div class="how" id="howCard" hidden></div>
     <div class="dlinfo" id="dlInfo" hidden></div>
-    <div class="card cnote" id="cNote" hidden style="margin-top:12px"><b>Ordering through your host.</b> Pick what you want, then open <b>My order</b> and tap <b>Send</b>.</div>
+    <button type="button" class="howlink" id="cNote" data-act="showhow" hidden aria-label="Show how it works"><span>How it works</span><i aria-hidden="true">+</i></button>
     <div class="cols two">
       <div>
         <div class="filters">
@@ -2644,6 +2647,7 @@ document.addEventListener('click', e => {
   else if (act === 'sentyes') { confirmSent(); }
   else if (act === 'sentdone') { sentBox().hidden = true; showView('pick'); window.scrollTo(0, 0); }
   else if (act === 'picksfromtop') { const top = topSellers(10); if (top.length) { const ids = new Set(top.map(x => x.it.id)); const ov = {}; CATALOG.forEach(it => { if (it.ft && !ids.has(it.id)) ov[it.id] = { ft: false }; }); top.forEach(x => { ov[x.it.id] = { ft: true }; }); saveLedger({ ov }); toast("Today's picks updated."); renderCustomers(); } }
+  else if (act === 'showhow') { LS.set('mumu-how', '0'); renderFilters(); }
   else if (act === 'hidehow') { LS.set('mumu-how', '1'); renderFilters(); }
   else if (act === 'imptog') { ui.impOpen = !(ui.impOpen === undefined ? !cust.length : ui.impOpen); renderCustomers(); }
   else if (act === 'goto') { if ((b.dataset.t === '#salesCard' || b.dataset.t === '#inviteCard') && !cardOpen(b.dataset.t.slice(1))) { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen[b.dataset.t.slice(1)] = true; renderCustomers(); } if (b.dataset.t === '#importCard' && (ui.impOpen === undefined ? !cust.length : ui.impOpen) === false) { ui.impOpen = true; renderCustomers(); } const el = document.querySelector(b.dataset.t); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); if (/^(INPUT|TEXTAREA)$/.test(el.tagName)) setTimeout(() => el.focus({ preventScroll: true }), 400); } }
