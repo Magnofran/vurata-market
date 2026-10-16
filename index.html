@@ -1164,6 +1164,10 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .btn.ghost[data-act="getpin"] { min-height: 44px; }
 .price a.ask { display: inline-block; padding: 12px 0; margin: -12px 0; }
 .stepper input { min-width: 40px; }
+.stafffoot .linkbtn { display: inline; border: 0; background: none; padding: 0; min-height: 0; color: var(--muted); font-size: inherit; letter-spacing: .02em; text-decoration: none; opacity: .9; cursor: pointer; } .stafffoot .linkbtn:hover { opacity: 1; text-decoration: underline; }
+.termsbox { max-height: calc(100vh - 32px); overflow: auto; }
+.tlist { display: grid; } .tsec { display: grid; gap: 3px; padding: 12px 0; background: var(--dotline); } .tsec:first-child { background: none; padding-top: 4px; }
+.tsec b { font-size: 14px; font-weight: 600; } .tsec span { font-size: 13.5px; line-height: 1.5; color: var(--muted); } .tsec span b { color: var(--ink); font-size: inherit; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1213,7 +1217,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 </div>
 
 <div class="helpfoot" id="helpFoot" hidden></div>
-<div class="stafffoot" id="staffFoot" hidden><a href="https://vurata.com" target="_blank" rel="noopener">Vurata &middot; Curated Bali Experiences</a><span aria-hidden="true"> &middot; </span><a href="#staff" id="staffLink">Staff</a></div>
+<div class="stafffoot" id="staffFoot" hidden><a href="https://vurata.com" target="_blank" rel="noopener">Vurata &middot; Curated Bali Experiences</a><span aria-hidden="true"> &middot; </span><button type="button" class="linkbtn" data-act="terms">Privacy &amp; terms</button><span aria-hidden="true"> &middot; </span><a href="#staff" id="staffLink">Staff</a></div>
 <div class="loginwrap" id="loginWrap" hidden><form class="card login" id="loginForm" autocomplete="on"><div class="brand"><span class="wm"><img class="wm-l" src="assets/wordmark-light.svg" alt="Vurata" height="17"><img class="wm-d" src="assets/wordmark-dark.svg" alt="" height="17"></span><span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12h17"/><path d="M5 12l1.3 7a2 2 0 0 0 2 1.7h7.4a2 2 0 0 0 2-1.7l1.3-7"/><path d="M9.5 15v3M12 15v3M14.5 15v3"/><circle cx="9" cy="8.6" r="2.7"/><path d="M9 5.9c0-1 .6-1.8 1.6-2"/><path d="M15 12V7.5"/><path d="M15 9c0-1.8 1.2-3 3-3.2"/><path d="M15 10.4c0-1.4-1-2.3-2.4-2.5"/></svg>Market</span><small>Staff sign in</small></div><div class="field"><label for="lg-email">Email</label><input id="lg-email" type="email" autocomplete="username" required></div><div class="field"><label for="lg-pw">Password</label><input id="lg-pw" type="password" autocomplete="current-password" required></div><p class="hint" id="lgMsg" role="alert"></p><div class="actions full"><button class="btn" type="submit" id="lgGo">Sign in</button></div><p class="hint"><a href="#" id="lgForgot">Forgot password?</a> &nbsp;&middot;&nbsp; <a href="#" id="lgBack">Back to the shop</a></p></form>
 <form class="card login" id="recForm" hidden><div class="brand"><span class="wm"><img class="wm-l" src="assets/wordmark-light.svg" alt="Vurata" height="17"><img class="wm-d" src="assets/wordmark-dark.svg" alt="" height="17"></span><span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12h17"/><path d="M5 12l1.3 7a2 2 0 0 0 2 1.7h7.4a2 2 0 0 0 2-1.7l1.3-7"/><path d="M9.5 15v3M12 15v3M14.5 15v3"/><circle cx="9" cy="8.6" r="2.7"/><path d="M9 5.9c0-1 .6-1.8 1.6-2"/><path d="M15 12V7.5"/><path d="M15 9c0-1.8 1.2-3 3-3.2"/><path d="M15 10.4c0-1.4-1-2.3-2.4-2.5"/></svg>Market</span><small>New password</small></div><div class="field"><label for="lg-new">Choose a new password</label><input id="lg-new" type="password" autocomplete="new-password" minlength="10" required></div><p class="hint" id="recMsg" role="alert">Use at least 10 characters.</p><div class="actions full"><button class="btn" type="submit" id="recGo">Save password</button></div></form></div>
 <div class="bottombar" id="bottombar">
@@ -2729,6 +2733,7 @@ document.addEventListener('click', e => {
   else if (act === 'noteadd') { const inp = b.closest('.ln').querySelector('input.note'); if (inp && !inp.value.toLowerCase().includes(b.dataset.t.toLowerCase())) { inp.value = (inp.value ? inp.value + ', ' : '') + b.dataset.t; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); } }
   else if (act === 'hrename') { ui.renameId = b.dataset.id; refreshHist(); const el = document.querySelector('input[data-hren]'); if (el) { el.focus(); el.select(); } }
   else if (act === 'markordered') { const list = cust.filter(c => c.inc !== false && c.status === 'new'); list.forEach(c => updCust(c.id, { status: 'ordered', dat: 0 })); toast('Marked ' + list.length + ' order' + (list.length > 1 ? 's' : '') + ' as ordered.', { label: 'Undo', fn: () => list.forEach(c => updCust(c.id, { status: 'new' })) }); }
+  else if (act === 'terms') { showTerms(); }
   else if (act === 'installapp') { const ev = ui.installEv; if (ev) { ev.prompt(); ev.userChoice.finally(() => { ui.installEv = null; }); } }
   else if (act === 'sentx') { closeSentBox(); }
   else if (act === 'sentno') { sentBox().hidden = true; }
@@ -2904,6 +2909,22 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 document.addEventListener('paste', e => { const t = e.target; if (!t || t.id !== 'importTxt' || !canWrite) return; const txt = ((e.clipboardData || window.clipboardData).getData('text')) || ''; if (/(?:VM1|MUMU1):/.test(txt)) { e.preventDefault(); importCodes(txt); } });
 document.addEventListener('click', e => { if (e.target.closest('#staffLink')) { e.preventDefault(); location.hash = '#staff'; location.reload(); return; } if (e.target.closest('#outBtn')) { window.SB.signOut().then(() => { location.hash = ''; location.reload(); }); return; } if (e.target.closest('#themeBtn')) { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; LS.set('mumu-theme', theme); applyTheme(); } });
 function sentBox() { let el = document.getElementById('sentWrap'); if (!el) { el = document.createElement('div'); el.id = 'sentWrap'; el.className = 'sentwrap'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Order sent'); document.body.appendChild(el); } return el; }
+function termsHtml() {
+  const dl = dlNow(), hw = hostWA || LS.get('mumu-hostwa') || '';
+  const cutoff = dl.cutoff ? ' Orders placed after ' + (dl.cutoff > 12 ? dl.cutoff - 12 : dl.cutoff) + ' pm are delivered from the day after tomorrow.' : '';
+  const money = (dl.min ? ' The minimum order is ' + fmtRp(dl.min) + '.' : '') + (dl.free ? ' Delivery is free on orders over ' + fmtRp(dl.free) + '.' : '');
+  const chk = ledger.cfg && ledger.cfg.chk ? 'Prices were last checked on ' + shortDate(ledger.cfg.chk) + '. ' : '';
+  const sec = (h, b) => '<div class="tsec"><b>' + h + '</b><span>' + b + '</span></div>';
+  return '<div class="sentbox termsbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Privacy and order terms</h3><p class="hint">The short version, in plain words.</p><div class="tlist">' +
+    sec('Your details', 'Your name, phone and address stay on your phone until you send your order. When you send it, Vurata receives it on WhatsApp and keeps it to prepare and deliver your order.') +
+    sec('Your location', 'We only get your location if you tap <b>Add my pin location</b>, and only together with your order.') +
+    sec('Ordering', 'Orders need 24 hours notice.' + cutoff + money) +
+    sec('Prices and weight', chk + 'Fresh items are sold by weight and weighed when packed, so you pay the exact weight. We confirm stock and your final total with you on WhatsApp.') +
+    sec('Payment', 'Pay on delivery in cash, or by bank transfer as a deposit, as agreed with us on WhatsApp.') +
+    sec('Changes', 'To change or cancel an order, message us on WhatsApp as early as you can.') + '</div>' +
+    (hw ? '<div class="actions full"><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Questions? Chat with us</a></div>' : '') + '</div>';
+}
+function showTerms() { const el = sentBox(); el.innerHTML = termsHtml(); el.hidden = false; const b = el.querySelector('button'); if (b) b.focus(); }
 function closeSentBox() { const el = sentBox(); const done = !!el.querySelector('[data-act="sentdone"]'); el.hidden = true; if (done) { showView('pick'); window.scrollTo(0, 0); } }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { const el = document.getElementById('sentWrap'); if (el && !el.hidden) closeSentBox(); } });
 document.addEventListener('click', e => { if (e.target && e.target.id === 'sentWrap') closeSentBox(); });
