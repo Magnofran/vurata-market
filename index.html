@@ -1642,7 +1642,7 @@ function renderPick() {
   const pc = pickedByCat();
   if (flat) {
     const list = filteredItems();
-    if (!list.length) { box.innerHTML = ui.fav && !ui.q.trim() && ui.cat === 'all' && !ui.picked ? '<div class="empty"><h3>No favorites yet</h3><p>Tap the star on an item to keep it here for next time.</p></div>' : ui.picked && !ui.q.trim() && ui.cat === 'all' ? '<div class="empty"><h3>Nothing picked yet</h3><p>Items you add show up here.</p></div>' : '<div class="empty"><h3>No match</h3><p>Try a shorter word, or clear the filters.</p>' + askHost() + '</div>'; return; }
+    if (!list.length) { const out = '<div class="actions full" style="max-width:260px;margin:14px auto 0"><button type="button" class="btn ghost" data-act="clearf">Show all items</button></div>'; box.innerHTML = ui.fav && !ui.q.trim() && ui.cat === 'all' ? '<div class="empty"><h3>No favorites yet</h3><p>Tap the star on an item to keep it here for next time.</p>' + out + '</div>' : ui.picked && !ui.q.trim() && ui.cat === 'all' ? '<div class="empty"><h3>Nothing picked yet</h3><p>Items you add show up here.</p>' + out + '</div>' : '<div class="empty"><h3>No match</h3><p>Try a shorter word, or clear the filters.</p>' + out + askHost() + '</div>'; return; }
     const shown = list.slice(0, ui.limit);
     box.innerHTML = (ui.picked ? '<div class="pickedbar"><span>' + list.length + ' picked</span><button type="button" class="btn ghost sm" data-act="clearall">Clear all</button></div>' : '<p class="hint" style="margin:14px 0 6px">' + list.length + ' item' + (list.length > 1 ? 's' : '') + '</p>') + '<div class="cats" style="border-top:1px solid var(--line);border-radius:10px">' + shown.map(it => itemHtml(it, true)).join('') + '</div>' +
       (list.length > shown.length ? '<button class="btn ghost more" data-act="more">Show ' + Math.min(80, list.length - shown.length) + ' more</button>' : '');
@@ -1672,6 +1672,12 @@ function dlParts() {
   if (cmode && dl.zones.length) { if (fees.length) parts.push('Delivery ' + (Math.min(...fees) === Math.max(...fees) ? fmtRp(fees[0]) : 'from ' + fmtRp(Math.min(...fees))) + (fees.length > 1 ? ', depending on your area.' : '.')); if (dl.free) parts.push('<b>Free on orders over ' + fmtRp(dl.free) + '.</b>'); if (dl.min) parts.push('Minimum order ' + fmtRp(dl.min) + '.'); }
   return parts;
 }
+function setListMode(m) {
+  ui.fav = m === 'fav'; ui.picked = m === 'picked'; ui.saved = m === 'saved'; ui.limit = 80;
+  if (m !== 'browse') { ui.sup = 'all'; ui.cat = 'all'; }
+  if (m === 'saved') { ui.q = ''; const qi = document.getElementById('q'); if (qi) qi.value = ''; }
+  renderFilters(); renderPick();
+}
 function renderFilters() {
   const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
   const hw = document.getElementById('howCard'); if (hw) {
@@ -1682,9 +1688,9 @@ function renderFilters() {
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; SUP_ORDER.forEach(s => { counts[s] = CATALOG.filter(i => i.s === s && !i.hidden).length; });
   const chipHost = document.getElementById('supChips'); if (!chipHost.dataset.bound) { chipHost.dataset.bound = '1'; chipHost.addEventListener('scroll', chipsFade, { passive: true }); window.addEventListener('resize', chipsFade); }
   document.getElementById('supChips').innerHTML = ['all'].concat(SUP_ORDER).map(s =>
-    '<button class="chip" data-act="sup" data-s="' + s + '" aria-pressed="' + (ui.sup === s) + '">' + (s === 'all' ? '' : '<span class="dot"></span>') + (s === 'all' ? 'All' : (cmode ? SUPS[s].tag : SUPS[s].name)) + ' <small>' + counts[s] + '</small></button>').join('') +
+    '<button class="chip" data-act="sup" data-s="' + s + '" aria-pressed="' + (ui.sup === s && !ui.fav && !ui.picked && !ui.saved) + '">' + (s === 'all' ? '' : '<span class="dot"></span>') + (s === 'all' ? 'All' : (cmode ? SUPS[s].tag : SUPS[s].name)) + ' <small>' + counts[s] + '</small></button>').join('') +
     '<button class="chip fav-chip" data-act="favf" aria-pressed="' + ui.fav + '">&#9733; Favorites <small>' + Object.keys(favs).length + '</small></button>' +
-    '<button class="chip saved-chip" data-act="savedf" aria-pressed="' + !!ui.saved + '">Saved <small>' + hist.length + '</small></button>' +
+    '<button class="chip saved-chip" data-act="savedf" aria-pressed="' + !!ui.saved + '">Saved orders <small>' + hist.length + '</small></button>' +
     '<button class="chip picked-chip" data-act="picked" aria-pressed="' + ui.picked + '">Picked <small>' + Object.keys(S.lines).filter(k => S.lines[k] && S.lines[k].q > 0).length + '</small></button>';
   setTimeout(chipsFade, 0);
   const sel = document.getElementById('catSel'); const cur = ui.cat; const parts = ['<option value="all">All categories</option>'];
@@ -2603,9 +2609,10 @@ document.addEventListener('click', e => {
   } else if (act === 'rm') { const key = b.closest('[data-key]').dataset.key; const L = S.lines[key] || {}; const snap = { q: L.q || 0, n: L.n || '', s: L.s || '', p: L.p || 0 }; const nm = (BY_ID[key.split('|')[0]] || {}).n || 'Item'; setQty(key, 0, true); toast('Removed ' + nm, { label: 'Undo', fn: () => { patch({ lines: { [key]: snap } }); renderPick(); renderAll(false); } }); }
   else if (act === 'note') { const key = b.closest('[data-key]').dataset.key; ui.noteOpen[key] = true; renderOrder(compute(S)); const inp = document.querySelector('#orderBody [data-key="' + CSS.escape(key) + '"] input.note'); if (inp) inp.focus(); }
   else if (act === 'cat') { const id = b.dataset.id; ui.open[id] = !ui.open[id]; renderPick(); }
-  else if (act === 'sup') { ui.saved = false; ui.sup = b.dataset.s; ui.cat = 'all'; ui.limit = 80; renderFilters(); renderPick(); }
-  else if (act === 'picked') { ui.saved = false; ui.picked = !ui.picked; ui.limit = 80; b.setAttribute('aria-pressed', String(ui.picked)); renderPick(); }
-  else if (act === 'favf') { ui.saved = false; ui.fav = !ui.fav; ui.limit = 80; b.setAttribute('aria-pressed', String(ui.fav)); renderPick(); }
+  else if (act === 'sup') { ui.saved = false; ui.fav = false; ui.picked = false; ui.sup = b.dataset.s; ui.cat = 'all'; ui.limit = 80; renderFilters(); renderPick(); }
+  else if (act === 'picked') { setListMode(ui.picked ? 'browse' : 'picked'); }
+  else if (act === 'favf') { setListMode(ui.fav ? 'browse' : 'fav'); }
+  else if (act === 'clearf') { ui.q = ''; ui.cat = 'all'; const qi = document.getElementById('q'); if (qi) qi.value = ''; setListMode('browse'); }
   else if (act === 'fav') {
     const id = b.dataset.id; if (favs[id]) delete favs[id]; else favs[id] = 1; saveFavs();
     document.querySelectorAll('.fav[data-id="' + id + '"]').forEach(x => x.setAttribute('aria-pressed', String(!!favs[id])));
@@ -2617,7 +2624,7 @@ document.addEventListener('click', e => {
   else if (act === 'reuse') { reuse(b.dataset.id); }
   else if (act === 'again') { orderAgain(b.dataset.id, b.dataset.edit === '1'); }
   else if (act === 'savedraft') { saveDraft(); }
-  else if (act === 'savedf') { ui.saved = !ui.saved; if (ui.saved) { ui.fav = false; ui.picked = false; ui.q = ''; const qi = document.getElementById('q'); if (qi) qi.value = ''; } renderFilters(); renderPick(); }
+  else if (act === 'savedf') { setListMode(ui.saved ? 'browse' : 'saved'); }
   else if (act === 'ladd') { ui.ladd = !ui.ladd; renderLedger(); }
   else if (act === 'lsave') { addProduct(); }
   else if (act === 'lsup') { ui.lsup = b.dataset.k; ui.llimit = 40; renderLedger(); }
