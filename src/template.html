@@ -1108,7 +1108,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .item.single > .main h4 { margin-top: -2px; } .item.single > .price.line { margin-bottom: -2px; align-self: end; }
 @media (max-width: 520px) { .item.single > .thw .thumb { height: auto; min-height: 48px; } }
 /* Stepper: the number sits snug against the unit, with equal space either side of the number-and-unit pair. */
-.stepper .minus { margin-right: 6px; } .stepper input { min-width: 0; padding: 0; font-variant-numeric: tabular-nums; }
+.stepper .minus { margin-right: 6px; } .stepper input { min-width: 0; padding: 0; font-variant-numeric: tabular-nums; text-align: center !important; }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -3124,7 +3124,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { const z = 
 const qtyProbe = document.createElement('span'); qtyProbe.setAttribute('aria-hidden', 'true'); qtyProbe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;left:-9999px;top:0;font-variant-numeric:tabular-nums'; let qtyFit = 0;
 function fitQty() {
   qtyFit = 0; if (!qtyProbe.parentNode) document.body.appendChild(qtyProbe);
-  document.querySelectorAll('.stepper input').forEach(i => { const cs = getComputedStyle(i); qtyProbe.style.font = cs.font; qtyProbe.textContent = (i.value || '0').replace(/\d/g, '0'); i.style.minWidth = '0'; i.style.width = Math.ceil(qtyProbe.getBoundingClientRect().width) + 2 + 'px'; });
+  document.querySelectorAll('.stepper input').forEach(i => { const cs = getComputedStyle(i); qtyProbe.style.font = cs.font; const kEl = i.closest('[data-key]'); const kk = kEl ? kEl.dataset.key.split('|') : []; const op = (BY_ID[kk[0]] || { o: [] }).o[+kk[1]]; qtyProbe.textContent = op ? (op.u === 'kg' ? '0'.repeat(String(QTY_MAX(op)).length) + ',0' : '0'.repeat(String(QTY_MAX(op)).length)) : (i.value || '0').replace(/\d/g, '0'); i.style.minWidth = '0'; i.style.width = Math.ceil(qtyProbe.getBoundingClientRect().width) + 2 + 'px'; });
 }
 const kickFit = () => { if (!qtyFit) qtyFit = requestAnimationFrame(fitQty); };
 ['click', 'input', 'change'].forEach(ev => document.addEventListener(ev, kickFit, true));
