@@ -1078,6 +1078,13 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .rcap-rows > div:first-child { border-top: 0; }
 .rcap-rows dt { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .rcap-rows dd { margin: 0; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+/* sections that sit flush inside a card are flat; only the card's own outer corners are rounded */
+.sup-card { overflow: hidden; }
+.sup-head, .sub, .supnote { border-radius: 0 !important; }
+.supband { border-radius: 3px 3px 0 0 !important; }
+.cats { border-radius: 0 0 3px 3px !important; overflow: hidden; }
+.cats .cat, .cats .cat-h, .cats .cat-b, .cats .item { border-radius: 0 !important; }
+.hrow2.cur { border-radius: 0 !important; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
