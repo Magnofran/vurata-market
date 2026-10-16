@@ -1104,6 +1104,9 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .mk svg { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--gold); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 440px) { body.staffmode .bar .mk svg { display: none; } .barbtns { gap: 4px; } .barbtns .themebtn { padding: 6px 8px; font-size: 11.5px; } .bar .mk { letter-spacing: .28em; } }
 .sentip { margin: 0; padding: 10px 12px; background: var(--surface-2); font-size: 13px; line-height: 1.5; color: var(--ink); } .sentip b { font-weight: 600; }
+.sentbox { position: relative; } .sentbox h3 { padding-right: 36px; }
+.sentx { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border: 0; background: transparent; color: var(--muted); font-size: 26px; line-height: 1; display: grid; place-items: center; cursor: pointer; padding: 0; }
+@media (hover: hover) { .sentx:hover { color: var(--ink); } }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -2647,6 +2650,7 @@ document.addEventListener('click', e => {
   else if (act === 'noteadd') { const inp = b.closest('.ln').querySelector('input.note'); if (inp && !inp.value.toLowerCase().includes(b.dataset.t.toLowerCase())) { inp.value = (inp.value ? inp.value + ', ' : '') + b.dataset.t; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); } }
   else if (act === 'hrename') { ui.renameId = b.dataset.id; refreshHist(); const el = document.querySelector('input[data-hren]'); if (el) { el.focus(); el.select(); } }
   else if (act === 'markordered') { const list = cust.filter(c => c.inc !== false && c.status === 'new'); list.forEach(c => updCust(c.id, { status: 'ordered', dat: 0 })); toast('Marked ' + list.length + ' order' + (list.length > 1 ? 's' : '') + ' as ordered.', { label: 'Undo', fn: () => list.forEach(c => updCust(c.id, { status: 'new' })) }); }
+  else if (act === 'sentx') { closeSentBox(); }
   else if (act === 'sentno') { sentBox().hidden = true; }
   else if (act === 'sentyes') { confirmSent(); }
   else if (act === 'sentdone') { sentBox().hidden = true; showView('pick'); window.scrollTo(0, 0); }
@@ -2819,9 +2823,12 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 document.addEventListener('paste', e => { const t = e.target; if (!t || t.id !== 'importTxt' || !canWrite) return; const txt = ((e.clipboardData || window.clipboardData).getData('text')) || ''; if (/(?:VM1|MUMU1):/.test(txt)) { e.preventDefault(); importCodes(txt); } });
 document.addEventListener('click', e => { if (e.target.closest('#staffLink')) { e.preventDefault(); location.hash = '#staff'; location.reload(); return; } if (e.target.closest('#outBtn')) { window.SB.signOut().then(() => { location.hash = ''; location.reload(); }); return; } if (e.target.closest('#themeBtn')) { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; LS.set('mumu-theme', theme); applyTheme(); } });
 function sentBox() { let el = document.getElementById('sentWrap'); if (!el) { el = document.createElement('div'); el.id = 'sentWrap'; el.className = 'sentwrap'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Order sent'); document.body.appendChild(el); } return el; }
+function closeSentBox() { const el = sentBox(); const done = !!el.querySelector('[data-act="sentdone"]'); el.hidden = true; if (done) { showView('pick'); window.scrollTo(0, 0); } }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { const el = document.getElementById('sentWrap'); if (el && !el.hidden) closeSentBox(); } });
+document.addEventListener('click', e => { if (e.target && e.target.id === 'sentWrap') closeSentBox(); });
 function showSentBox() {
   if (!compute(S).count) return; const el = sentBox();
-  el.innerHTML = '<div class="sentbox"><h3>Did your order go through?</h3><p class="hint">Once you have sent it on WhatsApp, your host confirms stock and your final total by message.</p><div class="actions full"><button type="button" class="btn" data-act="sentyes">Yes, I sent it</button><button type="button" class="btn ghost" data-act="sentno">Not yet</button></div></div>';
+  el.innerHTML = '<div class="sentbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Did your order go through?</h3><p class="hint">Once you have sent it on WhatsApp, your host confirms stock and your final total by message.</p><div class="actions full"><button type="button" class="btn" data-act="sentyes">Yes, I sent it</button><button type="button" class="btn ghost" data-act="sentno">Not yet</button></div></div>';
   el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
 }
 async function confirmSent() {
@@ -2829,7 +2836,7 @@ async function confirmSent() {
   const rows = [['Order total', fmtRp(comp.grand), 'estimate'], m.need ? ['Needed by', fmtDate(m.need), ''] : null, m.zone ? ['Area', zoneLabel(m.zone), ''] : null, m.pay ? ['Payment', m.pay, ''] : null].filter(Boolean);
   await archive(); const tt = document.getElementById('toast'); if (tt) tt.hidden = true;
   const el = sentBox();
-  el.innerHTML = '<div class="sentbox"><h3>Thank you' + (who ? ', ' + esc(who) : '') + '.</h3><p class="hint">Your order is with the Vurata team.</p><div class="sentrows">' + rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') + '</div>' +
+  el.innerHTML = '<div class="sentbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Thank you' + (who ? ', ' + esc(who) : '') + '.</h3><p class="hint">Your order is with the Vurata team.</p><div class="sentrows">' + rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') + '</div>' +
     '<ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Stock and your final total, on WhatsApp.</span></div></li><li><i>02</i><div><b>Final bill</b><span>Fresh items are weighed when packed, so you pay the exact weight.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day and you pay as agreed.</span></div></li></ol>' + (hadPin ? '' : '<p class="hint sentip"><b>Tip:</b> share your location in the same WhatsApp chat so the driver finds you faster. Tap <b>+</b>, then <b>Location</b>.</p>') +
     '<div class="actions full"><button type="button" class="btn" data-act="sentdone">Start a new order</button>' + (hw ? '<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Chat with us</a>' : '') + '</div></div>';
   el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
