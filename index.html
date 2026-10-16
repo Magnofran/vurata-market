@@ -1011,7 +1011,17 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 }
 /* order form: fields keep their own height, Needed by gets a full row */
 #orderBody .grid2 { align-items: start; } #orderBody .grid2 > .field { align-content: start; }
-#orderBody .grid2 > .field:has(#m-need), #orderBody .grid2 > .field:has(#m-pay) { grid-column: 1 / -1; }
+@media (max-width: 759px) { #orderBody .grid2 > .field:has(#m-need), #orderBody .grid2 > .field:has(#m-pay) { grid-column: 1 / -1; } }
+/* desktop: details in two columns, paired by meaning (who, when, where, how) */
+@media (min-width: 760px) {
+  #orderBody .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; row-gap: 20px; }
+  #orderBody .grid2 > .field:has(#m-phone-n), #orderBody .grid2 > .field:has(#m-zone), #orderBody .grid2 > .field:has(#m-slot), #orderBody .grid2 > .field:has(#m-addr) { grid-column: auto; }
+  #orderBody .grid2 > .field:has(#m-title) { order: 1; } #orderBody .grid2 > .field:has(#m-who) { order: 2; }
+  #orderBody .grid2 > .field:has(#m-phone-n) { order: 3; } #orderBody .grid2 > .field:has(#m-need) { order: 4; }
+  #orderBody .grid2 > .field:has(#m-zone) { order: 5; } #orderBody .grid2 > .field:has(#m-slot) { order: 6; }
+  #orderBody .grid2 > .field:has(#m-pay) { order: 7; } #orderBody .grid2 > .field:has(#m-addr) { order: 8; }
+  #orderBody .grid2 > .field:has(#m-notes) { order: 9; grid-column: 1 / -1; }
+}
 .hownote { margin: 14px 0 0; padding-top: 14px; border-top: 1.5px dotted var(--line-dot); font-size: 13px; line-height: 1.55; color: var(--muted); } .hownote b { color: var(--ink); font-weight: 600; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
