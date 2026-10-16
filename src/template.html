@@ -1168,6 +1168,19 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .termsbox { max-height: calc(100vh - 32px); overflow: auto; }
 .tlist { display: grid; } .tsec { display: grid; gap: 3px; padding: 12px 0; background: var(--dotline); } .tsec:first-child { background: none; padding-top: 4px; }
 .tsec b { font-size: 14px; font-weight: 600; } .tsec span { font-size: 13.5px; line-height: 1.5; color: var(--muted); } .tsec span b { color: var(--ink); font-size: inherit; }
+.sqbtn { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); cursor: pointer; flex: none; }
+.sqbtn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#themeBtn .i-moon { display: none; } #themeBtn[data-mode="dark"] .i-sun { display: none; } #themeBtn[data-mode="dark"] .i-moon { display: block; }
+@media (hover: hover) { .sqbtn:hover { border-color: var(--gold); } }
+@media (max-width: 440px) { body.staffmode #infoBtn { display: none; } .barbtns .sqbtn { width: 38px; height: 38px; } }
+.guidebox { max-height: calc(100vh - 32px); overflow: auto; }
+.gcard { border: 1px solid var(--line-dark); padding: 14px 14px 4px; } .gcard.mine { border-top: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 6%, var(--surface)); }
+.gh { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; } .gh b { font-size: 15px; font-weight: 700; } .gh span { font-size: 12.5px; color: var(--muted); } .gh em { margin-left: auto; font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; background: var(--gold); color: #0F172A; padding: 3px 8px; }
+.gsteps { list-style: none; margin: 0; padding: 0; display: grid; } .gsteps li, .gwarn { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; padding: 10px 0; }
+.gsteps li + li { background: var(--dotline); }
+.gic { width: 40px; height: 40px; display: grid; place-items: center; background: var(--surface-2); color: var(--gold-text); } .gic svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.gtx { font-size: 14px; line-height: 1.4; } .gtx b { font-weight: 600; }
+.gwarn { padding: 12px; background: var(--surface-2); } .gwarn.gdone { grid-template-columns: 1fr; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1181,7 +1194,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
   <div class="bar-in">
     <div class="brandwrap"><div class="brand"><span class="wm"><img class="wm-l" src="assets/wordmark-light.svg" alt="Vurata" height="17"><img class="wm-d" src="assets/wordmark-dark.svg" alt="" height="17"></span><span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12h17"/><path d="M5 12l1.3 7a2 2 0 0 0 2 1.7h7.4a2 2 0 0 0 2-1.7l1.3-7"/><path d="M9.5 15v3M12 15v3M14.5 15v3"/><circle cx="9" cy="8.6" r="2.7"/><path d="M9 5.9c0-1 .6-1.8 1.6-2"/><path d="M15 12V7.5"/><path d="M15 9c0-1.8 1.2-3 3-3.2"/><path d="M15 10.4c0-1.4-1-2.3-2.4-2.5"/></svg>Market</span><small>Fresh, frozen &amp; pantry delivered in Bali</small></div>
       <div class="sync" id="sync" data-s="local" role="status"><i></i><span id="syncTxt">Loading</span></div></div>
-    <div class="barbtns"><button class="themebtn" id="outBtn" type="button" hidden>Sign out</button><button class="themebtn" id="themeBtn" type="button" aria-label="Change theme">Auto</button></div>
+    <div class="barbtns"><button class="themebtn" id="outBtn" type="button" hidden>Sign out</button><button class="sqbtn" id="themeBtn" type="button" aria-label="Switch between light and dark"><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></svg></button><button class="sqbtn" id="infoBtn" type="button" data-act="installguide" aria-label="How to add this app to your home screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10.8v6.2"/><path d="M12 7.2h.01"/></svg></button></div>
   </div>
   <div class="tabs" role="tablist" aria-label="Sections">
     <button class="tab" role="tab" id="t-pick" aria-selected="true" data-view="pick"><span class="lg">Pick items</span><span class="sh">Pick</span></button>
@@ -2734,6 +2747,7 @@ document.addEventListener('click', e => {
   else if (act === 'hrename') { ui.renameId = b.dataset.id; refreshHist(); const el = document.querySelector('input[data-hren]'); if (el) { el.focus(); el.select(); } }
   else if (act === 'markordered') { const list = cust.filter(c => c.inc !== false && c.status === 'new'); list.forEach(c => updCust(c.id, { status: 'ordered', dat: 0 })); toast('Marked ' + list.length + ' order' + (list.length > 1 ? 's' : '') + ' as ordered.', { label: 'Undo', fn: () => list.forEach(c => updCust(c.id, { status: 'new' })) }); }
   else if (act === 'terms') { showTerms(); }
+  else if (act === 'installguide') { showGuide(); }
   else if (act === 'installapp') { const ev = ui.installEv; if (ev) { ev.prompt(); ev.userChoice.finally(() => { ui.installEv = null; }); } }
   else if (act === 'sentx') { closeSentBox(); }
   else if (act === 'sentno') { sentBox().hidden = true; }
@@ -2866,10 +2880,12 @@ document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.ma
 /* ================= boot ================= */
 async function cap(name) { try { return window.claude && window.claude.use ? await window.claude.use(name) : null; } catch (e) { return null; } }
 const THEMES = ['auto', 'light', 'dark']; let theme = 'auto';
+const effectiveTheme = () => theme === 'auto' ? ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light') : theme;
 function applyTheme() {
   const r = document.documentElement; if (theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', theme);
-  const b = document.getElementById('themeBtn'); if (b) { b.textContent = '\u25D0 ' + theme[0].toUpperCase() + theme.slice(1); b.setAttribute('aria-label', 'Theme: ' + theme + '. Tap to change'); }
+  const b = document.getElementById('themeBtn'); if (b) { const m = effectiveTheme(); b.dataset.mode = m; b.setAttribute('aria-label', m === 'dark' ? 'Dark mode is on. Tap for light' : 'Light mode is on. Tap for dark'); }
 }
+if (window.matchMedia) { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (theme === 'auto') applyTheme(); }); } catch (e) {} }
 /* ---- money inputs: thousands separators while typing (the app writes Rp 25.000, so the dot is used here too) ---- */
 const CCS = [['62', '🇮🇩', 'Indonesia'], ['61', '🇦🇺', 'Australia'], ['64', '🇳🇿', 'New Zealand'], ['65', '🇸🇬', 'Singapore'], ['60', '🇲🇾', 'Malaysia'], ['1', '🇺🇸', 'United States / Canada'], ['44', '🇬🇧', 'United Kingdom'], ['353', '🇮🇪', 'Ireland'], ['49', '🇩🇪', 'Germany'], ['33', '🇫🇷', 'France'], ['31', '🇳🇱', 'Netherlands'], ['39', '🇮🇹', 'Italy'], ['34', '🇪🇸', 'Spain'], ['41', '🇨🇭', 'Switzerland'], ['46', '🇸🇪', 'Sweden'], ['47', '🇳🇴', 'Norway'], ['45', '🇩🇰', 'Denmark'], ['48', '🇵🇱', 'Poland'], ['7', '🇷🇺', 'Russia'], ['380', '🇺🇦', 'Ukraine'], ['90', '🇹🇷', 'Turkey'], ['972', '🇮🇱', 'Israel'], ['971', '🇦🇪', 'United Arab Emirates'], ['966', '🇸🇦', 'Saudi Arabia'], ['27', '🇿🇦', 'South Africa'], ['91', '🇮🇳', 'India'], ['86', '🇨🇳', 'China'], ['81', '🇯🇵', 'Japan'], ['82', '🇰🇷', 'South Korea'], ['66', '🇹🇭', 'Thailand'], ['84', '🇻🇳', 'Vietnam'], ['63', '🇵🇭', 'Philippines'], ['55', '🇧🇷', 'Brazil'], ['54', '🇦🇷', 'Argentina'], ['52', '🇲🇽', 'Mexico']];
 function splitPhone(v) {
@@ -2907,7 +2923,7 @@ document.addEventListener('focusin', e => { const t = e.target; if (t.matches &&
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'q') e.target.blur(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.sentPending && cmode) { ui.sentPending = false; showSentBox(); } });
 document.addEventListener('paste', e => { const t = e.target; if (!t || t.id !== 'importTxt' || !canWrite) return; const txt = ((e.clipboardData || window.clipboardData).getData('text')) || ''; if (/(?:VM1|MUMU1):/.test(txt)) { e.preventDefault(); importCodes(txt); } });
-document.addEventListener('click', e => { if (e.target.closest('#staffLink')) { e.preventDefault(); location.hash = '#staff'; location.reload(); return; } if (e.target.closest('#outBtn')) { window.SB.signOut().then(() => { location.hash = ''; location.reload(); }); return; } if (e.target.closest('#themeBtn')) { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; LS.set('mumu-theme', theme); applyTheme(); } });
+document.addEventListener('click', e => { if (e.target.closest('#staffLink')) { e.preventDefault(); location.hash = '#staff'; location.reload(); return; } if (e.target.closest('#outBtn')) { window.SB.signOut().then(() => { location.hash = ''; location.reload(); }); return; } if (e.target.closest('#themeBtn')) { theme = effectiveTheme() === 'dark' ? 'light' : 'dark'; LS.set('mumu-theme', theme); applyTheme(); } });
 function sentBox() { let el = document.getElementById('sentWrap'); if (!el) { el = document.createElement('div'); el.id = 'sentWrap'; el.className = 'sentwrap'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Order sent'); document.body.appendChild(el); } return el; }
 function termsHtml() {
   const dl = dlNow(), hw = hostWA || LS.get('mumu-hostwa') || '';
@@ -2924,6 +2940,27 @@ function termsHtml() {
     sec('Changes', 'To change or cancel an order, message us on WhatsApp as early as you can.') + '</div>' +
     (hw ? '<div class="actions full"><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Questions? Chat with us</a></div>' : '') + '</div>';
 }
+function guideHtml() {
+  const ua = navigator.userAgent, ios = /iPad|iPhone|iPod/.test(ua), inApp = /Instagram|FBAN|FBAV|Line\/|TikTok|WhatsApp/i.test(ua);
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+  const ic = {
+    share: '<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
+    plus: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg>',
+    dots: '<svg viewBox="0 0 24 24" style="fill:currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>',
+    check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    compass: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>'
+  };
+  const step = (i, k, txt) => '<li><span class="gic">' + ic[k] + '</span><span class="gtx">' + txt + '</span></li>';
+  const iph = '<div class="gcard' + (ios ? ' mine' : '') + '"><div class="gh"><b>iPhone</b><span>Safari</span>' + (ios ? '<em>Your phone</em>' : '') + '</div><ol class="gsteps">' +
+    step(1, 'share', 'Tap <b>Share</b>, the square with an arrow, at the bottom.') + step(2, 'plus', 'Scroll down and tap <b>Add to Home Screen</b>.') + step(3, 'check', 'Tap <b>Add</b>. Done.') + '</ol></div>';
+  const and = '<div class="gcard' + (!ios ? ' mine' : '') + '"><div class="gh"><b>Android</b><span>Chrome</span>' + (!ios ? '<em>Your phone</em>' : '') + '</div><ol class="gsteps">' +
+    step(1, 'dots', 'Tap the <b>menu</b>, three dots at the top right.') + step(2, 'plus', 'Tap <b>Add to Home screen</b> or <b>Install app</b>.') + step(3, 'check', 'Tap <b>Add</b>. Done.') + '</ol></div>';
+  const warn = inApp ? '<div class="gwarn"><span class="gic">' + ic.compass + '</span><span class="gtx"><b>Opened from Instagram or WhatsApp?</b> Tap the <b>three dots</b>, choose <b>Open in browser</b>, then follow the steps below.</span></div>' : '';
+  const now = ui.installEv ? '<button type="button" class="btn" data-act="installapp">Add to home screen now</button>' : '';
+  return '<div class="sentbox guidebox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Add to your home screen</h3><p class="hint">Open Vurata Market in one tap, like any other app. Takes 10 seconds.</p>' +
+    (standalone ? '<p class="gwarn gdone"><span class="gtx"><b>You are all set.</b> This app is already on your home screen.</span></p>' : warn + now + (ios ? iph + and : and + iph)) + '</div>';
+}
+function showGuide() { const el = sentBox(); el.innerHTML = guideHtml(); el.hidden = false; const b = el.querySelector('button'); if (b) b.focus(); }
 function showTerms() { const el = sentBox(); el.innerHTML = termsHtml(); el.hidden = false; const b = el.querySelector('button'); if (b) b.focus(); }
 function closeSentBox() { const el = sentBox(); const done = !!el.querySelector('[data-act="sentdone"]'); el.hidden = true; if (done) { showView('pick'); window.scrollTo(0, 0); } }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { const el = document.getElementById('sentWrap'); if (el && !el.hidden) closeSentBox(); } });
