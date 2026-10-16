@@ -1155,6 +1155,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 @media (hover: hover) { .ln .linkbtn[data-act="note"]:hover { border-color: var(--gold); color: var(--ink); } }
 /* filter chips fill their row on desktop */
 @media (min-width: 561px) { .chipgrp { flex: 1 1 100%; } .chipgrp .chip { flex: 1 1 auto; justify-content: center; } }
+.dym { margin: 6px 0 0; } .dymbtn { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 3px; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1330,15 +1331,29 @@ function within(a, b, max) {
   return prev[b.length] <= max;
 }
 CATALOG.forEach(it => { it._w = norm(it.n + ' ' + (it.e || '') + ' ' + it.c + ' ' + (it.k || '')).split(/\s+/).filter(Boolean); it._h = it._w.join(' '); });
+const SYN = (() => { const g = [['ayam', 'chicken'], ['sapi', 'beef'], ['babi', 'pork'], ['ikan', 'fish'], ['udang', 'prawn', 'prawns', 'shrimp'], ['telur', 'telor', 'egg', 'eggs'], ['susu', 'milk'], ['keju', 'cheese'], ['apel', 'apple'], ['jeruk', 'orange'], ['pisang', 'banana'], ['mangga', 'mango'], ['anggur', 'grape', 'grapes'], ['tomat', 'tomato'], ['kentang', 'potato'], ['wortel', 'carrot'], ['bawang', 'onion', 'garlic'], ['cabe', 'cabai', 'chili', 'chilli'], ['beras', 'rice'], ['minyak', 'oil'], ['gula', 'sugar'], ['garam', 'salt'], ['tepung', 'flour'], ['mentega', 'butter'], ['roti', 'bread'], ['sayur', 'sayuran', 'vegetable', 'vegetables', 'veg'], ['buah', 'fruit', 'fruits'], ['daging', 'meat'], ['kelapa', 'coconut'], ['semangka', 'watermelon'], ['nanas', 'pineapple'], ['pepaya', 'papaya'], ['alpukat', 'avocado'], ['jagung', 'corn'], ['timun', 'mentimun', 'cucumber'], ['selada', 'lettuce'], ['bayam', 'spinach'], ['kol', 'kubis', 'cabbage'], ['tahu', 'tofu'], ['kopi', 'coffee'], ['teh', 'tea'], ['sosis', 'sausage'], ['bakso', 'meatball', 'meatballs'], ['kambing', 'lamb', 'mutton'], ['kacang', 'nut', 'nuts', 'bean', 'beans'], ['stroberi', 'strawberry'], ['jahe', 'ginger'], ['kunyit', 'turmeric'], ['mie', 'noodle', 'noodles'], ['saus', 'sauce'], ['coklat', 'cokelat', 'chocolate'], ['bebek', 'duck'], ['kentang goreng', 'fries']]; const m = {}; g.forEach(a => a.forEach(w => { if (!/\s/.test(w)) m[w] = a.filter(x => x !== w && !/\s/.test(x)); })); return m; })();
+function tokScore(it, t) {
+  const st = stem(t); let sc = -1;
+  if (it._w.includes(t)) sc = 0; else if (it._w.some(w => w.startsWith(t))) sc = 1; else if (it._h.includes(t) || it._h.includes(st)) sc = 2;
+  else if (t.length >= 4) { const mx = t.length >= 8 ? 2 : 1; if (it._w.some(w => w[0] === t[0] && (within(w, t, mx) || within(w, st, mx)))) sc = 3; }
+  return sc;
+}
 function matchScore(it, toks) {
   let total = 0;
   for (const raw of toks) {
-    const t = norm(raw).trim(); if (!t) continue; const st = stem(t); let sc = -1;
-    if (it._w.includes(t)) sc = 0; else if (it._w.some(w => w.startsWith(t))) sc = 1; else if (it._h.includes(t) || it._h.includes(st)) sc = 2;
-    else if (t.length >= 5) { const mx = t.length >= 8 ? 2 : 1; if (it._w.some(w => within(w, t, mx) || within(w, st, mx))) sc = 3; }
+    const t = norm(raw).trim(); if (!t) continue;
+    let sc = tokScore(it, t);
+    if (sc !== 0) { const alts = SYN[t] || SYN[stem(t)] || []; for (const a of alts) { const s2 = tokScore(it, a); if (s2 >= 0 && (sc < 0 || s2 + 1 < sc)) sc = s2 === 0 ? 0.5 : s2 + 1; } }
     if (sc < 0) return -1; total += sc;
   }
   return total;
+}
+let _vocab = null, _vocabN = -1;
+function didYouMean(q) {
+  if (_vocabN !== CATALOG.length) { _vocab = Array.from(new Set(CATALOG.flatMap(it => it._w).concat(Object.keys(SYN)))).filter(w => w.length >= 4); _vocabN = CATALOG.length; }
+  const toks = norm(q).split(/\s+/).filter(Boolean); let changed = false;
+  const out = toks.map(t => { if (t.length < 4 || _vocab.includes(t)) return t; let best = null, bd = 3; for (const w of _vocab) { if (Math.abs(w.length - t.length) > 2 || w[0] !== t[0]) continue; for (let d = 1; d < bd; d++) { if (within(w, t, d)) { best = w; bd = d; break; } } if (bd === 1) break; } if (best) { changed = true; return best; } return t; });
+  return changed ? out.join(' ') : '';
 }
 function optLabel(o) { return o.lb || ('per ' + o.u); }
 const plainLabel = o => /^(per (kg|pcs|pack|can|ltr|btl|jar)|pack|can)$/.test(optLabel(o));
@@ -1700,7 +1715,7 @@ function renderPick() {
   const pc = pickedByCat();
   if (flat) {
     const list = filteredItems();
-    if (!list.length) { const out = '<div class="actions full" style="max-width:260px;margin:14px auto 0"><button type="button" class="btn ghost" data-act="clearf">Show all items</button></div>'; box.innerHTML = ui.fav && !ui.q.trim() && ui.cat === 'all' ? '<div class="empty"><h3>No favorites yet</h3><p>Tap the star on an item to keep it here for next time.</p>' + out + '</div>' : ui.picked && !ui.q.trim() && ui.cat === 'all' ? '<div class="empty"><h3>Nothing picked yet</h3><p>Items you add show up here.</p>' + out + '</div>' : '<div class="empty"><h3>No match</h3><p>Try a shorter word, or clear the filters.</p>' + out + askHost() + '</div>'; return; }
+    if (!list.length) { const out = '<div class="actions full" style="max-width:260px;margin:14px auto 0"><button type="button" class="btn ghost" data-act="clearf">Show all items</button></div>'; box.innerHTML = ui.fav && !ui.q.trim() && ui.cat === 'all' ? '<div class="empty"><h3>No favorites yet</h3><p>Tap the star on an item to keep it here for next time.</p>' + out + '</div>' : ui.picked && !ui.q.trim() && ui.cat === 'all' ? '<div class="empty"><h3>Nothing picked yet</h3><p>Items you add show up here.</p>' + out + '</div>' : '<div class="empty"><h3>No match</h3><p>Try a shorter word, or clear the filters.</p>' + (() => { const dm = ui.q.trim() ? didYouMean(ui.q) : ''; return dm ? '<p class="dym">Did you mean <button type="button" class="linkbtn dymbtn" data-act="dym" data-q="' + esc(dm) + '">' + esc(dm) + '</button>?</p>' : ''; })() + out + askHost() + '</div>'; return; }
     const shown = list.slice(0, ui.limit);
     box.innerHTML = (ui.picked ? '<div class="pickedbar"><span>' + list.length + ' picked</span><button type="button" class="btn ghost sm" data-act="clearall">Clear all</button></div>' : '<p class="hint" style="margin:14px 0 6px">' + list.length + ' item' + (list.length > 1 ? 's' : '') + '</p>') + '<div class="cats" style="border-top:1px solid var(--line);border-radius:10px">' + shown.map(it => itemHtml(it, true)).join('') + '</div>' +
       (list.length > shown.length ? '<button class="btn ghost more" data-act="more">Show ' + Math.min(80, list.length - shown.length) + ' more</button>' : '');
@@ -2671,6 +2686,7 @@ document.addEventListener('click', e => {
   else if (act === 'sup') { ui.saved = false; ui.fav = false; ui.picked = false; ui.sup = b.dataset.s; ui.cat = 'all'; ui.limit = 80; renderFilters(); renderPick(); }
   else if (act === 'picked') { setListMode(ui.picked ? 'browse' : 'picked'); }
   else if (act === 'favf') { setListMode(ui.fav ? 'browse' : 'fav'); }
+  else if (act === 'dym') { ui.q = b.dataset.q || ''; const qi = document.getElementById('q'); if (qi) qi.value = ui.q; ui.limit = 80; renderPick(); }
   else if (act === 'clearf') { ui.q = ''; ui.cat = 'all'; const qi = document.getElementById('q'); if (qi) qi.value = ''; setListMode('browse'); }
   else if (act === 'fav') {
     const id = b.dataset.id; if (favs[id]) delete favs[id]; else favs[id] = 1; saveFavs();
