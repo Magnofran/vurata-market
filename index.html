@@ -1143,6 +1143,12 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .hrow2 .hdel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .hrow2 .hdel > span, .hrow2 .hdel > .linkbtn[data-act="hdelask"] { grid-column: 1 / -1; }
 .hrow2 .hdel .btn, .hrow2 .hdel > .linkbtn { width: 100%; min-height: 44px; }
+/* filter chips: two groups, browse on the left and your lists on the right */
+.chipgrp { display: contents; }
+@media (min-width: 561px) {
+  #supChips { justify-content: space-between; gap: 10px 24px; }
+  .chipgrp { display: flex; flex-wrap: wrap; gap: 8px; }
+}
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1733,11 +1739,11 @@ function renderFilters() {
   const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; SUP_ORDER.forEach(s => { counts[s] = CATALOG.filter(i => i.s === s && !i.hidden).length; });
   const chipHost = document.getElementById('supChips'); if (!chipHost.dataset.bound) { chipHost.dataset.bound = '1'; chipHost.addEventListener('scroll', chipsFade, { passive: true }); window.addEventListener('resize', chipsFade); }
-  document.getElementById('supChips').innerHTML = ['all'].concat(SUP_ORDER).map(s =>
-    '<button class="chip" data-act="sup" data-s="' + s + '" aria-pressed="' + (ui.sup === s && !ui.fav && !ui.picked && !ui.saved) + '">' + (s === 'all' ? '' : '<span class="dot"></span>') + (s === 'all' ? 'All' : (cmode ? SUPS[s].tag : SUPS[s].name)) + ' <small>' + counts[s] + '</small></button>').join('') +
+  document.getElementById('supChips').innerHTML = '<div class="chipgrp">' + ['all'].concat(SUP_ORDER).map(s =>
+    '<button class="chip" data-act="sup" data-s="' + s + '" aria-pressed="' + (ui.sup === s && !ui.fav && !ui.picked && !ui.saved) + '">' + (s === 'all' ? '' : '<span class="dot"></span>') + (s === 'all' ? 'All' : (cmode ? SUPS[s].tag : SUPS[s].name)) + ' <small>' + counts[s] + '</small></button>').join('') + '</div><div class="chipgrp lists">' +
     '<button class="chip fav-chip" data-act="favf" aria-pressed="' + ui.fav + '">&#9733; Favorites <small>' + Object.keys(favs).length + '</small></button>' +
     '<button class="chip saved-chip" data-act="savedf" aria-pressed="' + !!ui.saved + '">Saved orders <small>' + hist.length + '</small></button>' +
-    '<button class="chip picked-chip" data-act="picked" aria-pressed="' + ui.picked + '">Picked <small>' + Object.keys(S.lines).filter(k => S.lines[k] && S.lines[k].q > 0).length + '</small></button>';
+    '<button class="chip picked-chip" data-act="picked" aria-pressed="' + ui.picked + '">Picked <small>' + Object.keys(S.lines).filter(k => S.lines[k] && S.lines[k].q > 0).length + '</small></button></div>';
   setTimeout(chipsFade, 0);
   const sel = document.getElementById('catSel'); const cur = ui.cat; const parts = ['<option value="all">All categories</option>'];
   SUP_ORDER.filter(s => ui.sup === 'all' || ui.sup === s).forEach(s => {
