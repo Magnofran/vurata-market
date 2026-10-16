@@ -914,6 +914,8 @@ html { scroll-padding-top: 96px; } .card[id] { scroll-margin-top: 96px; }
 .pbar { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--ink) 12%, transparent); overflow: hidden; margin-bottom: 4px; } .pbar i { display: block; height: 100%; background: var(--fv); border-radius: 99px; transition: width .3s ease; }
 .pmode { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 12px 0 4px; } .pmode > b { font-size: 18px; } .pmode .actions { width: 100%; }
 .pmthumb .thumb { width: 96px; height: 96px; font-size: 52px; border-radius: 20px; }
+#zoomBox, .sentwrap { overscroll-behavior: contain; touch-action: none; } .sentbox { touch-action: pan-y; overscroll-behavior: contain; }
+body.locked { position: fixed; left: 0; right: 0; width: 100%; }
 #zoomBox { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.82); display: grid; place-items: center; padding: 20px; cursor: zoom-out; } #zoomBox[hidden] { display: none; }
 #zoomBox figure { margin: 0; display: grid; gap: 10px; justify-items: center; max-width: min(92vw, 520px); } #zoomBox img { width: 100%; border-radius: 16px; display: block; } #zoomBox figcaption { color: #fff; font-weight: 600; text-align: center; }
 
@@ -2967,7 +2969,7 @@ function guideHtml() {
 }
 function showGuide() { const el = sentBox(); el.innerHTML = guideHtml(); el.hidden = false; const b = el.querySelector('button'); if (b) b.focus(); }
 function showTerms() { const el = sentBox(); el.innerHTML = termsHtml(); el.hidden = false; const b = el.querySelector('button'); if (b) b.focus(); }
-function closeSentBox() { const el = sentBox(); const done = !!el.querySelector('[data-act="sentdone"]'); el.hidden = true; if (done) { showView('pick'); window.scrollTo(0, 0); } }
+function closeSentBox() { const el = sentBox(); const done = !!el.querySelector('[data-act="sentdone"]'); el.hidden = true; syncLock(); if (done) { showView('pick'); window.scrollTo(0, 0); } }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { const el = document.getElementById('sentWrap'); if (el && !el.hidden) closeSentBox(); } });
 document.addEventListener('click', e => { if (e.target && e.target.id === 'sentWrap') closeSentBox(); });
 function showSentBox() {
@@ -3102,6 +3104,14 @@ document.addEventListener('click', e => {
   const im = e.target.closest && e.target.closest('.thumb.img img, .fth.img img'); if (im) { const z = document.getElementById('zoomBox') || (() => { const d = document.createElement('div'); d.id = 'zoomBox'; d.setAttribute('role', 'dialog'); d.hidden = true; d.innerHTML = '<figure><img alt=""><figcaption></figcaption></figure>'; document.body.appendChild(d); d.addEventListener('click', () => { d.hidden = true; }); return d; })(); z.querySelector('img').src = im.src; z.querySelector('figcaption').textContent = im.dataset.zoomname || ''; z.hidden = false; return; }
 }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { const z = document.getElementById('zoomBox'); if (z) z.hidden = true; } });
+/* Freeze the page behind any open pop-up (photo zoom, order sheets) so it cannot be scrolled or swiped underneath. */
+let lockY = 0;
+function syncLock() {
+  const open = ['zoomBox', 'sentWrap'].some(id => { const e = document.getElementById(id); return e && !e.hidden; }); const b = document.body;
+  if (open && !b.classList.contains('locked')) { lockY = window.scrollY; b.style.top = -lockY + 'px'; b.classList.add('locked'); }
+  else if (!open && b.classList.contains('locked')) { b.classList.remove('locked'); b.style.top = ''; window.scrollTo(0, lockY); }
+}
+new MutationObserver(syncLock).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
 let lastErr = 0;
 function softFail() { const t = Date.now(); if (t - lastErr < 20000) return; lastErr = t; toast('Something did not work. Your order is saved on this device. Please refresh the page.'); }
 window.addEventListener('error', e => { if (e && e.message && !/ResizeObserver|Script error/i.test(e.message)) softFail(); });
