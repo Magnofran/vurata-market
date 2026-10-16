@@ -1023,6 +1023,24 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
   #orderBody .grid2 > .field:has(#m-notes) { order: 9; grid-column: 1 / -1; }
 }
 .hownote { margin: 14px 0 0; padding-top: 14px; border-top: 1.5px dotted var(--line-dot); font-size: 13px; line-height: 1.55; color: var(--muted); } .hownote b { color: var(--ink); font-weight: 600; }
+/* free delivery unlocked: the bar turns gold, pulses once, and the note gets a check */
+.bbprog.ok { height: 4px; top: -4px; } .bbprog.ok u { background: var(--gold); }
+.bbprog.pop { animation: bbpop 1s ease-out; }
+@keyframes bbpop { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 80%, transparent); } 100% { box-shadow: 0 0 0 16px transparent; } }
+#bbSub.ok { color: var(--ink); font-weight: 600; } #bbSub.ok::before { content: '\2713\00a0'; color: var(--gold-h); font-weight: 700; }
+.fdel.ok { display: flex; align-items: center; gap: 10px; background: color-mix(in srgb, var(--gold) 16%, var(--surface)); box-shadow: inset 0 0 0 1px var(--gold); font-weight: 400; animation: fdin .5s cubic-bezier(.16, 1, .3, 1); }
+.fdel.ok::before { content: '\2713'; flex: none; width: 22px; height: 22px; display: grid; place-items: center; background: var(--gold); color: #0F172A; font-size: 13px; font-weight: 700; }
+.fdel.ok b { font-weight: 600; }
+@keyframes fdin { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+/* order details progress: hairline across the card top plus a quiet count */
+#orderBody .card { position: relative; }
+.oprog { position: absolute; inset: 0 0 auto 0; height: 0; }
+.oprog i { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--line); overflow: hidden; border-radius: 0 !important; }
+.oprog u { display: block; height: 100%; width: 0; background: var(--ink); transition: width .35s ease, background-color .35s ease; text-decoration: none; border-radius: 0 !important; }
+.oprog.done u { background: var(--gold); }
+.oprog span { position: absolute; top: 20px; right: 20px; font-size: 12px; font-weight: 500; letter-spacing: .02em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.oprog.done span { color: var(--ink); font-weight: 600; } .oprog.done span::before { content: '\2713\00a0'; color: var(--gold-h); }
+@media (prefers-reduced-motion: reduce) { .bbprog.pop, .fdel.ok { animation: none; } .oprog u { transition: none; } }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1258,7 +1276,7 @@ function freeNudge(c) {
   if (mg > 0) return '<div class="fdel warn"><span>Minimum order is <b>' + fmtRp(dl.min) + '</b>. Add <b>' + fmtRp(mg) + '</b> more to send it.</span><i><u style="width:' + Math.round(c.total / dl.min * 100) + '%"></u></i></div>';
   if (!cmode || !dl.free || !c.total || !dl.zones.some(z => z.fee > 0)) return '';
   if (c.zone && c.feeKnown && c.fee === 0 && !c.free) return '';
-  if (c.total >= dl.free) return '<div class="fdel ok">Free delivery unlocked.</div>';
+  if (c.total >= dl.free) return '<div class="fdel ok"><span><b>Free delivery unlocked.</b> Your delivery is on us.</span></div>';
   const gap = dl.free - c.total;
   if (gap <= NEAR_FREE) { const br = bridgeItems(gap); return '<div class="fdel near"><span><b>Only ' + fmtRp(gap) + ' more</b> and delivery is free.</span><i><u style="width:' + Math.round(c.total / dl.free * 100) + '%"></u></i>' + (br.length ? '<div class="bridge"><small>Add something you like:</small>' + br.map(x => '<button type="button" data-act="addq" data-key="' + esc(x.k) + '" data-q="' + x.q + '">+ ' + esc(x.it.n) + ' <em>' + fmtRp(x.add) + '</em></button>').join('') + '</div>' : '') + '</div>'; }
   return '<div class="fdel"><span>Add <b>' + fmtRp(gap) + '</b> more for free delivery</span><i><u style="width:' + Math.round(c.total / dl.free * 100) + '%"></u></i></div>';
@@ -1425,6 +1443,14 @@ ui.custOpen = {}; ui.custDel = {}; ui.combMine = true; ui.cfil = 'all'; ui.cunpa
 const LS = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 
 function setSync(s, txt) { const el = document.getElementById('sync'); el.dataset.s = s; document.getElementById('syncTxt').textContent = txt; }
+function orderProg() { const keys = Object.keys(REQ_FIELDS).filter(k => k !== 'zone' || (cmode && dlNow().zones.length)); return { done: keys.filter(k => reqOk(k, S.meta)).length, total: keys.length }; }
+function orderProgHtml() {
+  const p = orderProg(); return '<div class="oprog' + (p.done === p.total ? ' done' : '') + '" id="oProg" role="progressbar" aria-label="Required details" aria-valuemin="0" aria-valuemax="' + p.total + '" aria-valuenow="' + p.done + '"><i><u style="width:' + Math.round(p.done / p.total * 100) + '%"></u></i><span>' + (p.done === p.total ? 'All set' : p.done + ' of ' + p.total + ' details') + '</span></div>';
+}
+function updateOrderProg() {
+  const el = document.getElementById('oProg'); if (!el || !cmode) return; const p = orderProg();
+  el.classList.toggle('done', p.done === p.total); el.setAttribute('aria-valuenow', p.done); el.querySelector('u').style.width = Math.round(p.done / p.total * 100) + '%'; el.querySelector('span').textContent = p.done === p.total ? 'All set' : p.done + ' of ' + p.total + ' details';
+}
 function patch(p) {
   if (!canWrite) { toast('This copy is view-only. Ask for Editor access to change the order.'); return; }
   deepMerge(S, clone(p)); S.by = myId || S.by; S.at = Date.now();
@@ -1432,6 +1458,7 @@ function patch(p) {
   setSync(db ? 'saving' : 'local', db ? 'Saving' : 'Saved on this device only');
   clearTimeout(flushTimer); flushTimer = setTimeout(flush, 350);
   if (!db) LS.set('mumu-order', JSON.stringify(S));
+  if (p.meta) updateOrderProg();
 }
 function flush() {
   if (!db) { setSync('local', 'Saved on this device only (not shared)'); return; }
@@ -1621,8 +1648,10 @@ function chrome(comp) {
   document.getElementById('bbSub').textContent = comp.count ? comp.count + ' line' + (comp.count > 1 ? 's' : '') + (fmtMeasure(comp.w, comp.v) ? ' - about ' + fmtMeasure(comp.w, comp.v) : '') : 'Nothing picked yet';
   const b = document.getElementById('nBadge'); const prevN = +b.dataset.n || 0; b.textContent = comp.count; b.dataset.n = comp.count; if (comp.count > prevN) { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
   document.getElementById('bbGo').disabled = !comp.count;
-  const gl = goalOf(comp); const bp = document.getElementById('bbProg'); if (bp) { bp.hidden = !gl; bp.className = 'bbprog ' + (gl ? gl.k : ''); if (gl) bp.firstChild.style.width = Math.round(Math.min(1, gl.p) * 100) + '%'; }
-  if (gl) document.getElementById('bbSub').textContent = gl.t;
+  const gl = goalOf(comp); const bp = document.getElementById('bbProg'); const nowFree = !!(gl && gl.k === 'ok'); const justFree = ui.wasFree === false && nowFree; ui.wasFree = nowFree;
+  if (bp) { bp.hidden = !gl; bp.className = 'bbprog ' + (gl ? gl.k : '') + (justFree ? ' pop' : ''); if (gl) bp.firstChild.style.width = Math.round(Math.min(1, gl.p) * 100) + '%'; }
+  const bsub = document.getElementById('bbSub'); bsub.className = nowFree ? 'ok' : ''; if (gl) bsub.textContent = gl.t;
+  if (justFree) toast('Free delivery unlocked.');
   renderSide(comp);
   const pcn = document.querySelector('.picked-chip small'); if (pcn) pcn.textContent = comp.count;
   const pc = pickedByCat();
@@ -1632,7 +1661,7 @@ function chrome(comp) {
 /* ================= order view ================= */
 function renderOrder(comp) {
   const host = document.getElementById('orderBody'); const m = S.meta; const ro = canWrite ? '' : ' disabled';
-  const meta = '<div class="card"><h3>Order details' + (cmode ? ' <span class="reqnote"><i class="req">*</i> required</span>' : '') + '</h3><div class="grid2">' +
+  const meta = '<div class="card"><h3>Order details' + (cmode ? ' <span class="reqnote"><i class="req">*</i> required</span>' : '') + '</h3>' + (cmode ? orderProgHtml() : '') + '<div class="grid2">' +
     '<div class="field"><label for="m-title">Order name</label><input id="m-title" data-meta="title" value="' + esc(m.title) + '"' + ro + '></div>' +
     '<div class="field' + (cmode && !String(m.who || '').trim() ? ' miss' : '') + '"><label for="m-who">' + (cmode ? 'Your name <i class="req" aria-hidden="true">*</i>' : 'Requested by') + '</label><input id="m-who" data-meta="who" value="' + esc(m.who) + '" placeholder="Your name"' + ro + '></div>' +
     '<div class="field' + (cmode && !reqOk('need', m) ? ' miss' : '') + '"><label for="m-need">Needed by' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><input id="m-need" type="date" data-meta="need" min="' + minNeed() + '" value="' + esc(m.need) + '"' + ro + '>' + quickDates() + needHint() + '</div>' +
