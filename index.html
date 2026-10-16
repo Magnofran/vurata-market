@@ -1068,6 +1068,16 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .nsteps li:first-child { border-top: 0; padding-top: 6px; } .nsteps li:last-child { padding-bottom: 2px; }
 .nsteps i { font-style: normal; color: var(--gold-h); font-weight: 600; font-size: 12px; letter-spacing: .18em; }
 .nsteps li > div { display: grid; gap: 3px; } .nsteps b { font-size: 15px; font-weight: 600; letter-spacing: -.005em; } .nsteps span { font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+/* send view: order recap */
+.recap { display: block !important; padding: 16px 16px 6px !important; margin: 4px 0 16px !important; background: var(--surface) !important; box-shadow: none !important; border: 1px solid var(--line) !important; border-top: 2px solid var(--gold) !important; }
+.rcap-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding-bottom: 12px; }
+.rcap-who { display: grid; gap: 2px; min-width: 0; } .rcap-who b { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; } .recap .rcap-who span { font-size: 13px; color: var(--muted); }
+.rcap-tot { font-size: 20px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+.rcap-rows { margin: 0; display: grid; border-top: 1.5px dotted var(--line-dot); }
+.rcap-rows > div { display: grid; grid-template-columns: 84px 1fr; gap: 10px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); }
+.rcap-rows > div:first-child { border-top: 0; }
+.rcap-rows dt { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.rcap-rows dd { margin: 0; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -2200,7 +2210,8 @@ function renderShareC(comp) {
       : '<h4 class="opt-h">Option 3: send a picture of this QR code</h4><p class="hint">Take a screenshot of the code below, then send the picture to your host on WhatsApp.</p>' + (q ? '<div class="qrbox">' + q + '</div>' : '<p class="hint">This order is too big for a QR code. Use option 1 or 2.</p>') + '<div class="actions full">' + openWa + '</div>';
   host.innerHTML = '<div class="card"><div class="msg-head"><h3>Send your order</h3><span class="pill">' + fmtRp(comp.grand) + '</span></div>' +
     (S.meta.who ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Add your name in My order first, so your host knows who it is from.</p>') + (S.meta.pay ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Choose how you will pay in My order: cash on delivery or a deposit.</p>') +
-    '<div class="recap"><b>' + esc(S.meta.who || 'Your order') + '</b> &middot; ' + comp.count + ' item' + (comp.count === 1 ? '' : 's') + ' &middot; ' + fmtRp(comp.grand) + '<span>' + esc([S.meta.need ? fmtDate(S.meta.need) : '', S.meta.slot || '', S.meta.zone ? zoneLabel(S.meta.zone) : ''].filter(Boolean).join(' - ')) + '</span>' + (S.meta.addr ? '<span>' + esc(S.meta.addr) + '</span>' : '') + '</div>' +
+    '<div class="recap"><div class="rcap-top"><div class="rcap-who"><b>' + esc(S.meta.who || 'Your order') + '</b><span>' + comp.count + ' item' + (comp.count === 1 ? '' : 's') + '</span></div><b class="rcap-tot num">' + fmtRp(comp.grand) + '</b></div>' +
+    (S.meta.need || S.meta.slot || S.meta.zone || S.meta.addr ? '<dl class="rcap-rows">' + [['Day', S.meta.need ? fmtDate(S.meta.need) : ''], ['Time', S.meta.slot || ''], ['Area', S.meta.zone ? zoneLabel(S.meta.zone) : ''], ['Deliver to', S.meta.addr || '']].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>').join('') + '</dl>' : '') + '</div>' +
     '<p class="choose">Choose <b>one</b> way to send it. Your host gets the same order whichever you pick.</p>' +
     '<div class="lseg three sendseg" role="group" aria-label="How to send">' + seg + '</div><div class="sendpanel">' + panel + '</div>' +
     (hw ? '' : '<div class="field" style="margin-top:14px"><label for="hostwa">Your host\'s WhatsApp number</label><input id="hostwa" inputmode="numeric" placeholder="e.g. 6281234567890"><span class="hint">Not needed if you open the link your host sent. Without it, WhatsApp asks who to send to.</span></div>') + '</div>' +
