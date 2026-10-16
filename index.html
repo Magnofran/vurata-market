@@ -1765,13 +1765,20 @@ function renderShare(comp) {
 
 /* ================= PDF receipt ================= */
 const clean = s => String(s == null ? '' : s).replace(/[–—]/g, '-').replace(/×/g, 'x').replace(/≈/g, '~').replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
+let WM_PNG = '';
+function ensureWordmark() {
+  if (WM_PNG) return Promise.resolve(WM_PNG);
+  return new Promise(res => { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = 600; c.height = 126; c.getContext('2d').drawImage(im, 0, 0, 600, 126); WM_PNG = c.toDataURL('image/png'); } catch (e) {} res(WM_PNG); }; im.onerror = () => res(''); im.src = 'assets/wordmark-light.svg'; });
+}
 function buildPdf(comp) {
   const J = window.jspdf && window.jspdf.jsPDF; if (!J) return null;
   const doc = new J({ unit: 'mm', format: 'a4' }); const ocode = cmode ? makeCode(S) : '';
   if (cmode) doc.setProperties({ title: 'Vurata Market order', subject: ocode, author: (S.meta.who || 'Customer').replace(/[()\\]/g, '') }); const W = 210, M = 14; let y = 16;
   const need = h => { if (y + h > 284) { doc.addPage(); y = 16; } };
   const txt = (t, x, yy, o) => doc.text(clean(t), x, yy, o);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(22, 32, 26); txt('Mumu Market order', M, y);
+  if (WM_PNG) { try { doc.addImage(WM_PNG, 'PNG', M - 0.9, y - 6.6, 38, 7.98, 'vmwm', 'FAST'); } catch (e) { WM_PNG = ''; } }
+  if (WM_PNG) { doc.setDrawColor(194, 166, 121); doc.setLineWidth(0.3); doc.line(M + 40, y - 5, M + 40, y + 0.5); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139); txt('M A R K E T', M + 43, y - 0.8); }
+  else { doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(22, 32, 26); txt('VURATA MARKET', M, y); }
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 100, 94); txt('Created ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), W - M, y, { align: 'right' });
   y += 8; doc.setFontSize(11); doc.setTextColor(22, 32, 26); doc.setFont('helvetica', 'bold'); txt(S.meta.title || 'Order', M, y); y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
@@ -1808,20 +1815,20 @@ function buildPdf(comp) {
   const meas = fmtMeasure(comp.w, comp.v);
   const facts = comp.count + ' lines.' + (comp.kgQty ? ' ' + fmtQty(comp.kgQty) + ' kg sold by weight.' : '') + (comp.unitQty ? ' ' + unitsTxt(comp.unitQty) + '.' : '') + (meas ? ' About ' + meas + ' where weights are listed.' : '') + (comp.unpriced ? ' ' + comp.unpriced + ' line(s) without a price are not counted.' : '');
   const fl = doc.splitTextToSize(clean(facts), W - 2 * M); doc.text(fl, M, y); y += fl.length * 4 + 3;
-  if (comp.warnings.length) {
+  if (!cmode && comp.warnings.length) {
     need(14); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(120, 78, 0); txt('Confirm before ordering', M, y); y += 5; doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
     comp.warnings.forEach(w => { const l = doc.splitTextToSize(clean('- ' + (w.sid ? SUPS[w.sid].short + ': ' : '') + w.text), W - 2 * M - 2); need(l.length * 4 + 1); doc.text(l, M + 1, y); y += l.length * 4 + 0.6; });
     y += 2;
   }
   need(14); doc.setTextColor(90, 100, 94); doc.setFontSize(8);
-  const fl2 = cmode ? doc.splitTextToSize('Fresh items are weighed when packed, so you pay for the exact weight.', W - 2 * M) : doc.splitTextToSize(clean('Prices come from the supplier lists: ' + comp.groups.map(g => SUPS[g.sid].short + ' (' + SUPS[g.sid].list + ')').join('; ') + '. Suppliers say prices can change at any time, so confirm the total when ordering.'), W - 2 * M);
+  const fl2 = cmode ? doc.splitTextToSize('Items marked est. are sold by weight. They are weighed when packed, so you pay for the exact weight.', W - 2 * M) : doc.splitTextToSize(clean('Prices come from the supplier lists: ' + comp.groups.map(g => SUPS[g.sid].short + ' (' + SUPS[g.sid].list + ')').join('; ') + '. Suppliers say prices can change at any time, so confirm the total when ordering.'), W - 2 * M);
   doc.text(fl2, M, y); y += fl2.length * 3.6 + 6;
   if (cmode) { const qm = qrModules(ocode); if (qm) { const n = qm.length, size = 78, mod = size / (n + 4); need(size + 14); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(22, 32, 26); txt('Order code for your host (scan it, or send this page)', M, y); y += 3; doc.setFillColor(255, 255, 255); doc.rect(M, y, size, size, 'F'); doc.setFillColor(0, 0, 0); for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qm[r][c]) doc.rect(M + (c + 2) * mod, y + (r + 2) * mod, mod + 0.04, mod + 0.04, 'F'); y += size + 4; } }
   const n = doc.getNumberOfPages(); for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(140, 148, 143); txt('Vurata Market order  |  page ' + i + ' of ' + n, W / 2, 291, { align: 'center' }); }
   return doc;
 }
 async function savePdf() {
-  const comp = compute(S); const doc = buildPdf(comp);
+  await ensureWordmark(); const comp = compute(S); const doc = buildPdf(comp);
   if (!doc) { toast('The PDF tool did not load. Check your connection and try again.'); return; }
   if (!dlCap) { toast('Saving files is not available here. Copy the text instead.'); return; }
   const stamp = new Date().toISOString().slice(0, 10);
@@ -2884,6 +2891,7 @@ function softFail() { const t = Date.now(); if (t - lastErr < 20000) return; las
 window.addEventListener('error', e => { if (e && e.message && !/ResizeObserver|Script error/i.test(e.message)) softFail(); });
 window.addEventListener('unhandledrejection', () => softFail());
 (function () { const bar = document.createElement('div'); bar.id = 'offBar'; bar.hidden = true; bar.setAttribute('role', 'status'); bar.textContent = cmode ? "You're offline. Your order is saved on this phone. Reconnect to send it." : "You're offline. Changes are saved on this device and sync when you reconnect."; document.body.appendChild(bar); const upd = () => { bar.hidden = navigator.onLine !== false; document.body.classList.toggle('is-offline', navigator.onLine === false); }; window.addEventListener('online', upd); window.addEventListener('offline', upd); upd(); })();
+ensureWordmark();
 boot();
 })();
 </script>
