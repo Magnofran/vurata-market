@@ -1012,6 +1012,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 /* order form: fields keep their own height, Needed by gets a full row */
 #orderBody .grid2 { align-items: start; } #orderBody .grid2 > .field { align-content: start; }
 #orderBody .grid2 > .field:has(#m-need), #orderBody .grid2 > .field:has(#m-pay) { grid-column: 1 / -1; }
+.hownote { margin: 14px 0 0; padding-top: 14px; border-top: 1.5px dotted var(--line-dot); font-size: 13px; line-height: 1.55; color: var(--muted); } .hownote b { color: var(--ink); font-weight: 600; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1566,19 +1567,19 @@ function renderPick() {
   box.innerHTML = html.join('');
 }
 function chipsFade() { const c = document.getElementById('supChips'); if (c) c.classList.toggle('at-end', c.scrollLeft + c.clientWidth >= c.scrollWidth - 2); }
+function dlParts() {
+  const dl = dlNow(); const fees = dl.zones.map(z => z.fee).filter(x => x != null); const parts = [];
+  if (cmode && ledger.cfg && ledger.cfg.chk) parts.push('Prices checked ' + shortDate(ledger.cfg.chk) + '.');
+  if (cmode && dl.zones.length) { if (fees.length) parts.push('Delivery ' + (Math.min(...fees) === Math.max(...fees) ? fmtRp(fees[0]) : 'from ' + fmtRp(Math.min(...fees))) + (fees.length > 1 ? ', depending on your area.' : '.')); if (dl.free) parts.push('<b>Free on orders over ' + fmtRp(dl.free) + '.</b>'); if (dl.min) parts.push('Minimum order ' + fmtRp(dl.min) + '.'); }
+  return parts;
+}
 function renderFilters() {
   const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
   const hw = document.getElementById('howCard'); if (hw) {
     const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
-    if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span>Pick what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>';
+    if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span>Pick what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().join(' ') + '</p>' : '');
   }
-  const di = document.getElementById('dlInfo');
-  if (di) {
-    const dl = dlNow(); const fees = dl.zones.map(z => z.fee).filter(x => x != null); const parts = [];
-    if (cmode && ledger.cfg && ledger.cfg.chk) parts.push('Prices checked ' + shortDate(ledger.cfg.chk) + '.');
-    if (cmode && dl.zones.length) { if (fees.length) parts.push('Delivery ' + (Math.min(...fees) === Math.max(...fees) ? fmtRp(fees[0]) : 'from ' + fmtRp(Math.min(...fees))) + (fees.length > 1 ? ', depending on your area.' : '.')); if (dl.free) parts.push('<b>Free on orders over ' + fmtRp(dl.free) + '.</b>'); if (dl.min) parts.push('Minimum order ' + fmtRp(dl.min) + '.'); }
-    di.innerHTML = parts.length ? '<span>' + parts.join(' ') + '</span>' : ''; di.hidden = !parts.length;
-  }
+  const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; SUP_ORDER.forEach(s => { counts[s] = CATALOG.filter(i => i.s === s && !i.hidden).length; });
   const chipHost = document.getElementById('supChips'); if (!chipHost.dataset.bound) { chipHost.dataset.bound = '1'; chipHost.addEventListener('scroll', chipsFade, { passive: true }); window.addEventListener('resize', chipsFade); }
   document.getElementById('supChips').innerHTML = ['all'].concat(SUP_ORDER).map(s =>
