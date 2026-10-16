@@ -8,7 +8,10 @@
 <meta property="og:title" content="Vurata Market | Bali Grocery Delivery">
 <meta property="og:description" content="Fresh, frozen and pantry delivered in Bali. Build your order and send it on WhatsApp.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://vurata.com/images/hero.webp">
+<meta property="og:image" content="https://market.vurata.com/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://market.vurata.com/og-card.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:url" content="https://market.vurata.com/">
 <meta name="robots" content="index, follow">
@@ -1041,6 +1044,14 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .oprog span { position: absolute; top: 20px; right: 20px; font-size: 12px; font-weight: 500; letter-spacing: .02em; color: var(--muted); font-variant-numeric: tabular-nums; }
 .oprog.done span { color: var(--ink); font-weight: 600; } .oprog.done span::before { content: '\2713\00a0'; color: var(--gold-h); }
 @media (prefers-reduced-motion: reduce) { .bbprog.pop, .fdel.ok { animation: none; } .oprog u { transition: none; } }
+.price a.ask { color: var(--warn); font-weight: 600; font-size: 13.5px; text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 3px; }
+.toplist { display: grid; margin-top: 2px; } .toprow { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.toprow:first-child { border-top: 0; } .toprow .tn { color: var(--gold-h); font-weight: 600; font-size: 12px; letter-spacing: .1em; } .toprow .tc { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.sentwrap { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 16px; background: rgba(15, 23, 42, .55); } .sentwrap[hidden] { display: none; }
+.sentbox { width: min(420px, 100%); max-height: 100%; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-top: 2px solid var(--gold); padding: 24px 22px 22px; display: grid; gap: 14px; }
+.sentbox h3 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; } .sentbox .hint { margin: 0; }
+.sentrows { display: grid; } .sentrows > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; } .sentrows span { color: var(--muted); } .sentrows b { font-weight: 600; text-align: right; }
+.sentsteps { list-style: none; margin: 0; padding: 12px 0 0; border-top: 1.5px dotted var(--line-dot); display: grid; gap: 10px; font-size: 13.5px; line-height: 1.45; } .sentsteps li { display: grid; grid-template-columns: 30px 1fr; align-items: baseline; } .sentsteps i { font-style: normal; color: var(--gold-h); font-weight: 600; font-size: 12px; letter-spacing: .18em; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1091,7 +1102,8 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 
 <div class="helpfoot" id="helpFoot" hidden></div>
 <div class="stafffoot" id="staffFoot" hidden><a href="https://vurata.com" target="_blank" rel="noopener">Vurata &middot; Curated Bali Experiences</a><span aria-hidden="true"> &middot; </span><a href="#staff" id="staffLink">Staff</a></div>
-<div class="loginwrap" id="loginWrap" hidden><form class="card login" id="loginForm" autocomplete="on"><div class="brand"><span class="wm"><img class="wm-l" src="assets/wordmark-light.svg" alt="Vurata" height="17"><img class="wm-d" src="assets/wordmark-dark.svg" alt="" height="17"></span><span class="mk">Market</span><small>Staff sign in</small></div><div class="field"><label for="lg-email">Email</label><input id="lg-email" type="email" autocomplete="username" required></div><div class="field"><label for="lg-pw">Password</label><input id="lg-pw" type="password" autocomplete="current-password" required></div><p class="hint" id="lgMsg" role="alert"></p><div class="actions full"><button class="btn" type="submit" id="lgGo">Sign in</button></div><p class="hint"><a href="#" id="lgBack">Back to the shop</a></p></form></div>
+<div class="loginwrap" id="loginWrap" hidden><form class="card login" id="loginForm" autocomplete="on"><div class="brand"><span class="wm"><img class="wm-l" src="assets/wordmark-light.svg" alt="Vurata" height="17"><img class="wm-d" src="assets/wordmark-dark.svg" alt="" height="17"></span><span class="mk">Market</span><small>Staff sign in</small></div><div class="field"><label for="lg-email">Email</label><input id="lg-email" type="email" autocomplete="username" required></div><div class="field"><label for="lg-pw">Password</label><input id="lg-pw" type="password" autocomplete="current-password" required></div><p class="hint" id="lgMsg" role="alert"></p><div class="actions full"><button class="btn" type="submit" id="lgGo">Sign in</button></div><p class="hint"><a href="#" id="lgForgot">Forgot password?</a> &nbsp;&middot;&nbsp; <a href="#" id="lgBack">Back to the shop</a></p></form>
+<form class="card login" id="recForm" hidden><div class="brand"><span class="wm"><img class="wm-l" src="assets/wordmark-light.svg" alt="Vurata" height="17"><img class="wm-d" src="assets/wordmark-dark.svg" alt="" height="17"></span><span class="mk">Market</span><small>New password</small></div><div class="field"><label for="lg-new">Choose a new password</label><input id="lg-new" type="password" autocomplete="new-password" minlength="10" required></div><p class="hint" id="recMsg" role="alert">Use at least 10 characters.</p><div class="actions full"><button class="btn" type="submit" id="recGo">Save password</button></div></form></div>
 <div class="bottombar" id="bottombar">
   <i class="bbprog" id="bbProg" hidden><u></u></i>
   <div class="t"><b id="bbTotal" class="num">Rp 0</b><span id="bbSub">Nothing picked yet</span></div>
@@ -1534,13 +1546,18 @@ function stepperHtml(it, o, i, q) {
     '<input type="text" inputmode="decimal" data-act="qty" value="' + (q ? fmtQty(q) : '') + '" placeholder="0" aria-label="Quantity of ' + esc(it.n) + ' (' + esc(optLabel(o)) + ')">' +
     '<button type="button" data-act="inc" aria-label="More ' + esc(it.n) + '">+</button><span class="u">' + esc(UNIT_EN[o.u] || o.u) + '</span></div>';
 }
+function askLink(it, o) {
+  const hw = hostWA || LS.get('mumu-hostwa') || ''; if (!hw) return '<b class="ask">Ask for price</b>';
+  const q = 'Hi! What is the price of ' + it.n + (it.e ? ' (' + it.e + ')' : '') + ', ' + optLabel(o) + '?';
+  return '<a class="ask" target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent(q) + '">Request price</a>';
+}
 function itemHtml(it, showSup) {
   const flags = it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : '';
   const pk = it.k && it.k.length < 70 && it.o.length > 1 ? '<p class="meta">Listed as: ' + esc(it.k) + '</p>' : '';
   const picked = itemPicked(it);
   const thumb = '<span class="thw"><span class="thumb s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><button type="button" class="fav" data-act="fav" data-id="' + it.id + '" aria-pressed="' + !!favs[it.id] + '" aria-label="Favorite ' + esc(it.n) + '">&#9733;</button></span>';
   const title = '<div class="nmrow"><h4>' + (showSup ? '<span class="tag ' + it.s + '">' + SUPS[it.s].short + '</span>' : '') + esc(it.n) + '</h4>' + (it.e ? '<p class="en">' + esc(it.e) + '</p>' : '') + '</div>';
-  const priceLine = (o) => ((cmode ? o.sp : o.pr) ? '<b>' + fmtRp(cmode ? o.sp : o.pr) + '</b>' : '<b class="ask">Ask for price</b>') + '<span>' + esc(optLabel(o)) + (o.mn ? ' - min ' + o.mn : '') + '</span>';
+  const priceLine = (o) => ((cmode ? o.sp : o.pr) ? '<b>' + fmtRp(cmode ? o.sp : o.pr) + '</b>' : (cmode ? askLink(it, o) : '<b class="ask">Ask for price</b>')) + '<span>' + esc(optLabel(o)) + (o.mn ? ' - min ' + o.mn : '') + '</span>';
   if (it.o.length === 1) {
     const o = it.o[0]; const key = keyOf(it.id, 0); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
     return '<article class="item single s-' + it.s + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '">' + thumb + '<div class="main">' + title + flags + '</div>' +
@@ -1986,6 +2003,17 @@ function exportSalesCsv() {
   saveCsv('Mumu Market sales ' + new Date().toISOString().slice(0, 10) + '.csv', rows);
 }
 const dueOf = c => { const t = compute(custState(c), 'sell').grand; return c.paid ? 0 : Math.max(0, t - (+c.dep || 0)); };
+function salesCut() { return ui.srep === 'week' ? Date.now() - 7 * 864e5 : ui.srep === 'month' ? Date.now() - 30 * 864e5 : 0; }
+function topSellers(n) {
+  const cut = salesCut(), tally = {};
+  cust.filter(c => !c.demo && (c.dat || c.at) >= cut).forEach(c => Object.keys(c.lines || {}).forEach(k => { const q = (c.lines[k] || {}).q; if (!(q > 0)) return; const id = k.split('|')[0]; const o = tally[id] || (tally[id] = { orders: 0, units: 0 }); o.orders++; o.units += q; }));
+  return Object.keys(tally).filter(id => BY_ID[id]).sort((a, b) => tally[b].orders - tally[a].orders || tally[b].units - tally[a].units).slice(0, n).map(id => ({ it: BY_ID[id], orders: tally[id].orders }));
+}
+function topSellersHtml() {
+  const top = topSellers(10); if (!top.length) return '';
+  return '<span class="lgl">Top sellers</span><div class="toplist">' + top.map((x, i) => '<div class="toprow"><span class="tn">' + (i + 1) + '</span><span class="tt">' + esc(x.it.n) + '</span><span class="tc">' + x.orders + ' order' + (x.orders === 1 ? '' : 's') + '</span></div>').join('') + '</div>' +
+    '<div class="actions full" style="margin-top:10px"><button type="button" class="btn ghost" data-act="picksfromtop"' + (canWrite ? '' : ' disabled') + '>Use these as Today&#39;s picks</button></div><p class="hint" style="margin-top:6px">Counts every order received in this period, not only delivered ones.</p>';
+}
 function salesList() { const cut = ui.srep === 'week' ? Date.now() - 7 * 864e5 : ui.srep === 'month' ? Date.now() - 30 * 864e5 : 0; return cust.filter(c => c.status === 'delivered' && (c.dat || c.at) >= cut); }
 function custView() {
   let l = cust.slice(); const cq = String(ui.cq || '').trim().toLowerCase().replace(/^#/, ''); if (cq) { const dg = cq.replace(/\D/g, ''); l = l.filter(c => String(orderNo(c)) === cq || String(c.name || '').toLowerCase().includes(cq) || (dg.length >= 3 && String(c.phone || '').replace(/\D/g, '').includes(dg))); }
@@ -2099,8 +2127,8 @@ function salesHtml() {
   if (!cardOpen('salesCard')) return '<div class="card" id="salesCard">' + cardHead('salesCard', 'Sales', false) + '<p class="hint">' + l.length + ' delivered order' + (l.length === 1 ? '' : 's') + ' - ' + fmtRp(rev) + ' revenue</p></div>';
   return '<div class="card" id="salesCard">' + cardHead('salesCard', 'Sales', true) + '<div class="lseg three" role="group" aria-label="Period">' + seg + '</div>' +
     '<div class="stats" style="margin-top:14px"><div><b class="num">' + l.length + '</b><span>Delivered orders</span></div><div><b class="num">' + fmtRp(rev) + '</b><span>Revenue</span></div><div><b class="num ' + (rev - cost >= 0 ? 'pos' : 'neg') + '">' + fmtRp(rev - cost) + '</b><span>Profit</span></div></div>' +
-    '<div class="pbox"><div class="sumrow"><span>Delivery fees charged</span><span class="num">' + fmtRp(fees) + '</span></div><div class="sumrow"><span>Paid so far</span><span class="num">' + fmtRp(paid) + '</span></div><div class="sumrow"><span>Still to collect</span><span class="num">' + fmtRp(rev + fees - paid) + '</span></div></div>' +
-    '<p class="hint" style="margin-top:8px">Counts customers marked Delivered. Mark an order Delivered once it is handed over.</p>' +
+    '<div class="pbox"><div class="sumrow"><span>Average order</span><span class="num">' + fmtRp(l.length ? rev / l.length : 0) + '</span></div><div class="sumrow"><span>Delivery fees charged</span><span class="num">' + fmtRp(fees) + '</span></div><div class="sumrow"><span>Paid so far</span><span class="num">' + fmtRp(paid) + '</span></div><div class="sumrow"><span>Still to collect</span><span class="num">' + fmtRp(rev + fees - paid) + '</span></div></div>' +
+    topSellersHtml() + '<p class="hint" style="margin-top:8px">Counts customers marked Delivered. Mark an order Delivered once it is handed over.</p>' +
     '<div class="actions duo"><button type="button" class="btn ghost" data-act="csvsales">Export sales CSV</button><button type="button" class="btn ghost" data-act="csvledger">Export ledger CSV</button></div><div class="actions full" style="margin-top:10px"><button type="button" class="btn ghost" data-act="backup">Download a full backup</button></div><p class="hint" style="margin-top:6px">One file with your prices, customers and saved orders. Keep a copy somewhere safe.</p></div>';
 }
 
@@ -2331,13 +2359,30 @@ async function loadPrivate(dbc) {
     Object.keys(d.sups || {}).forEach(id => { const s = d.sups[id], t = SUPS[id]; if (!s || !t) return; ['name', 'short', 'phone', 'wa', 'addr', 'list'].forEach(k => { if (s[k] !== undefined) t[k] = s[k]; }); delete t._o; });
   } catch (e) {}
 }
-function showLogin(msg) {
-  document.body.classList.add('gated'); const w = document.getElementById('loginWrap'); w.hidden = false; document.getElementById('lgMsg').textContent = msg || '';
-  const f = document.getElementById('loginForm');
+function showLogin(msg, mode) {
+  document.body.classList.add('gated'); const w = document.getElementById('loginWrap'); w.hidden = false;
+  const f = document.getElementById('loginForm'), r = document.getElementById('recForm'), lm = document.getElementById('lgMsg');
+  lm.textContent = msg || '';
+  if (mode === 'recovery') {
+    f.hidden = true; r.hidden = false;
+    r.onsubmit = async ev => {
+      ev.preventDefault(); const b = document.getElementById('recGo'), rm = document.getElementById('recMsg'), pw = document.getElementById('lg-new').value;
+      if (pw.length < 10) { rm.textContent = 'Use at least 10 characters.'; return; }
+      b.disabled = true; rm.textContent = '';
+      try { await window.SB.setPassword(pw); location.hash = ''; location.reload(); } catch (e) { rm.textContent = 'Could not save that password. Open the reset link in your email again.'; b.disabled = false; }
+    };
+    return;
+  }
   f.onsubmit = async ev => {
-    ev.preventDefault(); const b = document.getElementById('lgGo'); b.disabled = true; document.getElementById('lgMsg').textContent = '';
+    ev.preventDefault(); const b = document.getElementById('lgGo'); b.disabled = true; lm.textContent = '';
     try { await window.SB.signIn(document.getElementById('lg-email').value.trim(), document.getElementById('lg-pw').value); location.hash = ''; location.reload(); }
-    catch (e) { document.getElementById('lgMsg').textContent = 'That email or password did not work.'; b.disabled = false; }
+    catch (e) { lm.textContent = 'That email or password did not work.'; b.disabled = false; }
+  };
+  document.getElementById('lgForgot').onclick = async ev => {
+    ev.preventDefault(); const em = document.getElementById('lg-email').value.trim();
+    if (!em) { lm.textContent = 'Enter your email first, then tap Forgot password.'; return; }
+    try { await window.SB.resetPassword(em); } catch (e) {}
+    lm.textContent = 'If that email has staff access, a reset link is on its way.';
   };
   document.getElementById('lgBack').onclick = ev => { ev.preventDefault(); location.hash = ''; location.reload(); };
 }
@@ -2511,6 +2556,10 @@ document.addEventListener('click', e => {
   else if (act === 'noteadd') { const inp = b.closest('.ln').querySelector('input.note'); if (inp && !inp.value.toLowerCase().includes(b.dataset.t.toLowerCase())) { inp.value = (inp.value ? inp.value + ', ' : '') + b.dataset.t; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); } }
   else if (act === 'hrename') { ui.renameId = b.dataset.id; refreshHist(); const el = document.querySelector('input[data-hren]'); if (el) { el.focus(); el.select(); } }
   else if (act === 'markordered') { const list = cust.filter(c => c.inc !== false && c.status === 'new'); list.forEach(c => updCust(c.id, { status: 'ordered', dat: 0 })); toast('Marked ' + list.length + ' order' + (list.length > 1 ? 's' : '') + ' as ordered.', { label: 'Undo', fn: () => list.forEach(c => updCust(c.id, { status: 'new' })) }); }
+  else if (act === 'sentno') { sentBox().hidden = true; }
+  else if (act === 'sentyes') { confirmSent(); }
+  else if (act === 'sentdone') { sentBox().hidden = true; showView('pick'); window.scrollTo(0, 0); }
+  else if (act === 'picksfromtop') { const top = topSellers(10); if (top.length) { const ids = new Set(top.map(x => x.it.id)); const ov = {}; CATALOG.forEach(it => { if (it.ft && !ids.has(it.id)) ov[it.id] = { ft: false }; }); top.forEach(x => { ov[x.it.id] = { ft: true }; }); saveLedger({ ov }); toast("Today's picks updated."); renderCustomers(); } }
   else if (act === 'hidehow') { LS.set('mumu-how', '1'); renderFilters(); }
   else if (act === 'imptog') { ui.impOpen = !(ui.impOpen === undefined ? !cust.length : ui.impOpen); renderCustomers(); }
   else if (act === 'goto') { if ((b.dataset.t === '#salesCard' || b.dataset.t === '#inviteCard') && !cardOpen(b.dataset.t.slice(1))) { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen[b.dataset.t.slice(1)] = true; renderCustomers(); } if (b.dataset.t === '#importCard' && (ui.impOpen === undefined ? !cust.length : ui.impOpen) === false) { ui.impOpen = true; renderCustomers(); } const el = document.querySelector(b.dataset.t); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); if (/^(INPUT|TEXTAREA)$/.test(el.tagName)) setTimeout(() => el.focus({ preventScroll: true }), 400); } }
@@ -2673,9 +2722,25 @@ document.addEventListener('input', e => {
 }, true);
 document.addEventListener('focusin', e => { const t = e.target; if (t.matches && t.matches('input[data-act="qty"]')) setTimeout(() => { try { t.select(); } catch (x) {} }, 0); });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'q') e.target.blur(); });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.sentPending && cmode) { ui.sentPending = false; toast('Welcome back. Did your order go through?', { label: 'Yes, start a new order', fn: archive }); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.sentPending && cmode) { ui.sentPending = false; showSentBox(); } });
 document.addEventListener('paste', e => { const t = e.target; if (!t || t.id !== 'importTxt' || !canWrite) return; const txt = ((e.clipboardData || window.clipboardData).getData('text')) || ''; if (/MUMU1:/.test(txt)) { e.preventDefault(); importCodes(txt); } });
 document.addEventListener('click', e => { if (e.target.closest('#staffLink')) { e.preventDefault(); location.hash = '#staff'; location.reload(); return; } if (e.target.closest('#outBtn')) { window.SB.signOut().then(() => { location.hash = ''; location.reload(); }); return; } if (e.target.closest('#themeBtn')) { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; LS.set('mumu-theme', theme); applyTheme(); } });
+function sentBox() { let el = document.getElementById('sentWrap'); if (!el) { el = document.createElement('div'); el.id = 'sentWrap'; el.className = 'sentwrap'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Order sent'); document.body.appendChild(el); } return el; }
+function showSentBox() {
+  if (!compute(S).count) return; const el = sentBox();
+  el.innerHTML = '<div class="sentbox"><h3>Did your order go through?</h3><p class="hint">Once you have sent it on WhatsApp, your host confirms stock and your final total by message.</p><div class="actions full"><button type="button" class="btn" data-act="sentyes">Yes, I sent it</button><button type="button" class="btn ghost" data-act="sentno">Not yet</button></div></div>';
+  el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
+}
+async function confirmSent() {
+  const comp = compute(S), m = S.meta, who = (m.who || '').trim().split(/\s+/)[0] || '', hw = hostWA || LS.get('mumu-hostwa') || '';
+  const rows = [['Order total', fmtRp(comp.grand), 'estimate'], m.need ? ['Needed by', fmtDate(m.need), ''] : null, m.zone ? ['Area', zoneLabel(m.zone), ''] : null, m.pay ? ['Payment', m.pay, ''] : null].filter(Boolean);
+  await archive(); const tt = document.getElementById('toast'); if (tt) tt.hidden = true;
+  const el = sentBox();
+  el.innerHTML = '<div class="sentbox"><h3>Thank you' + (who ? ', ' + esc(who) : '') + '.</h3><p class="hint">Your order is with the Vurata team.</p><div class="sentrows">' + rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') + '</div>' +
+    '<ol class="sentsteps"><li><i>01</i><span>We confirm stock and your final total on WhatsApp.</span></li><li><i>02</i><span>Fresh items are weighed when packed, so you pay for the exact weight.</span></li><li><i>03</i><span>We deliver on your day and you pay as agreed.</span></li></ol>' +
+    '<div class="actions full"><button type="button" class="btn" data-act="sentdone">Start a new order</button>' + (hw ? '<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Chat with us</a>' : '') + '</div></div>';
+  el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
+}
 function setBarH() { const b = document.getElementById('bar'); if (b) document.documentElement.style.setProperty('--barh', b.offsetHeight + 'px'); }
 window.addEventListener('resize', setBarH); if (window.ResizeObserver) { try { new ResizeObserver(setBarH).observe(document.getElementById('bar')); } catch (e) {} }
 document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('input[data-act="qty"]')) setTimeout(() => { try { e.target.select(); } catch (er) {} }, 0); });
@@ -2726,6 +2791,7 @@ function photoCard() {
 }
 async function boot() {
   const st = await window.SB.ready;
+  if (window.SB.recovery) { showLogin('', 'recovery'); return; }
   if (location.hash === '#staff' && !st.admin) { showLogin(st.session ? 'This account does not have staff access.' : ''); return; }
   restoreUi(); if (cmode) ui.loading = true;
   const firstGr = CATALOG.find(i => i.s === 'gr').c; ui.open['fv|Fruits'] = true; ui.open['mt|Sausages'] = true; ui.open['gr|' + firstGr] = true;

@@ -5,10 +5,12 @@
   const KEY = 'sb_publishable__5mdSDs65F8zkTt6r3NrfA_nFfXUA0C';
   const BUCKET = 'product-photos';
   const sb = window.supabase.createClient(URL, KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
-  let session = null, admin = false, chanN = 0;
+  let session = null, admin = false, chanN = 0, recovery = null;
+  try { const hp = new URLSearchParams(location.hash.replace(/^#/, '')); if (hp.get('type') === 'recovery' && hp.get('access_token')) { recovery = { access_token: hp.get('access_token'), refresh_token: hp.get('refresh_token') || '' }; history.replaceState(null, '', location.pathname + '#staff'); } } catch (e) {}
 
   const ready = (async () => {
     try {
+      if (recovery) { await Promise.race([sb.auth.setSession(recovery), new Promise(r => setTimeout(r, 6000))]); }
       const r = await sb.auth.getSession(); session = r.data && r.data.session;
       if (session) {
         const q = await sb.from('settings').select('id').eq('id', 'host').limit(1);
@@ -110,6 +112,9 @@
     email: () => (session && session.user.email) || '',
     imgUrl: id => URL + '/storage/v1/object/public/' + BUCKET + '/' + encodeURIComponent(id),
     async signIn(email, password) { const r = await sb.auth.signInWithPassword({ email, password }); if (r.error) throw r.error; return r.data; },
+    recovery: !!recovery,
+    async resetPassword(email) { const r = await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://market.vurata.com' }); if (r.error) throw r.error; },
+    async setPassword(pw) { const r = await sb.auth.updateUser({ password: pw }); if (r.error) throw r.error; },
     async signOut() { try { await sb.auth.signOut(); } catch (e) {} },
     hasStoredSession() { try { return Object.keys(localStorage).some(k => /^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)); } catch (e) { return false; } }
   };
