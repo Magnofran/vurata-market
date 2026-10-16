@@ -1326,6 +1326,9 @@ CATALOG.forEach((it, i) => { BY_ID[it.id] = it; ORDER_IX[it.id] = i; });
 /* ================= pure helpers ================= */
 const fmtRp = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtQty = q => String(Math.round(q * 100) / 100).replace('.', ',');
+/* Weight steppers always show one decimal (0,5 / 1,0 / 2,5) so the number keeps the same width. */
+const fmtStep = (q, o) => !q ? '' : (o && o.u === 'kg' && Math.abs(q * 10 - Math.round(q * 10)) < 1e-9 ? q.toFixed(1).replace('.', ',') : fmtQty(q));
+const QTY_MAX = o => (o && o.u === 'kg' ? 10 : 99);
 function fmtMeasure(w, v) {
   const out = [];
   if (w > 0) out.push(w < 1 ? Math.round(w * 1000) + ' g' : fmtQty(w) + ' kg');
@@ -1700,7 +1703,7 @@ const thumbCls = it => it.img ? ' img' : '';
 function stepperHtml(it, o, i, q) {
   if (cmode && it.so) return '<span class="sopill">Sold out</span>';
   return '<div class="stepper"><button type="button" class="minus" data-act="dec" aria-label="Less ' + esc(it.n) + '">&minus;</button>' +
-    '<input type="text" inputmode="decimal" data-act="qty" value="' + (q ? fmtQty(q) : '') + '" placeholder="0" aria-label="Quantity of ' + esc(it.n) + ' (' + esc(optLabel(o)) + ')">' +
+    '<input type="text" inputmode="decimal" data-act="qty" value="' + fmtStep(q, o) + '" placeholder="0" aria-label="Quantity of ' + esc(it.n) + ' (' + esc(optLabel(o)) + ')">' +
     '<button type="button" data-act="inc" aria-label="More ' + esc(it.n) + '">+</button><span class="u">' + esc(UNIT_EN[o.u] || o.u) + '</span></div>';
 }
 function askLink(it, o) {
@@ -1871,7 +1874,7 @@ function renderOrder(comp) {
         (cmode ? '' : '<button type="button" class="stbtn st-' + (ln.st || 'n') + '" data-act="status"' + (canWrite ? '' : ' disabled') + '>' + stl + '</button>') + '</div>' +
         '<button type="button" class="x" data-act="rm" aria-label="Remove ' + esc(ln.it.n) + '">&times;</button></div>' +
         '<div class="ln-b"><div class="ln-total"><b>' + (ln.st === 'x' ? 'Out of stock' : ln.total != null ? fmtRp(ln.total) : 'Ask price') + '</b>' + priceBlock + '</div>' +
-        '<div class="stepper"><button type="button" class="minus" data-act="dec" aria-label="Less">&minus;</button><input type="text" inputmode="decimal" data-act="qty" value="' + fmtQty(ln.q) + '" aria-label="Quantity of ' + esc(ln.it.n) + '"><button type="button" data-act="inc" aria-label="More">+</button><span class="u">' + esc(UNIT_EN[o.u] || o.u) + '</span></div></div>' +
+        '<div class="stepper"><button type="button" class="minus" data-act="dec" aria-label="Less">&minus;</button><input type="text" inputmode="decimal" data-act="qty" value="' + fmtStep(ln.q, o) + '" aria-label="Quantity of ' + esc(ln.it.n) + '"><button type="button" data-act="inc" aria-label="More">+</button><span class="u">' + esc(UNIT_EN[o.u] || o.u) + '</span></div></div>' +
         (ln.note || ui.noteOpen[ln.key] ? '<input class="note" data-note="1" value="' + esc(ln.note) + '" placeholder="Note, e.g. ripe ones, small size, no skin" aria-label="Note for ' + esc(ln.it.n) + '"' + ro + '>' + (ln.o.u === 'kg' && canWrite ? '<div class="nchips">' + ['Ripe', 'Not too ripe', 'Small', 'Large', 'Cut up'].map(t => '<button type="button" data-act="noteadd" data-t="' + t + '">' + t + '</button>').join('') + '</div>' : '') : (canWrite ? '<button type="button" class="linkbtn" data-act="note">+ Add a note</button>' : '')) + '</div>';
     }).join('');
     const meas = fmtMeasure(g.w, g.v);
@@ -2018,10 +2021,10 @@ function showView(v) {
 }
 function setQty(key, q, fromOrder) {
   const [id, ix] = key.split('|'); const it = BY_ID[id]; if (!it) return; const o = it.o[+ix]; if (!o) return;
-  q = Math.max(0, Math.min(999, Math.round(q * 100) / 100));
+  q = Math.max(0, Math.round(q * 100) / 100); const cap = QTY_MAX(o); if (q > cap) { q = cap; toast('The most we take online is ' + fmtQty(cap) + ' ' + (UNIT_EN[o.u] || o.u) + ' of one item. Need more? Message us on WhatsApp.'); }
   const cur = S.lines[key] || {}; if ((cur.q || 0) === q) return;
   patch({ lines: { [key]: q === 0 ? { q: 0, s: '', p: 0 } : { q: q } } });
-  if (!fromOrder) document.querySelectorAll('.opt[data-key="' + CSS.escape(key) + '"]').forEach(el => { el.classList.toggle('on', q > 0); const inp = el.querySelector('input'); if (inp !== document.activeElement) inp.value = q ? fmtQty(q) : ''; const art = el.closest('.item'); if (art) { art.classList.toggle('on', itemPicked(it)); const lt = art.querySelector('.lt[data-lt="' + CSS.escape(key) + '"]'); if (lt) lt.textContent = ltText(o, q, key); } });
+  if (!fromOrder) document.querySelectorAll('.opt[data-key="' + CSS.escape(key) + '"]').forEach(el => { el.classList.toggle('on', q > 0); const inp = el.querySelector('input'); if (inp !== document.activeElement) inp.value = fmtStep(q, o); const art = el.closest('.item'); if (art) { art.classList.toggle('on', itemPicked(it)); const lt = art.querySelector('.lt[data-lt="' + CSS.escape(key) + '"]'); if (lt) lt.textContent = ltText(o, q, key); } });
   const comp = compute(S); chrome(comp); if (ui.view === 'order') renderOrderKeepFocus(comp);
 }
 const parseQty = s => { const n = parseFloat(String(s).replace(',', '.')); return isNaN(n) ? 0 : n; };
@@ -2832,7 +2835,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => {
   const t = e.target;
-  if (t.matches('input[data-act="qty"]')) { const key = t.closest('[data-key]').dataset.key; const q = parseQty(t.value); setQty(key, q, !!t.closest('#v-order')); const L = S.lines[key]; t.value = L && L.q ? fmtQty(L.q) : ''; }
+  if (t.matches('input[data-act="qty"]')) { const key = t.closest('[data-key]').dataset.key; const q = parseQty(t.value); setQty(key, q, !!t.closest('#v-order')); const L = S.lines[key]; t.value = L && L.q ? fmtStep(L.q, (BY_ID[key.split('|')[0]] || { o: [] }).o[+key.split('|')[1]]) : ''; }
   else if (t.matches('input[data-price]')) { const key = t.closest('[data-key]').dataset.key; const n = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; ui.priceEdit[key] = false; patch({ lines: { [key]: { p: n } } }); renderAll(false); }
   else if (t.matches('input[data-lp]')) { const k = t.dataset.lp.split('|'); const n = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; setPrice(k[0], +k[1], n); }
   else if (t.matches('input[data-sp]')) { const k = t.dataset.sp.split('|'); setSell(k[0], +k[1], parseInt(String(t.value).replace(/\D/g, ''), 10) || 0); }
