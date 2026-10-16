@@ -989,7 +989,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .stafffoot { padding-top: 14px; font-size: 12px; letter-spacing: .02em; } .stafffoot a { opacity: .8; }
 .barbtns { gap: 4px; flex: none; } .barbtns .themebtn { white-space: nowrap; padding: 6px 10px; }
 .card h3, .supband .nm, .sup-head h3, .warnbox h3, .opt-h, .empty h3 { font-variant-numeric: lining-nums; font-feature-settings: "lnum"; }
-.stats { grid-template-columns: 1fr 1fr 1.5fr; } .stats b { font-size: 15px; white-space: nowrap; overflow-wrap: normal; }
+.stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } .stats b { font-size: 15px; white-space: nowrap; overflow-wrap: normal; }
 .lseg button, .seg button { white-space: nowrap; padding-inline: 2px; font-size: 13px; }
 /* product tiles: quiet grey tile, gold hairline, muted emoji (photos stay in full colour) */
 .thumb, .fth { background: var(--surface-2) !important; border: 1px solid var(--gold); }
@@ -1052,6 +1052,11 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .sentbox h3 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; } .sentbox .hint { margin: 0; }
 .sentrows { display: grid; } .sentrows > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; } .sentrows span { color: var(--muted); } .sentrows b { font-weight: 600; text-align: right; }
 .sentsteps { list-style: none; margin: 0; padding: 12px 0 0; border-top: 1.5px dotted var(--line-dot); display: grid; gap: 10px; font-size: 13.5px; line-height: 1.45; } .sentsteps li { display: grid; grid-template-columns: 30px 1fr; align-items: baseline; } .sentsteps i { font-style: normal; color: var(--gold-h); font-weight: 600; font-size: 12px; letter-spacing: .18em; }
+.csel { font-size: 12.5px; letter-spacing: -.01em; padding: 0 20px 0 6px; }
+.actions.duo .btn, .actions.full .btn { padding-inline: 12px; }
+/* long names and addresses must stay inside their box */
+@media (max-width: 560px) { #orderBody .grid2 { grid-template-columns: minmax(0, 1fr); } }
+#orderBody .field textarea#m-addr { min-height: 64px; height: 64px; resize: none; line-height: 1.35; padding-top: 12px; overflow-wrap: anywhere; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
@@ -1687,7 +1692,7 @@ function renderOrder(comp) {
     (() => { const dlc = dlNow(); if (!cmode) return ''; const cp = compute(S);
       return (dlc.zones.length ? '<div class="field span-all' + (!reqOk('zone', m) ? ' miss' : '') + '"><label for="m-zone">Delivery area <i class="req" aria-hidden="true">*</i></label><select id="m-zone" data-meta="zone"' + ro + '><option value="">Choose your area</option>' + dlc.zones.map(z => '<option value="' + esc(z.n) + '"' + (z.n === m.zone ? ' selected' : '') + '>' + (z.fee == null ? 'Fee by message' : (z.fee === 0 || (dlc.free > 0 && cp.total >= dlc.free)) ? 'Free delivery' : fmtRp(z.fee)) + ' - ' + esc(z.n) + '</option>').join('') + '<option value="__other"' + (m.zone === '__other' ? ' selected' : '') + '>Another area in Bali</option></select><p class="hint dlnote' + (cp.zone && cp.feeKnown ? ' ok' : '') + '">' + esc(dlNote(cp)) + '</p></div>' : '') +
         '<div class="field span-all"><label for="m-slot">Delivery time</label><select id="m-slot" data-meta="slot"' + ro + '>' + ['', 'Morning (8 to 12)', 'Afternoon (12 to 4)', 'Evening (4 to 7)'].map(o => '<option value="' + o + '"' + (o === (m.slot || '') ? ' selected' : '') + '>' + (o || 'Any time on the day') + '</option>').join('') + '</select></div>'; })() +
-    '<div class="field span-all' + (cmode && !reqOk('addr', m) ? ' miss' : '') + '"><label for="m-addr">Deliver to' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><input id="m-addr" data-meta="addr" value="' + esc(m.addr) + '" placeholder="Delivery address"' + ro + '>' + (cmode ? '<div class="pinrow">' + (m.pin ? '<span class="pinok">&#10003; Pin added</span><button type="button" class="linkbtn" data-act="clrpin">Remove</button>' : '<button type="button" class="btn ghost sm" data-act="getpin">Add my pin location</button><span class="hint">Optional. Helps the driver find you.</span>') + '</div>' : '') + '</div>' +
+    '<div class="field span-all' + (cmode && !reqOk('addr', m) ? ' miss' : '') + '"><label for="m-addr">Deliver to' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><textarea id="m-addr" data-meta="addr" rows="2" placeholder="Delivery address"' + ro + '>' + esc(m.addr) + '</textarea>' + (cmode ? '<div class="pinrow">' + (m.pin ? '<span class="pinok">&#10003; Pin added</span><button type="button" class="linkbtn" data-act="clrpin">Remove</button>' : '<button type="button" class="btn ghost sm" data-act="getpin">Add my pin location</button><span class="hint">Optional. Helps the driver find you.</span>') + '</div>' : '') + '</div>' +
     '<div class="field span-all"><label for="m-notes">' + (cmode ? 'Notes for your host' : 'Notes for your brother') + '</label><textarea id="m-notes" data-meta="notes" placeholder="' + (cmode ? 'Anything we should know before delivery' : 'Anything he should know before ordering') + '"' + ro + '>' + esc(m.notes) + '</textarea></div></div></div>';
   if (!comp.groups.length) {
     host.innerHTML = meta + '<div class="card empty"><h3>Nothing in this order yet</h3><p>' + (cmode ? 'Pick items and they appear here with your total worked out.' : 'Pick items from the three supplier lists and they appear here, grouped by supplier, with the math done.') + '</p><div class="actions duo" style="width:100%;max-width:420px"><button class="btn" data-view="pick">Pick items</button>' + (cmode ? '<button class="btn ghost" data-act="opensaved">Saved orders</button>' : '<button class="btn ghost" data-view="share">Past orders</button>') + '</div></div>';
@@ -2111,7 +2116,7 @@ function ccardHead(c, comp, date) {
     ['Order', comp.count + ' line' + (comp.count === 1 ? '' : 's') + ' &middot; received ' + esc(date)]
   ].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('');
   const ret = c.phone && cust.filter(x => digitsOf(x.phone) === digitsOf(c.phone)).length > 1;
-  return '<div class="ccard' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(c.status || 'new') + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono" title="Order number">#' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div><dl class="cinfo">' + rows + '</dl>' + '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="e.g. gate code, allergies, call before arriving" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label>';
+  return '<div class="ccard' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(c.status || 'new') + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono" title="Order number">#' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div><dl class="cinfo">' + rows + '</dl>' + '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label>';
 }
 function repeatInfo(c) {
   if (!c.phone) return ''; const ph = digitsOf(c.phone); const prev = cust.filter(x => x.id !== c.id && digitsOf(x.phone) === ph && (x.at || 0) < (c.at || 0)).sort((x, y) => y.at - x.at); if (!prev.length) return '';
@@ -2390,8 +2395,23 @@ function afterLedger() {
   renderFilters(); renderPick(); renderAll(false);
   if (ui.view === 'ledger') renderLedgerList();
 }
+function resetCandidates(sid) {
+  const ov = {}, prev = {}; let n = 0;
+  Object.keys(ledger.ov || {}).forEach(id => {
+    const it = BY_ID[id], b = BASE_BY[id]; if (!it || !b || (sid !== 'all' && it.s !== sid)) return;
+    const cur = ledger.ov[id].pr; if (!Array.isArray(cur) || !cur.some((p, i) => p !== null && p !== undefined && b.o[i] && (p > 0 ? p : null) !== b.o[i].pr)) return;
+    ov[id] = { pr: [] }; prev[id] = { pr: cur.slice() }; n++;
+  });
+  return { ov, prev, n };
+}
+function askResetPrices(sid) {
+  if (!canWrite) { toast('This copy is view-only.'); return; }
+  const c = resetCandidates(sid); if (!c.n) { toast('Prices already match the uploaded lists.'); return; }
+  toast('Reset ' + c.n + ' product' + (c.n > 1 ? 's' : '') + (sid === 'all' ? '' : ' from ' + SUPS[sid].name) + ' to the uploaded prices?', { label: 'Reset', fn: () => { saveLedger({ ov: c.ov }); renderLedger(); toast('Prices reset.', { label: 'Undo', fn: () => { saveLedger({ ov: c.prev }); renderLedger(); } }); } });
+}
 function setPrice(id, i, val) {
-  const it = BY_ID[id]; if (!it) return; const cur = ((ledger.ov || {})[id] || {}).pr || [];
+  const it = BY_ID[id]; if (!it) return;
+  const base = BASE_BY[id]; if (!(val > 0) && base && base.o[i] && base.o[i].pr > 0) { toast('A supplier price cannot be empty or zero. Use Reset to uploaded prices to go back.'); if (ui.view === 'ledger') renderLedgerList(); return; } const cur = ((ledger.ov || {})[id] || {}).pr || [];
   const arr = it.o.map((_, j) => (cur[j] === undefined ? null : cur[j])); arr[i] = val; saveLedger({ ov: { [id]: { pr: arr } } });
 }
 function setSell(id, i, val) {
@@ -2466,7 +2486,7 @@ function renderLedger() {
     '<div class="mkrow grid2"><div class="field"><label for="mk-pct">Customer markup (%)</label><input id="mk-pct" inputmode="decimal" value="' + cfgNow().pct + '"' + (canWrite ? '' : ' disabled') + '></div><div class="field"><label for="mk-round">Round up to</label><select id="mk-round"' + (canWrite ? '' : ' disabled') + '>' + [100, 500, 1000].map(r => '<option value="' + r + '"' + (cfgNow().round === r ? ' selected' : '') + '>Rp ' + r + '</option>').join('') + '</select></div></div>' +
     '<div class="chkrow' + (priceStale() ? ' stale' : '') + '"><span>Prices last checked: <b>' + (ledger.cfg && ledger.cfg.chk ? esc(shortDate(ledger.cfg.chk)) : 'never') + '</b></span><button type="button" class="btn ghost sm" data-act="chkprices"' + (canWrite ? '' : ' disabled') + '>I checked today</button></div>' +
     '<p class="hint" style="margin:6px 0 12px">Customers pay the supplier price plus this markup. Your own orders stay at the supplier price. Set a sell price on any product to override the markup. Average margin: <b>' + avgMargin() + '%</b>.</p>' +
-    '<span class="lgl">Supplier changed their prices?</span><div class="grid2"><div class="field"><label for="bk-sup">Supplier</label><select id="bk-sup"><option value="all">All suppliers</option>' + SUP_ORDER.map(x => '<option value="' + x + '">' + esc(SUPS[x].name) + '</option>').join('') + '</select></div><div class="field"><label for="bk-pct">Change by (%)</label><input id="bk-pct" inputmode="decimal" placeholder="e.g. 5 or -3"></div></div><div class="actions full" style="margin-top:10px"><button class="btn ghost" data-act="bulk"' + (canWrite ? '' : ' disabled') + '>Apply to their products</button></div>' +
+    '<span class="lgl">Supplier changed their prices?</span><div class="grid2"><div class="field"><label for="bk-sup">Supplier</label><select id="bk-sup"><option value="all">All suppliers</option>' + SUP_ORDER.map(x => '<option value="' + x + '">' + esc(SUPS[x].name) + '</option>').join('') + '</select></div><div class="field"><label for="bk-pct">Change by (%)</label><input id="bk-pct" inputmode="decimal" placeholder="e.g. 5 or -3"></div></div><div class="actions duo" style="margin-top:10px"><button class="btn ghost" data-act="bulk"' + (canWrite ? '' : ' disabled') + '>Apply to products</button><button class="btn ghost" data-act="resetprices"' + (canWrite ? '' : ' disabled') + '>Reset to uploaded</button></div><p class="hint" style="margin-top:6px">Reset puts the selected supplier\'s prices back to the lists you uploaded. Sell prices follow automatically.</p>' +
     '<div class="search" style="margin-top:14px"><input id="lq" type="search" placeholder="Search the ledger" value="' + esc(ui.lq) + '" autocomplete="off" aria-label="Search the ledger"></div>' +
     '<span class="lgl">Supplier</span><div class="chips lchips">' + chip('lsup', 'all', ui.lsup, 'All suppliers', 'data-k="all"') + SUP_ORDER.map(x => '<button class="chip" data-act="lsup" data-s="' + x + '" data-k="' + x + '" aria-pressed="' + (ui.lsup === x) + '"><span class="dot"></span>' + esc(SUPS[x].name) + '</button>').join('') + '</div>' +
     '<span class="lgl">Show</span><div class="lseg five" role="group" aria-label="Show products">' + [['all', 'All', CATALOG.filter(i => !i.hidden).length], ['edited', 'Edited', editedN], ['added', 'Added', CATALOG.filter(i => /^x-/.test(i.id)).length], ['hidden', 'Hidden', CATALOG.filter(i => i.hidden).length], ['so', 'Sold out', CATALOG.filter(i => i.so).length]].map(x => '<button type="button" data-act="lfil" data-k="' + x[0] + '" aria-pressed="' + (ui.lfil === x[0]) + '">' + x[1] + ' <small>' + x[2] + '</small></button>').join('') + '</div>' +
@@ -2602,6 +2622,7 @@ document.addEventListener('click', e => {
   else if (act === 'srep') { ui.srep = b.dataset.k; renderCustomers(); }
   else if (act === 'csvsales') { exportSalesCsv(); }
   else if (act === 'csvledger') { exportLedgerCsv(); }
+  else if (act === 'resetprices') { askResetPrices(document.getElementById('bk-sup').value); }
   else if (act === 'bulk') { bulkPrice(document.getElementById('bk-sup').value, parseFloat(String(document.getElementById('bk-pct').value).replace(',', '.'))); }
   else if (act === 'import') { importCodes(document.getElementById('importTxt').value); }
   else if (act === 'cview') { ui.custOpen[b.dataset.id] = !ui.custOpen[b.dataset.id]; renderCustomers(); }
