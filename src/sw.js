@@ -33,6 +33,6 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (/supabase\.co$/.test(url.hostname)) return;
   if (req.mode === 'navigate') { e.respondWith(fromNetworkFirst(req, 3500)); return; }
-  if (url.origin === location.origin) { e.respondWith(/\.(svg|png|webmanifest)$/.test(url.pathname) ? staleWhileRevalidate(req) : fromNetworkFirst(req, 3500)); return; }
+  if (url.origin === location.origin) { e.respondWith(/(\.(svg|png|webmanifest)$|^\/photos\/.*\.jpg$)/.test(url.pathname) ? staleWhileRevalidate(req) : fromNetworkFirst(req, 3500)); return; }
   if (/(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)$/.test(url.hostname)) e.respondWith(staleWhileRevalidate(req));
 });

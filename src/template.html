@@ -1563,7 +1563,7 @@ function applyLedger() {
     const it = JSON.parse(JSON.stringify(src)); const o = ov[it.id];
     if (o) {
       if (Array.isArray(o.pr)) o.pr.forEach((p, i) => { if (p !== null && p !== undefined && it.o[i]) it.o[i].pr = p > 0 ? p : null; });
-      if (o.n) it.n = o.n; if (o.e !== undefined && o.e !== null) it.e = o.e; if (o.c) it.c = o.c; if (o.hid) it.hidden = true; if (o.so) it.so = true; if (o.ft) it.ft = true; if (o.img) it.img = String(o.img);
+      if (o.n) it.n = o.n; if (o.e !== undefined && o.e !== null) it.e = o.e; if (o.c) it.c = o.c; if (o.hid) it.hidden = true; if (o.so) it.so = true; if (o.ft) it.ft = true; if (o.img !== undefined && o.img !== null) it.img = o.img ? String(o.img) : '';
     }
     
     const c = cfgNow(); const sps = o && Array.isArray(o.sp) ? o.sp : [];
@@ -1682,7 +1682,7 @@ function pickedByCat() {
 }
 function itemPicked(it) { return it.o.some((o, i) => { const L = S.lines[keyOf(it.id, i)]; return L && L.q > 0; }); }
 const ltText = (o, q, key) => { const L = (key && S.lines[key]) || {}; const p = +L.p > 0 ? +L.p : (cmode ? o.sp : o.pr); return q > 0 && p ? '= ' + fmtRp(p * q) : ''; };
-const imgSrc = id => /^data:image\//.test(id) ? id : window.SB.imgUrl(id);
+const imgSrc = id => /^(data:image\/|photos\/)/.test(id) ? id : window.SB.imgUrl(id);
 const thumbIn = it => it.img ? '<img loading="lazy" decoding="async" alt="" data-e="' + esc(it.i || '') + '" data-zoomname="' + esc(it.n) + '" src="' + esc(imgSrc(it.img)) + '">' : (it.i || '');
 const thumbCls = it => it.img ? ' img' : '';
 function stepperHtml(it, o, i, q) {
@@ -2938,6 +2938,7 @@ function termsHtml() {
     sec('Your location', 'We only get your location if you tap <b>Add my pin location</b>, and only together with your order.') +
     sec('Ordering', 'Orders need 24 hours notice.' + cutoff + money) +
     sec('Prices and weight', chk + 'Fresh items are sold by weight and weighed when packed, so you pay the exact weight. We confirm stock and your final total with you on WhatsApp.') +
+    sec('Photos', 'Some product photos are free-licence images from Wikimedia Commons. <a href="photo-credits.html" target="_blank" rel="noopener">See the photo credits</a>.') +
     sec('Payment', 'Pay on delivery in cash, or by bank transfer as a deposit, as agreed with us on WhatsApp.') +
     sec('Changes', 'To change or cancel an order, message us on WhatsApp as early as you can.') + '</div>' +
     (hw ? '<div class="actions full"><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Questions? Chat with us</a></div>' : '') + '</div>';
@@ -3009,12 +3010,12 @@ async function uploadPhoto(id, file) {
   try {
     const blob = await photoBlob(file); const res = await assetsCap.upload(blob, { type: 'image/jpeg' }); const old = it.img;
     saveLedger({ ov: { [id]: { img: res.id } } });
-    if (old && !/^data:/.test(old) && old !== res.id && !CATALOG.some(x => x.id !== id && x.img === old)) { assetsCap.delete(old).catch(() => {}); }
+    if (old && !/^(data:|photos\/)/.test(old) && old !== res.id && !CATALOG.some(x => x.id !== id && x.img === old)) { assetsCap.delete(old).catch(() => {}); }
     toast('Photo added for ' + it.n + '.');
     if (ui.photoMode) { ui.photoSkip = ui.photoSkip || {}; renderLedger(); }
   } catch (e) { toast(e && e.code === 'too_large' ? 'That picture is too large.' : e && e.code === 'quota_or_state' ? 'Photo storage is full.' : 'Could not add the photo. Try again.'); }
 }
-function removePhoto(id) { const it = BY_ID[id]; if (!it || !it.img) return; const old = it.img; saveLedger({ ov: { [id]: { img: '' } } }); if (assetsCap && !/^data:/.test(old) && !CATALOG.some(x => x.img === old)) assetsCap.delete(old).catch(() => {}); toast('Photo removed.'); }
+function removePhoto(id) { const it = BY_ID[id]; if (!it || !it.img) return; const old = it.img; saveLedger({ ov: { [id]: { img: '' } } }); if (assetsCap && !/^(data:|photos\/)/.test(old) && !CATALOG.some(x => x.img === old)) assetsCap.delete(old).catch(() => {}); toast('Photo removed.'); }
 function photoNext() { ui.photoSkip = ui.photoSkip || {}; return CATALOG.find(i => !i.hidden && !i.img && !ui.photoSkip[i.id] && (ui.lsup === 'all' || ui.lsup === i.s)); }
 function importCard() {
   if (cmode || !db) return '';
