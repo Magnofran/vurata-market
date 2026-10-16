@@ -984,6 +984,10 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .thumb, .fth { background: var(--surface-2); }
 .card, .sup-card, .cats { border-color: var(--line); }
 .stafffoot { padding-top: 14px; font-size: 12px; letter-spacing: .02em; } .stafffoot a { opacity: .8; }
+.barbtns { gap: 4px; flex: none; } .barbtns .themebtn { white-space: nowrap; padding: 6px 10px; }
+.card h3, .supband .nm, .sup-head h3, .warnbox h3, .opt-h, .empty h3 { font-variant-numeric: lining-nums; font-feature-settings: "lnum"; }
+.stats { grid-template-columns: 1fr 1fr 1.5fr; } .stats b { font-size: 15px; white-space: nowrap; overflow-wrap: normal; }
+.lseg button, .seg button { white-space: nowrap; padding-inline: 2px; font-size: 13px; }
 .login { padding: 28px 24px; } .login .brand { margin-bottom: 4px; }
 </style>
 </head>
@@ -1353,6 +1357,7 @@ function applyLedger() {
   };
   const list = BASE.map(mk); Object.keys(ledger.add || {}).forEach(id => { list.push(mk(Object.assign({ id }, ledger.add[id]))); });
   CATALOG.length = 0; list.forEach(x => CATALOG.push(x)); reindex();
+  if (cmode && ledger.cfg && ledger.cfg.wa) hostWA = String(ledger.cfg.wa);
 }
 function applyFriendLabels() {
   SUP_ORDER.forEach(x => {
@@ -2207,7 +2212,7 @@ function delCust(id) {
   cust = cust.filter(c => c.id !== id); delete ui.custOpen[id]; delete ui.custDel[id]; renderCustomers(); updateCBadge(); toast('Customer removed.');
 }
 function setMyWA(v) {
-  myWA = digitsOf(v); LS.set('mumu-mywa', myWA);
+  myWA = digitsOf(v); LS.set('mumu-mywa', myWA); schedulePublish();
   if (db) { custChain = custChain.then(() => db.doc('settings/host').set({ wa: myWA, bank: bankTxt })).catch(() => {}); }
   renderCustomers();
 }
@@ -2241,7 +2246,7 @@ function publicLedger() {
   });
   const add = {}; Object.keys(ledger.add || {}).forEach(id => { const a = clone(ledger.add[id]); (a.o || []).forEach(op => { delete op.pr; delete op.sp; }); delete a.x; add[id] = a; });
   const sups = {}; Object.keys(ledger.sups || {}).forEach(id => { const s = ledger.sups[id] || {}; sups[id] = { name: s.what || s.name, short: s.short, what: s.what || s.name, h: s.h }; });
-  const cfg = {}; if (ledger.cfg && ledger.cfg.chk) cfg.chk = ledger.cfg.chk;
+  const cfg = {}; if (ledger.cfg && ledger.cfg.chk) cfg.chk = ledger.cfg.chk; if (myWA) cfg.wa = myWA;
   return { ov, add, cfg, sups, dl: ledger.dl || null };
 }
 async function publishPublic(force) {
@@ -2683,7 +2688,7 @@ async function boot() {
   }
   if (db) {
     try { db.collection('customers').orderBy('at', 'desc').limit(100).onSnapshot(sn => { const oldIds = new Set(cust.map(c => c.id)); cust = sn.docs.map(d => Object.assign({ id: d.id }, d.data())); if (ui.custLoaded) { const nu = cust.filter(c => !oldIds.has(c.id) && !c.demo); if (nu.length) toast(nu.length === 1 ? 'New order #' + orderNo(nu[0]) + ' from ' + (nu[0].name || 'a customer') : nu.length + ' new orders', { label: 'View', fn: () => showView('cust') }); } ui.custLoaded = true; updateCBadge(); const a = document.activeElement; if (ui.view === 'cust' && !(a && a.closest && a.closest('#v-cust') && /^(INPUT|TEXTAREA)$/.test(a.tagName))) renderCustomers(); }, () => {}); } catch (e) {}
-    try { db.doc('settings/host').onSnapshot(sn => { if (sn.exists) { const d = sn.data(); if (d.wa) { myWA = String(d.wa); LS.set('mumu-mywa', myWA); } if (typeof d.bank === 'string') { bankTxt = d.bank; LS.set('mumu-bank', bankTxt); } if (ui.view === 'cust' && !(document.activeElement && /^(mywa|bankTxt)$/.test(document.activeElement.id))) renderCustomers(); } }, () => {}); } catch (e) {}
+    try { db.doc('settings/host').onSnapshot(sn => { if (sn.exists) { const d = sn.data(); if (d.wa) { myWA = String(d.wa); LS.set('mumu-mywa', myWA); schedulePublish(); } if (typeof d.bank === 'string') { bankTxt = d.bank; LS.set('mumu-bank', bankTxt); } if (ui.view === 'cust' && !(document.activeElement && /^(mywa|bankTxt)$/.test(document.activeElement.id))) renderCustomers(); } }, () => {}); } catch (e) {}
     try { db.collection('orders').orderBy('at', 'desc').limit(40).onSnapshot(sn => { hist = sn.docs.filter(d => d.id.indexOf('h_') === 0).map(d => Object.assign({ id: d.id }, d.data())).slice(0, 30); if (ui.view === 'share') renderShare(compute(S)); renderFilters(); if (ui.saved && ui.view === 'pick') renderPick(); }, () => {}); } catch (e) {}
     if (myId) { try { favRef = db.doc('data/users/' + myId + '/prefs'); const sn = await favRef.get(); if (sn.exists && sn.data().fav) { favs = Object.assign({}, favs, sn.data().fav); LS.set('mumu-fav', JSON.stringify(favs)); } } catch (e) { favRef = null; } renderFilters(); renderPick(); }
   }
