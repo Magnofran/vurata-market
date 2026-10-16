@@ -1103,6 +1103,9 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .howlink[hidden] { display: none; } .howlink i { font-style: normal; font-size: 18px; font-weight: 400; letter-spacing: 0; color: var(--gold-text); }
 /* The banners sit at the top of the item column so the order panel starts level with them on wide screens. */
 .cols.two > div > .how, .cols.two > div > .dlinfo, .cols.two > div > .howlink { margin-top: 0 !important; margin-bottom: 16px; }
+/* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
+.item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
+@media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
 @media (hover: hover) { .howlink:hover { color: var(--ink); border-color: var(--gold); } }
 .mk { display: flex; align-items: center; gap: 8px; }
 .mk svg { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--gold); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
