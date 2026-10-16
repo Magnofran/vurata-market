@@ -1137,6 +1137,12 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .hrow2 .linkbtn { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 16px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; text-decoration: none; }
 .hrow2 .linkbtn[data-act="hdelask"] { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--surface)); }
 @media (hover: hover) { .hrow2 .linkbtn:hover { border-color: var(--gold); text-decoration: none; } .hrow2 .linkbtn[data-act="hdelask"]:hover { border-color: var(--danger); } }
+/* ticket actions line up on one grid: 50/50 pairs and a full-width delete */
+.hrow2 .hlinks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.hrow2 .hlinks .linkbtn { width: 100%; min-height: 44px; }
+.hrow2 .hdel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.hrow2 .hdel > span, .hrow2 .hdel > .linkbtn[data-act="hdelask"] { grid-column: 1 / -1; }
+.hrow2 .hdel .btn, .hrow2 .hdel > .linkbtn { width: 100%; min-height: 44px; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
