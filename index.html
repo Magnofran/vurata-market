@@ -1128,6 +1128,15 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .hline { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: baseline; padding: 11px 12px !important; border-radius: 0 !important; border-bottom: 1px solid var(--line); font-size: 14px; }
 .hname { min-width: 0; line-height: 1.4; overflow-wrap: anywhere; } .hname em { display: block; margin-top: 2px; font-style: normal; font-size: 12.5px; color: var(--muted); }
 .hqty { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; } .hqty b { color: var(--ink); font-size: 14px; font-weight: 600; }
+/* saved order tickets: roomier content, links become buttons */
+.hrow2 { padding: 14px !important; }
+.hrow2 .hdet { margin-inline: -14px; }
+.hrow2 .hgrp { padding-inline: 14px; } .hrow2 .hline { padding-inline: 14px !important; }
+.hrow2 .hdet > .hint { padding-inline: 14px; margin-top: 14px; } .hrow2 .hdet > .hdel { padding-inline: 14px; margin-top: 12px; }
+.hrow2 .hlinks { display: flex; gap: 8px; flex-wrap: wrap; }
+.hrow2 .linkbtn { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 16px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 600; text-decoration: none; }
+.hrow2 .linkbtn[data-act="hdelask"] { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--surface)); }
+@media (hover: hover) { .hrow2 .linkbtn:hover { border-color: var(--gold); text-decoration: none; } .hrow2 .linkbtn[data-act="hdelask"]:hover { border-color: var(--danger); } }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
