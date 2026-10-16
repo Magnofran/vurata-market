@@ -2952,9 +2952,9 @@ function guideHtml() {
   };
   const step = (i, k, txt) => '<li><span class="gic">' + ic[k] + '</span><span class="gtx">' + txt + '</span></li>';
   const iph = '<div class="gcard' + (ios ? ' mine' : '') + '"><div class="gh"><b>iPhone</b><span>Safari</span>' + (ios ? '<em>Your phone</em>' : '') + '</div><ol class="gsteps">' +
-    step(1, 'share', 'Tap <b>Share</b>, the square with an arrow, at the bottom.') + step(2, 'plus', 'Scroll down and tap <b>Add to Home Screen</b>.') + step(3, 'check', 'Tap <b>Add</b>. Done.') + '</ol></div>';
+    step(1, 'share', 'Tap <b>Share</b>, the square with an arrow.') + step(2, 'plus', 'Tap <b>Add to Home Screen</b>. Scroll the list if you do not see it.') + step(3, 'check', 'Tap <b>Add</b>. Done.') + '</ol></div>';
   const and = '<div class="gcard' + (!ios ? ' mine' : '') + '"><div class="gh"><b>Android</b><span>Chrome</span>' + (!ios ? '<em>Your phone</em>' : '') + '</div><ol class="gsteps">' +
-    step(1, 'dots', 'Tap the <b>menu</b>, three dots at the top right.') + step(2, 'plus', 'Tap <b>Add to Home screen</b> or <b>Install app</b>.') + step(3, 'check', 'Tap <b>Add</b>. Done.') + '</ol></div>';
+    step(1, 'dots', 'Tap the <b>menu</b>, the three dots.') + step(2, 'plus', 'Tap <b>Add to Home screen</b> or <b>Install app</b>.') + step(3, 'check', 'Tap <b>Add</b>. Done.') + '</ol></div>';
   const warn = inApp ? '<div class="gwarn"><span class="gic">' + ic.compass + '</span><span class="gtx"><b>Opened from Instagram or WhatsApp?</b> Tap the <b>three dots</b>, choose <b>Open in browser</b>, then follow the steps below.</span></div>' : '';
   const now = ui.installEv ? '<button type="button" class="btn" data-act="installapp">Add to home screen now</button>' : '';
   return '<div class="sentbox guidebox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Add to your home screen</h3><p class="hint">Open Vurata Market in one tap, like any other app. Takes 10 seconds.</p>' +
