@@ -1358,7 +1358,7 @@ function compute(state, mode) {
     if (o.est) g.est++;
     if (o.w || o.v) { g.w += ln.w; g.v += ln.v; w += ln.w; v += ln.v; } else { g.noMeasure++; noMeasure++; }
     if (o.u === 'kg') kgQty += q; else unitQty += q;
-    if (o.mn && q < o.mn) warnings.push({ sid: it.s, text: it.n + ': the supplier minimum is ' + o.mn + ' ' + o.u + ' (you have ' + fmtQty(q) + ').' });
+    if (o.mn && q < o.mn) warnings.push({ sid: it.s, text: it.n + ': the minimum for this item is ' + o.mn + ' ' + o.u + ' (you have ' + fmtQty(q) + ').' });
     if (needsCheck(it)) warnings.push({ sid: it.s, text: it.n + ': ' + it.x });
   }
   if (out) warnings.push({ sid: '', text: out + ' line' + (out > 1 ? 's are' : ' is') + ' marked out of stock and not counted in the total.' });
@@ -2329,7 +2329,7 @@ async function importCodes(text) {
 }
 function offerStatusMsg(id, st) {
   const c = cust.find(x => x.id === id); if (!c || !digitsOf(c.phone) || st === 'new') return; const first = (c.name || 'there').split(' ')[0]; const due = dueOf(c);
-  const msg = st === 'ordered' ? 'Hi ' + first + ', your order #' + orderNo(c) + ' is confirmed and we have placed it with our suppliers. We will message you when it is on its way.'
+  const msg = st === 'ordered' ? 'Hi ' + first + ', your order #' + orderNo(c) + ' is confirmed and is being prepared. We will message you when it is on its way.'
     : 'Hi ' + first + ', your order #' + orderNo(c) + ' has been delivered. Thank you!' + (due > 0 ? ' The balance of ' + fmtRp(due) + ' is still open.' : '');
   setTimeout(() => toast('Let ' + first + ' know?', { label: 'Message on WhatsApp', fn: () => window.open('https://wa.me/' + digitsOf(c.phone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener') }), 350);
 }
@@ -2710,7 +2710,7 @@ document.addEventListener('change', e => {
   else if (t.id === 'catSel') { ui.cat = t.value; ui.limit = 80; renderPick(); }
   else if (t.id === 'onlyPicked') { ui.picked = t.checked; ui.limit = 80; renderPick(); }
   else if (t.matches('[data-meta]')) {
-    if (t.dataset.meta === 'need' && t.value && t.value < minNeed()) { t.value = minNeed(); toast('Suppliers need at least 24 hours notice. Date moved to the earliest day.'); }
+    if (t.dataset.meta === 'need' && t.value && t.value < minNeed()) { t.value = minNeed(); toast('Orders need 24 hours notice, so your date moved to the earliest available day.'); }
     if (cmode && t.dataset.meta === 'need' && t.value && isClosed(t.value)) { const cd = dlNow().closed.find(x => x.d === t.value); const nx = nextOpen(t.value); toast('No delivery on ' + fmtDate(t.value) + (cd && cd.n ? ' (' + cd.n + ')' : '') + '. Moved to ' + fmtDate(nx) + '.'); t.value = nx; }
     patch({ meta: { [t.dataset.meta]: t.value } });
     if (t.dataset.meta === 'zone') renderOrder(compute(S));
