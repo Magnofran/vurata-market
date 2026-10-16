@@ -992,6 +992,26 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .thumb, .fth { background: var(--surface-2) !important; border: 1px solid var(--gold); }
 .thumb:not(.img), .fth:not(.img) { filter: grayscale(.45); }
 .thumb.img, .fth.img { filter: none; }
+/* wordmark divider stays a straight hairline */
+.mk { border-radius: 0 !important; }
+/* How it works: quiet hairline panel with a gold top rule */
+.how { background: var(--surface); border: 1px solid var(--line) !important; border-top: 2px solid var(--gold) !important; box-shadow: none; padding: 16px 18px 18px; margin-top: 14px; }
+.howh { margin-bottom: 14px; }
+.howh b { font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+.howh .x { border: 0; background: transparent; width: 32px; height: 32px; font-size: 22px; color: var(--muted); margin: -8px -8px -8px 0; }
+.how ol { gap: 0; }
+.how li { font-size: 14px; line-height: 1.4; color: var(--ink); gap: 8px; padding: 0 16px; border-left: 1px solid var(--line); }
+.how li:first-child { padding-left: 0; border-left: 0; } .how li:last-child { padding-right: 0; }
+.how li i { display: block; white-space: nowrap; background: none; color: var(--gold-h); width: auto; height: auto; font-size: 12px; font-weight: 600; letter-spacing: .18em; }
+.how li i::before { content: '0'; }
+@media (max-width: 560px) {
+  .how ol { grid-template-columns: 1fr; }
+  .how li { grid-template-columns: 30px 1fr; align-items: baseline; padding: 11px 0; border-left: 0; border-top: 1px solid var(--line); gap: 0; }
+  .how li:first-child { border-top: 0; padding-top: 0; } .how li:last-child { padding-bottom: 0; }
+}
+/* order form: fields keep their own height, Needed by gets a full row */
+#orderBody .grid2 { align-items: start; } #orderBody .grid2 > .field { align-content: start; }
+#orderBody .grid2 > .field:has(#m-need) { grid-column: 1 / -1; }
 .login { padding: 32px 24px 28px; gap: 14px; }
 .login .brand { justify-content: center; margin-bottom: 14px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
