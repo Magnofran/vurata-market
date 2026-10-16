@@ -992,7 +992,11 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .thumb, .fth { background: var(--surface-2) !important; border: 1px solid var(--gold); }
 .thumb:not(.img), .fth:not(.img) { filter: grayscale(.45); }
 .thumb.img, .fth.img { filter: none; }
-.login { padding: 28px 24px; } .login .brand { margin-bottom: 4px; }
+.login { padding: 32px 24px 28px; gap: 14px; }
+.login .brand { justify-content: center; margin-bottom: 14px; }
+.login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+.login .field { text-align: left; } .login .hint { text-align: center; margin: 0; }
+ .login .brand { margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -1020,9 +1024,10 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
     <div class="cols two">
       <div>
         <div class="filters">
-          <div class="sticky"><div class="search"><label class="sr" for="q">Search items</label><input id="q" type="search" enterkeyhint="search" placeholder="Search: buah naga, dragon fruit, kecap" autocomplete="off"></div>
+          <div class="sticky">
           <div class="chips" id="supChips"></div></div>
           <div class="row2"><label class="sr" for="catSel">Category</label><select id="catSel"></select></div>
+          <div class="search"><label class="sr" for="q">Search items</label><input id="q" type="search" enterkeyhint="search" placeholder="Search: buah naga, dragon fruit, kecap" autocomplete="off"></div>
         </div>
         <div id="pickList"></div>
       </div>
@@ -1076,7 +1081,7 @@ const SUPS = {
   },
   "mt": {
     "id": "mt",
-    "name": "Meat processing & raw meat supplier",
+    "name": "Meat processing & raw meat",
     "short": "Meat & seafood",
     "rgb": [
       156,
@@ -1086,7 +1091,7 @@ const SUPS = {
     "phone": "",
     "wa": "",
     "addr": "",
-    "what": "Meat processing & raw meat supplier",
+    "what": "Meat processing & raw meat",
     "tag": "Meat & seafood",
     "list": ""
   },
