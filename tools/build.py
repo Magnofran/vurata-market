@@ -21,6 +21,8 @@ led = json.dumps(latest_ledger(), ensure_ascii=False, separators=(",", ":"))
 out = tpl.replace("__CATALOG__", cat).replace("__LEDGER__", led.replace("</", "<\\/"))
 out = out.replace("</script></script>", "</script>")
 open(os.path.join(ROOT, "index.html"), "w").write(out)
+import time
+open(os.path.join(ROOT, "sw.js"), "w").write(open(os.path.join(ROOT, "src/sw.js")).read().replace("__BUILD__", time.strftime("%Y%m%d%H%M%S")))
 for f in ("shim.js", "vendor/supabase.js"):
     dst = os.path.join(ROOT, f); os.makedirs(os.path.dirname(dst), exist_ok=True)
     open(dst, "w").write(open(os.path.join(ROOT, "src", f)).read())

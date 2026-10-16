@@ -2715,6 +2715,7 @@ document.addEventListener('click', e => {
   else if (act === 'noteadd') { const inp = b.closest('.ln').querySelector('input.note'); if (inp && !inp.value.toLowerCase().includes(b.dataset.t.toLowerCase())) { inp.value = (inp.value ? inp.value + ', ' : '') + b.dataset.t; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); } }
   else if (act === 'hrename') { ui.renameId = b.dataset.id; refreshHist(); const el = document.querySelector('input[data-hren]'); if (el) { el.focus(); el.select(); } }
   else if (act === 'markordered') { const list = cust.filter(c => c.inc !== false && c.status === 'new'); list.forEach(c => updCust(c.id, { status: 'ordered', dat: 0 })); toast('Marked ' + list.length + ' order' + (list.length > 1 ? 's' : '') + ' as ordered.', { label: 'Undo', fn: () => list.forEach(c => updCust(c.id, { status: 'new' })) }); }
+  else if (act === 'installapp') { const ev = ui.installEv; if (ev) { ev.prompt(); ev.userChoice.finally(() => { ui.installEv = null; }); } }
   else if (act === 'sentx') { closeSentBox(); }
   else if (act === 'sentno') { sentBox().hidden = true; }
   else if (act === 'sentyes') { confirmSent(); }
@@ -2896,13 +2897,20 @@ function showSentBox() {
   el.innerHTML = '<div class="sentbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Did your order go through?</h3><p class="hint">Once you have sent it on WhatsApp, your host confirms stock and your final total by message.</p><div class="actions full"><button type="button" class="btn" data-act="sentyes">Yes, I sent it</button><button type="button" class="btn ghost" data-act="sentno">Not yet</button></div></div>';
   el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
 }
+function installHtml() {
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone; if (standalone || !cmode) return '';
+  const ua = navigator.userAgent; if (/Instagram|FBAN|FBAV|Line\/|TikTok|WhatsApp/i.test(ua)) return '';
+  if (ui.installEv) return '<button type="button" class="btn ghost" data-act="installapp">Add Vurata Market to your home screen</button>';
+  if (/iPad|iPhone|iPod/.test(ua)) return '<p class="hint sentip"><b>Order faster next time:</b> tap the <b>Share</b> icon in Safari, then <b>Add to Home Screen</b>.</p>';
+  return '';
+}
 async function confirmSent() {
   const comp = compute(S), m = S.meta, who = (m.who || '').trim().split(/\s+/)[0] || '', hw = hostWA || LS.get('mumu-hostwa') || '', hadPin = !!m.pin;
   const rows = [['Order total', fmtRp(comp.grand), 'estimate'], m.need ? ['Needed by', fmtDate(m.need), ''] : null, m.zone ? ['Area', zoneLabel(m.zone), ''] : null, m.pay ? ['Payment', m.pay, ''] : null].filter(Boolean);
   await archive(); const tt = document.getElementById('toast'); if (tt) tt.hidden = true;
   const el = sentBox();
   el.innerHTML = '<div class="sentbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Thank you' + (who ? ', ' + esc(who) : '') + '.</h3><p class="hint">Your order is with the Vurata team.</p><div class="sentrows">' + rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') + '</div>' +
-    '<ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Stock and your final total, on WhatsApp.</span></div></li><li><i>02</i><div><b>Final bill</b><span>Fresh items are weighed when packed, so you pay the exact weight.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day and you pay as agreed.</span></div></li></ol>' + (hadPin ? '' : '<p class="hint sentip"><b>Tip:</b> share your location in the same WhatsApp chat so the driver finds you faster. Tap <b>+</b>, then <b>Location</b>.</p>') +
+    '<ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Stock and your final total, on WhatsApp.</span></div></li><li><i>02</i><div><b>Final bill</b><span>Fresh items are weighed when packed, so you pay the exact weight.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day and you pay as agreed.</span></div></li></ol>' + (hadPin ? '' : '<p class="hint sentip"><b>Tip:</b> share your location in the same WhatsApp chat so the driver finds you faster. Tap <b>+</b>, then <b>Location</b>.</p>') + installHtml() +
     '<div class="actions full"><button type="button" class="btn" data-act="sentdone">Start a new order</button>' + (hw ? '<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Chat with us</a>' : '') + '</div></div>';
   el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
 }
@@ -3022,6 +3030,8 @@ window.addEventListener('error', e => { if (e && e.message && !/ResizeObserver|S
 window.addEventListener('unhandledrejection', () => softFail());
 (function () { const bar = document.createElement('div'); bar.id = 'offBar'; bar.hidden = true; bar.setAttribute('role', 'status'); bar.textContent = cmode ? "You're offline. Your order is saved on this phone. Reconnect to send it." : "You're offline. Changes are saved on this device and sync when you reconnect."; document.body.appendChild(bar); const upd = () => { bar.hidden = navigator.onLine !== false; document.body.classList.toggle('is-offline', navigator.onLine === false); }; window.addEventListener('online', upd); window.addEventListener('offline', upd); upd(); })();
 ensureWordmark();
+if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); ui.installEv = e; });
 boot();
 })();
 </script>
