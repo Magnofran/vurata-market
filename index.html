@@ -1190,6 +1190,9 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .cdconf { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--warn); text-align: center; } .cdconfbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .cdconfbtns .btn { width: 100%; min-height: 46px; }
 .btn.danger.solid { background: var(--warn); border-color: var(--warn); color: #fff; } .cdrestore { width: 100%; min-height: 46px; }
 .price.line .custp { color: var(--gold-text); font-weight: 500; }
+.otype { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0; border: 1px solid var(--line-dark); } .otype button { min-height: 48px; padding: 6px 10px; background: var(--surface); border: 0; border-left: 1px solid var(--line-dark); font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; line-height: 1.25; } .otype button:first-child { border-left: 0; }
+.otype button small { display: block; font-size: 11.5px; font-weight: 400; color: var(--muted); } .otype button[aria-pressed="true"] { background: var(--ink); color: var(--bg); } .otype button[aria-pressed="true"] small { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+.otype + input { margin-top: 8px; }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -1677,7 +1680,7 @@ function lineText(ln) {
 }
 function buildSummary(state, comp) {
   const m = state.meta; const out = [];
-  out.push('*VURATA MARKET ORDER* - ' + (m.title || 'Order'));
+  out.push('*VURATA MARKET ORDER*' + (m.title && m.title !== 'Vurata Market order' ? ' - ' + m.title : ''));
   const head = [];
   if (m.who) head.push('Requested by: ' + m.who);
   if (m.need) head.push('Needed by: ' + fmtDate(m.need));
@@ -1774,6 +1777,13 @@ const LS = { get(k) { try { return localStorage.getItem(k); } catch (e) { return
 
 function setSync(s, txt) { const el = document.getElementById('sync'); el.dataset.s = s; document.getElementById('syncTxt').textContent = txt; }
 function orderProg() { const keys = Object.keys(REQ_FIELDS).filter(k => k !== 'zone' || (cmode && dlNow().zones.length)); return { done: keys.filter(k => reqOk(k, S.meta)).length, total: keys.length }; }
+/* Staff: choose what this order is for, so the summary and saved name say it clearly. */
+const ORDER_TYPES = ['Vurata Market order', 'Personal order'];
+function orderTypeHtml(m, ro) {
+  const cur = m.title || 'Personal order'; const other = !ORDER_TYPES.includes(cur) || ui.titleOther;
+  const seg = ORDER_TYPES.map(v => '<button type="button" data-act="otype" data-v="' + esc(v) + '" aria-pressed="' + (!other && cur === v) + '"' + ro + '>' + (v === 'Vurata Market order' ? 'Vurata order <small>for suppliers</small>' : 'Personal order <small>for home</small>') + '</button>').join('') + '<button type="button" data-act="otype" data-v="__other" aria-pressed="' + other + '"' + ro + '>Other</button>';
+  return '<div class="field span-all"><label>Order type</label><div class="otype" role="group" aria-label="Order type">' + seg + '</div>' + (other ? '<input id="m-title" data-meta="title" value="' + esc(ORDER_TYPES.includes(cur) ? '' : cur) + '" placeholder="Name this order, e.g. Villa Rama" aria-label="Order name"' + ro + '>' : '') + '</div>';
+}
 function detSummary(m) {
   const bits = [m.who && String(m.who).trim(), m.phone && String(m.phone).trim(), m.zone && m.zone !== '__other' ? m.zone : (m.zone ? 'Another area' : ''), m.need ? fmtDate(m.need) : '', m.pay].filter(Boolean);
   return '<p class="detsum">' + (bits.length ? bits.map(esc).join(' <span aria-hidden="true">&middot;</span> ') : 'No details added yet.') + '</p>';
@@ -2010,7 +2020,7 @@ function renderOrder(comp) {
   const host = document.getElementById('orderBody'); const m = S.meta; const ro = canWrite ? '' : ' disabled';
   const detOpen = !cmode || ui.detOpen !== false;
   const meta = '<div class="card detcard' + (detOpen ? '' : ' shut') + '"><div class="msg-head"><h3>Order details' + (cmode ? ' <span class="reqnote"><i class="req">*</i> required</span>' : '') + '</h3>' + (cmode && detOpen ? '<button type="button" class="dethide" data-act="dettog" aria-expanded="true">Hide</button>' : '') + '</div>' + (cmode ? orderProgHtml() : '') + (detOpen ? '' : detSummary(m) + '<button type="button" class="dettogbig' + (orderProg().done < orderProg().total ? ' pulse' : '') + '" data-act="dettog" aria-expanded="false"><span>Show order details</span>' + LB_CHEV + '</button>') + (detOpen ? '<div class="grid2">' +
-    '<div class="field"><label for="m-title">Order name</label><input id="m-title" data-meta="title" value="' + esc(m.title) + '"' + ro + '></div>' +
+    (cmode ? '<div class="field"><label for="m-title">Order name</label><input id="m-title" data-meta="title" value="' + esc(m.title) + '"' + ro + '></div>' : orderTypeHtml(m, ro)) +
     '<div class="field' + (cmode && !String(m.who || '').trim() ? ' miss' : '') + '"><label for="m-who">' + (cmode ? 'Your name <i class="req" aria-hidden="true">*</i>' : 'Requested by') + '</label><input id="m-who" data-meta="who" value="' + esc(m.who) + '" placeholder="Your name"' + ro + '></div>' +
     '<div class="field' + (cmode && !reqOk('need', m) ? ' miss' : '') + '"><label for="m-need">Needed by' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><input id="m-need" type="date" data-meta="need" min="' + minNeed() + '" value="' + esc(m.need) + '"' + ro + '>' + quickDates() + needHint() + '</div>' +
     '<div class="field' + (cmode && !m.pay ? ' miss' : '') + '"><label for="m-pay">Payment' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><select id="m-pay" data-meta="pay"' + ro + '>' + PAYMENTS.filter(p => !(cmode && /cafe/.test(p))).map(p => '<option' + (p === m.pay ? ' selected' : '') + ' value="' + esc(p) + '">' + (p || 'Choose how it will be paid') + '</option>').join('') + '</select></div>' +
@@ -2253,7 +2263,7 @@ async function saveDraft() {
   const comp = compute(S); if (!comp.count) { toast('Add some items first.'); return; }
   if (!canWrite) { toast('This copy is view-only.'); return; }
   const lines = {}; Object.keys(S.lines).forEach(k => { const L = S.lines[k]; if (L && L.q > 0) lines[k] = { q: L.q, n: L.n || '', p: L.p || 0 }; });
-  const name = (S.meta.title && S.meta.title !== 'Personal order') ? S.meta.title : 'Order ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const name = (S.meta.title && !ORDER_TYPES.includes(S.meta.title)) ? S.meta.title : (S.meta.title || 'Order') + ' ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const old = S.meta.draftId && hist.find(x => x.id === S.meta.draftId); const id = old ? old.id : 'h_' + Date.now();
   const rec = { h: 1, kept: true, title: name, who: S.meta.who || '', total: comp.total, count: comp.count, at: Date.now(), by: myId || '', lines, meta: { who: S.meta.who || '', addr: S.meta.addr || '', pay: S.meta.pay || '', zone: S.meta.zone || '', slot: S.meta.slot || '' }, placed: false };
   try { await putHist(id, rec); } catch (e) { toast('Could not save. Try again.'); return; }
@@ -2997,6 +3007,7 @@ document.addEventListener('click', e => {
   else if (act === 'imptog') { ui.impOpen = !(ui.impOpen === undefined ? !cust.length : ui.impOpen); renderCustomers(); }
   else if (act === 'goto') { if ((b.dataset.t === '#salesCard' || b.dataset.t === '#inviteCard') && !cardOpen(b.dataset.t.slice(1))) { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen[b.dataset.t.slice(1)] = true; renderCustomers(); } if (b.dataset.t === '#importCard' && (ui.impOpen === undefined ? !cust.length : ui.impOpen) === false) { ui.impOpen = true; renderCustomers(); } const el = document.querySelector(b.dataset.t); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); if (/^(INPUT|TEXTAREA)$/.test(el.tagName)) setTimeout(() => el.focus({ preventScroll: true }), 400); } }
   else if (act === 'setdl') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen.dlCard = true; showView('ledger'); const el = document.getElementById('dlCard'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+  else if (act === 'otype') { const v = b.dataset.v; if (v === '__other') { ui.titleOther = true; patch({ meta: { title: '' } }); renderOrder(compute(S)); const f = document.getElementById('m-title'); if (f) f.focus(); } else { ui.titleOther = false; patch({ meta: { title: v } }); renderOrder(compute(S)); } }
   else if (act === 'dettog') { ui.detOpen = ui.detOpen === false; renderOrder(compute(S)); }
   else if (act === 'basketview') { const bk = basketsNow().find(x => x.id === b.dataset.id); if (!bk) return; const el = sentBox(); el.innerHTML = basketViewHtml(bk); el.hidden = false; const f = el.querySelector('button'); if (f) f.focus(); }
   else if (act === 'basketadd') {
