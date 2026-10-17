@@ -1153,8 +1153,8 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .cdrow .grid2 { align-items: start; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); } .cdrow .field .hint { margin: 4px 0 0; }
 .cdempty { margin: 2px 2px 0; font-size: 13.5px; color: var(--muted); }
 .cdadd { width: 100%; min-height: 48px; border: 1px dashed var(--line-dark); background: transparent; color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer; } .cdadd:hover { border-color: var(--gold); }
-.stamp { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); } .stamp[hidden] { display: none; }
-.stamp svg { flex: none; margin-top: 2px; color: #2E7D5B; } .stamp b { display: block; font-size: 14px; font-weight: 600; } .stamp span { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); line-height: 1.45; } .stamp a { display: inline-block; margin-top: 4px; font-size: 12.5px; color: var(--gold-text); text-underline-offset: 3px; }
+.stamp { display: grid; gap: 3px; margin: 0 0 16px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); } .stamp[hidden] { display: none; }
+.stamphead { display: flex; align-items: center; gap: 8px; } .stamp svg { flex: none; color: #2E7D5B; } .stamp b { font-size: 14px; font-weight: 600; } .stamp span { font-size: 12.5px; white-space: nowrap; color: var(--muted); line-height: 1.45; } .stamp a { justify-self: start; margin-top: 2px; font-size: 12.5px; color: var(--gold-text); text-underline-offset: 3px; }
 .baskets { margin-top: 18px; } .brow { display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 10px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
 .bcard { flex: 0 0 min(260px, 78%); scroll-snap-align: start; display: grid; gap: 4px; align-content: start; padding: 14px; background: var(--surface); border: 1px solid var(--line-dark); border-top: 2px solid var(--gold); }
 .bcard b { font-size: 15px; font-weight: 700; } .bdesc { font-size: 13px; color: var(--muted); line-height: 1.4; } .bmeta { font-size: 12.5px; color: var(--muted); } .bprice { font-size: 16px; font-weight: 600; margin-top: 2px; } .bprice em { font-style: normal; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-left: 6px; padding: 1px 7px; background: #DDEFE5; color: #1F6B47; } .bcard .btn { margin-top: 8px; width: 100%; }
@@ -1465,7 +1465,12 @@ const sentCount = () => parseInt(LS.get('vm-sent') || '0', 10) || 0;
 const ordWord = n => n + ((n % 100 >= 11 && n % 100 <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'));
 const loyalDue = () => { const n = dlNow().loyal; return n > 0 && sentCount() % n === n - 1; };
 /* Ready-made baskets: staff save an order as a basket, customers add it in one tap. */
-const basketsNow = () => (Array.isArray(ledger.baskets) ? ledger.baskets : []).filter(b => b && b.n && b.l && Object.keys(b.l).length).map(b => ({ id: String(b.id || ''), n: String(b.n).slice(0, 40), d: String(b.d || '').slice(0, 90), l: b.l }));
+const DEFAULT_BASKETS = [
+  { id: 'd-plant', n: 'Plant-based week', d: 'Vegetarian: greens, veg, beans, oats and fruit.', l: { 'fv-064|0': 0.5, 'fv-007|0': 0.5, 'fv-071|0': 1, 'fv-069|0': 0.5, 'fv-010|0': 1, 'fv-048|0': 1, 'fv-046|0': 0.5, 'fv-043|0': 0.5, 'fv-019|0': 0.5, 'gr-383|0': 2, 'gr-195|0': 1, 'fv-083|0': 1, 'fv-105|0': 1, 'fv-079|0': 1 } },
+  { id: 'd-protein', n: 'Low-carb protein box', d: 'Meat, fish, cheese and low-carb veg, for keto and high-protein diets.', l: { 'mt-030|0': 1, 'gr-090|0': 0.5, 'mt-055|0': 0.5, 'mt-022|0': 0.5, 'gr-119|0': 0.5, 'gr-102|0': 1, 'fv-007|0': 1, 'fv-064|0': 0.5, 'fv-083|0': 1, 'fv-011|0': 0.5, 'fv-076|0': 0.5 } },
+  { id: 'd-family', n: 'Fresh family box', d: 'Fruit, vegetables and meat for everyday cooking.', l: { 'mt-029|0': 1, 'mt-023|0': 0.5, 'fv-010|0': 1, 'fv-048|0': 1, 'fv-071|0': 1, 'fv-069|0': 0.5, 'fv-053|0': 0.5, 'fv-007|0': 0.5, 'fv-105|0': 1, 'fv-082|0': 1, 'fv-088|0': 1, 'fv-109|0': 1 } }
+];
+const basketsNow = () => (Array.isArray(ledger.baskets) ? ledger.baskets : DEFAULT_BASKETS).filter(b => b && b.n && b.l && Object.keys(b.l).length).map(b => ({ id: String(b.id || ''), n: String(b.n).slice(0, 40), d: String(b.d || '').slice(0, 90), l: b.l }));
 function basketInfo(b) {
   const keys = Object.keys(b.l).filter(k => { const p = k.split('|'); const it = BY_ID[p[0]]; return it && !it.hidden && !it.so && it.o[+p[1]] && b.l[k] > 0; });
   const lines = {}; keys.forEach(k => { lines[k] = { q: b.l[k] }; });
@@ -1644,7 +1649,7 @@ function buildSupplierMsg(state, g, lang) {
 }
 
 /* ================= ledger (one editable list of every product) ================= */
-let ledger = { ov: {}, add: {}, cfg: {}, sups: {}, dl: null, baskets: [] };
+let ledger = { ov: {}, add: {}, cfg: {}, sups: {}, dl: null };
 const DEFAULT_CFG = { pct: 15, round: 500 };
 const cfgNow = () => Object.assign({}, DEFAULT_CFG, ledger.cfg || {});
 function reindex() {
@@ -1881,7 +1886,7 @@ function renderFilters() {
     const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
     if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span>Pick what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().join(' ') + '</p>' : '');
   }
-  const sb = document.getElementById('stampBar'); if (sb) { sb.hidden = !cmode; if (cmode) { const chk = ledger.cfg && ledger.cfg.chk; sb.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div><b>' + (chk ? 'Prices checked ' + esc(shortDate(chk)) : 'Fresh, frozen and pantry in Bali') + '</b><span>Fresh produce arrives the morning of your delivery.</span><a href="https://vurata.com" target="_blank" rel="noopener">From the team behind Vurata Bali Experiences</a></div>'; } }
+  const sb = document.getElementById('stampBar'); if (sb) { sb.hidden = !cmode; if (cmode) { const chk = ledger.cfg && ledger.cfg.chk; sb.innerHTML = '<div class="stamphead"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>' + (chk ? 'Prices checked ' + esc(shortDate(chk)) : 'Fresh, frozen and pantry in Bali') + '</b></div><span>Fresh produce arrives the morning of delivery.</span><a href="https://vurata.com" target="_blank" rel="noopener">From the team behind Vurata Bali Experiences</a>'; } }
   const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; SUP_ORDER.forEach(s => { counts[s] = CATALOG.filter(i => i.s === s && !i.hidden).length; });
   const chipHost = document.getElementById('supChips'); if (!chipHost.dataset.bound) { chipHost.dataset.bound = '1'; chipHost.addEventListener('scroll', chipsFade, { passive: true }); window.addEventListener('resize', chipsFade); }
@@ -3182,7 +3187,7 @@ async function confirmSent() {
 function setBarH() { const b = document.getElementById('bar'); if (b) document.documentElement.style.setProperty('--barh', b.offsetHeight + 'px'); }
 window.addEventListener('resize', setBarH); if (window.ResizeObserver) { try { new ResizeObserver(setBarH).observe(document.getElementById('bar')); } catch (e) {} }
 document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('input[data-act="qty"]')) setTimeout(() => { try { e.target.select(); } catch (er) {} }, 0); });
-function restoreUi() { setBarH(); if (cmode && INIT_LEDGER && (INIT_LEDGER.ov || INIT_LEDGER.add)) ledger = { ov: INIT_LEDGER.ov || {}, add: INIT_LEDGER.add || {}, cfg: INIT_LEDGER.cfg || {}, sups: INIT_LEDGER.sups || {}, dl: INIT_LEDGER.dl || null, baskets: INIT_LEDGER.baskets || [] }; if (!cmode) { try { const l = JSON.parse(LS.get('mumu-ledger') || 'null'); if (l && (l.ov || l.add)) ledger = { ov: l.ov || {}, add: l.add || {}, cfg: l.cfg || {}, sups: l.sups || {}, dl: l.dl || null }; } catch (e) {} } setMode(); applyLedger(); myWA = LS.get('mumu-mywa') || ''; bankTxt = LS.get('mumu-bank') || ''; try { cust = JSON.parse(LS.get('mumu-cust') || '[]') || []; } catch (e) { cust = []; } updateCBadge(); const t = LS.get('mumu-theme'); if (THEMES.includes(t)) theme = t; applyTheme(); try { const j = JSON.parse(LS.get('mumu-ui') || '{}'); if (j.lang) ui.lang = j.lang; } catch (e) {} }
+function restoreUi() { setBarH(); if (cmode && INIT_LEDGER && (INIT_LEDGER.ov || INIT_LEDGER.add)) ledger = { ov: INIT_LEDGER.ov || {}, add: INIT_LEDGER.add || {}, cfg: INIT_LEDGER.cfg || {}, sups: INIT_LEDGER.sups || {}, dl: INIT_LEDGER.dl || null, baskets: INIT_LEDGER.baskets }; if (!cmode) { try { const l = JSON.parse(LS.get('mumu-ledger') || 'null'); if (l && (l.ov || l.add)) ledger = { ov: l.ov || {}, add: l.add || {}, cfg: l.cfg || {}, sups: l.sups || {}, dl: l.dl || null }; } catch (e) {} } setMode(); applyLedger(); myWA = LS.get('mumu-mywa') || ''; bankTxt = LS.get('mumu-bank') || ''; try { cust = JSON.parse(LS.get('mumu-cust') || '[]') || []; } catch (e) { cust = []; } updateCBadge(); const t = LS.get('mumu-theme'); if (THEMES.includes(t)) theme = t; applyTheme(); try { const j = JSON.parse(LS.get('mumu-ui') || '{}'); if (j.lang) ui.lang = j.lang; } catch (e) {} }
 async function photoBlob(file) {
   const url = URL.createObjectURL(file);
   try {
@@ -3247,7 +3252,7 @@ async function boot() {
       const lr = dbc.doc(cmode ? 'catalog/ledger' : 'settings/ledger'); if (!cmode) ledgerRef = lr;
       lr.onSnapshot(sn => {
         ledgerExists = sn.exists; if (sn.metadata && sn.metadata.hasPendingWrites) return; ui.loading = false;
-        if (sn.exists) { const d = clone(sn.data()); ledger = { ov: d.ov || {}, add: d.add || {}, cfg: d.cfg || {}, sups: d.sups || {}, dl: d.dl || null, baskets: d.baskets || [] }; applyLedger(); if (!cmode) LS.set('mumu-ledger', JSON.stringify(ledger)); }
+        if (sn.exists) { const d = clone(sn.data()); ledger = { ov: d.ov || {}, add: d.add || {}, cfg: d.cfg || {}, sups: d.sups || {}, dl: d.dl || null, baskets: d.baskets }; applyLedger(); if (!cmode) LS.set('mumu-ledger', JSON.stringify(ledger)); }
         if (!cmode && !ui.pubSynced) { ui.pubSynced = true; pubRef.get().then(s => { pubLast = s.exists ? JSON.stringify(s.data()) : ''; schedulePublish(); }).catch(() => {}); }
         renderFilters(); renderPick(); renderAll(false);
         const a = document.activeElement; if (ui.view === 'ledger' && !(a && a.closest && a.closest('#v-ledger') && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) renderLedger();
