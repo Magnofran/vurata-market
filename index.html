@@ -1122,6 +1122,11 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .lbbody .lsec { margin-top: 0; padding-top: 18px; background: none; } .lbbody .lsec + .lsec { margin-top: 18px; background: var(--dotline); }
 @media (hover: hover) { .lblock:not(.open) .lbhead:hover .lbchev { color: var(--ink); } .lblock:not(.open):hover { border-color: var(--gold); } }
 @media (prefers-reduced-motion: reduce) { .lbchev, .lblock { transition: none; } }
+.brkgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 20px 32px; margin-top: 18px; }
+.brk h4 { margin: 0 0 4px; font-size: 11.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.brk ul { list-style: none; margin: 0; padding: 0; } .brk li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.brk li:first-child { border-top: 0; } .brk li span { min-width: 0; overflow-wrap: anywhere; } .brk li b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.brk li.neg, .brk li.neg b { color: var(--warn); font-weight: 600; }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -2242,7 +2247,11 @@ function overviewHtml() {
   const dayLabel = iso => { const t = isoOf(new Date()), tm = isoOf(new Date(Date.now() + 864e5)); return iso === t ? 'Today' : iso === tm ? 'Tomorrow' : new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); };
   const byDay = {}; let overdue = 0; const todayIso = isoOf(new Date()); cust.filter(c => c.status !== 'delivered' && c.need).forEach(c => { if (c.need < todayIso) overdue++; else byDay[c.need] = (byDay[c.need] || 0) + 1; });
   const dayTxt = (overdue ? '<b class="neg">Overdue ' + overdue + '</b>' : '') + Object.keys(byDay).sort().slice(0, 5).map(d => esc(dayLabel(d)) + ' <b>' + byDay[d] + '</b>').join(' &middot; ');
-  return nx + '<div class="card"><h3>Overview</h3><div class="stats"><div><b class="num">' + n('new') + '</b><span>New orders</span></div><div><b class="num">' + n('ordered') + '</b><span>With suppliers</span></div><div><b class="num">' + fmtRp(toCollect) + '</b><span>To collect</span></div></div>' + (dayTxt ? '<p class="hint" style="margin-top:12px">To deliver, by day: ' + (overdue && Object.keys(byDay).length ? dayTxt.replace('</b>', '</b> &middot; ') : dayTxt) + '</p>' : '') + (byTxt ? '<p class="hint" style="margin-top:6px">By area: ' + byTxt + '</p>' : '') + '</div>';
+  const dayRows = (overdue ? [['Overdue', overdue, true]] : []).concat(Object.keys(byDay).sort().slice(0, 6).map(d => [dayLabel(d), byDay[d], false]));
+  const areaRows = Object.keys(by).sort((a, b) => by[b] - by[a] || a.localeCompare(b)).map(z => [z, by[z], false]);
+  const brkCol = (title, rows) => rows.length ? '<div class="brk"><h4>' + title + '</h4><ul>' + rows.map(r => '<li' + (r[2] ? ' class="neg"' : '') + '><span>' + esc(r[0]) + '</span><b class="num">' + r[1] + '</b></li>').join('') + '</ul></div>' : '';
+  const brkHtml = (d, a) => (d.length || a.length) ? '<div class="brkgrid">' + brkCol('Deliveries by day', d) + brkCol('Deliveries by area', a) + '</div>' : '';
+  return nx + '<div class="card"><h3>Overview</h3><div class="stats"><div><b class="num">' + n('new') + '</b><span>New orders</span></div><div><b class="num">' + n('ordered') + '</b><span>With suppliers</span></div><div><b class="num">' + fmtRp(toCollect) + '</b><span>To collect</span></div></div>' + brkHtml(dayRows, areaRows) + '</div>';
 }
 function stopsList() {
   const zi = z => { const ix = dlNow().zones.findIndex(x => x.n === z); return ix < 0 ? 999 : ix; };
