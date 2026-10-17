@@ -909,6 +909,7 @@ html { scroll-padding-top: 96px; } .card[id] { scroll-margin-top: 96px; }
 
 /* ---- product photos ---- */
 .thumb.img, .fth.img { padding: 0; overflow: hidden; background: var(--surface-2); cursor: zoom-in; }
+.thumb.gen, .fth.gen { cursor: default; } .thumb.gen img, .fth.gen img { pointer-events: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 .thumb.img img, .fth.img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .fth.img { width: 100%; height: 96px; border-radius: 10px; } .fth.img img { border-radius: 10px; }
 .pbar { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--ink) 12%, transparent); overflow: hidden; margin-bottom: 4px; } .pbar i { display: block; height: 100%; background: var(--fv); border-radius: 99px; transition: width .3s ease; }
@@ -1701,7 +1702,8 @@ function itemPicked(it) { return it.o.some((o, i) => { const L = S.lines[keyOf(i
 const ltText = (o, q, key) => { const L = (key && S.lines[key]) || {}; const p = +L.p > 0 ? +L.p : (cmode ? o.sp : o.pr); return q > 0 && p ? '= ' + fmtRp(p * q) : ''; };
 const imgSrc = id => /^(data:image\/|photos\/)/.test(id) ? id : window.SB.imgUrl(id);
 const thumbIn = it => it.img ? '<img loading="lazy" decoding="async" alt="" data-e="' + esc(it.i || '') + '" data-zoomname="' + esc(it.n) + '" src="' + esc(imgSrc(it.img)) + '">' : (it.i || '');
-const thumbCls = it => it.img ? ' img' : '';
+/* Generated placeholder photos (photos/...) are not tappable. Real photos uploaded by staff still open full size. */
+const thumbCls = it => it.img ? (/^photos\//.test(it.img) ? ' img gen' : ' img') : '';
 function stepperHtml(it, o, i, q) {
   if (cmode && it.so) return '<span class="sopill">Sold out</span>';
   return '<div class="stepper"><button type="button" class="minus" data-act="dec" aria-label="Less ' + esc(it.n) + '">&minus;</button>' +
@@ -3115,7 +3117,7 @@ async function boot() {
 })();
 document.addEventListener('error', e => { const t = e.target; if (t && t.tagName === 'IMG' && t.dataset && 'e' in t.dataset) { const p = t.parentNode; if (p) { p.classList.remove('img'); p.textContent = t.dataset.e; } } }, true);
 document.addEventListener('click', e => {
-  const im = e.target.closest && e.target.closest('.thumb.img img, .fth.img img'); if (im) { const z = document.getElementById('zoomBox') || (() => { const d = document.createElement('div'); d.id = 'zoomBox'; d.setAttribute('role', 'dialog'); d.hidden = true; d.innerHTML = '<figure><img alt=""><figcaption></figcaption></figure>'; document.body.appendChild(d); d.addEventListener('click', () => { d.hidden = true; }); return d; })(); z.querySelector('img').src = im.src; z.querySelector('figcaption').textContent = im.dataset.zoomname || ''; z.hidden = false; return; }
+  const im = e.target.closest && e.target.closest('.thumb.img:not(.gen) img, .fth.img:not(.gen) img'); if (im) { const z = document.getElementById('zoomBox') || (() => { const d = document.createElement('div'); d.id = 'zoomBox'; d.setAttribute('role', 'dialog'); d.hidden = true; d.innerHTML = '<figure><img alt=""><figcaption></figcaption></figure>'; document.body.appendChild(d); d.addEventListener('click', () => { d.hidden = true; }); return d; })(); z.querySelector('img').src = im.src; z.querySelector('figcaption').textContent = im.dataset.zoomname || ''; z.hidden = false; return; }
 }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { const z = document.getElementById('zoomBox'); if (z) z.hidden = true; } });
 /* Freeze the page behind any open pop-up (photo zoom, order sheets) so it cannot be scrolled or swiped underneath. */
