@@ -1127,6 +1127,13 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .brk ul { list-style: none; margin: 0; padding: 0; } .brk li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
 .brk li:first-child { border-top: 0; } .brk li span { min-width: 0; overflow-wrap: anywhere; } .brk li b { font-weight: 600; font-variant-numeric: tabular-nums; }
 .brk li.neg, .brk li.neg b { color: var(--warn); font-weight: 600; }
+.codebox { margin: 10px 0 2px; font-size: 13.5px; } .codebox .linkbtn { min-height: 36px; }
+.codebox.ok, .codebox.warn { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface-2); border-left: 3px solid #2E7D5B; } .codebox.warn { border-left-color: var(--warn); }
+.coderow { display: flex; gap: 8px; } .coderow input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: .08em; } .codemsg { margin: 6px 0 0; color: var(--warn); }
+.num .was { color: var(--muted); font-weight: 400; margin-right: 4px; }
+.cdrow { margin: 0 0 12px; padding: 12px; border: 1px solid var(--line-dark); background: var(--surface); } .cdrow.off { opacity: .6; }
+.cdtop { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; } .cdtop > input[data-cd$="|c"] { flex: 1; min-width: 0; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.cdon { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; white-space: nowrap; }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -1422,8 +1429,14 @@ function needsCheck(it) { return !!(it.x && /confirm|not stated|blank|does not m
 
 
 const DL_STARTER = [['Tabanan town / Kediri', 20000], ['Tanah Lot / Kerambitan / Beraban', 25000], ['Jatiluwih / Penebel / Baturiti', 40000], ['Mengwi / Munggu / Abiansemal', 35000], ['Canggu / Berawa / Pererenan', 40000], ['Seminyak / Kerobokan / Umalas', 50000], ['Kuta / Legian', 60000], ['Denpasar / Sanur', 65000], ['Munduk / Pupuan / Belimbing', 70000], ['Jimbaran / Nusa Dua', 80000], ['Bedugul / Candikuning', 80000], ['Ubud', 85000], ['Uluwatu / Bingin', 95000], ['Gianyar / Sukawati / Tegalalang', 95000], ['Medewi / Negara / Jembrana', 100000], ['Klungkung / Semarapura / Padang Bai', 120000], ['Bangli / Kintamani', 130000], ['Singaraja / Lovina / Buleleng', 140000], ['Gilimanuk / Melaya', 150000], ['Candidasa / Amed / Karangasem', 170000], ['Seririt / Pemuteran / Menjangan', 190000]];
-const dlNow = () => { const d = ledger.dl || {}; return { free: +d.free > 0 ? +d.free : 0, min: +d.min > 0 ? +d.min : 0, cutoff: +d.cutoff > 0 && +d.cutoff < 24 ? +d.cutoff : 0, closed: Array.isArray(d.closed) ? d.closed.filter(x => x && /^\d{4}-\d{2}-\d{2}$/.test(x.d)) : [], zones: Array.isArray(d.zones) ? d.zones.filter(z => z && z.n) : [] }; };
-const dlSave = p => { const dl = dlNow(); saveLedger({ dl: Object.assign({ free: dl.free, min: dl.min, cutoff: dl.cutoff, closed: dl.closed, zones: dl.zones }, p) }); };
+const dlNow = () => { const d = ledger.dl || {}; return { free: +d.free > 0 ? +d.free : 0, min: +d.min > 0 ? +d.min : 0, cutoff: +d.cutoff > 0 && +d.cutoff < 24 ? +d.cutoff : 0, closed: Array.isArray(d.closed) ? d.closed.filter(x => x && /^\d{4}-\d{2}-\d{2}$/.test(x.d)) : [], zones: Array.isArray(d.zones) ? d.zones.filter(z => z && z.n) : [], codes: Array.isArray(d.codes) ? d.codes.filter(x => x && x.c).map(x => ({ c: String(x.c).toUpperCase().replace(/\s+/g, '').slice(0, 24), t: ['free', 'pct', 'off'].includes(x.t) ? x.t : 'free', v: +x.v > 0 ? +x.v : 0, min: +x.min > 0 ? +x.min : 0, until: /^\d{4}-\d{2}-\d{2}$/.test(x.until || '') ? x.until : '', on: x.on !== false })) : [] }; };
+const dlSave = p => { const dl = dlNow(); saveLedger({ dl: Object.assign({ free: dl.free, min: dl.min, cutoff: dl.cutoff, closed: dl.closed, zones: dl.zones, codes: dl.codes }, p) }); };
+/* Delivery codes: only ever change the delivery fee, never product prices. */
+const codeKey = raw => String(raw || '').toUpperCase().replace(/\s+/g, '').slice(0, 24);
+const codeFind = raw => { const k = codeKey(raw); return k ? (dlNow().codes.find(x => x.c === k) || null) : null; };
+const codeFee = (cd, f0) => cd.t === 'free' ? 0 : cd.t === 'pct' ? Math.max(0, Math.round(f0 * (1 - Math.min(100, cd.v) / 100) / 500) * 500) : Math.max(0, f0 - cd.v);
+const codeWhy = (raw, total) => { const cd = codeFind(raw); if (!cd || !cd.on) return "That code isn't valid."; if (cd.until && cd.until < isoOf(baliNow())) return 'That code has expired.'; if (cd.min && total < cd.min) return 'This code needs an order of at least ' + fmtRp(cd.min) + '.'; return ''; };
+const codeWhat = cd => cd.t === 'free' ? 'free delivery' : cd.t === 'pct' ? fmtQty(cd.v) + '% off delivery' : fmtRp(cd.v) + ' off delivery';
 const isoOf = d => { const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); };
 const isClosed = iso => dlNow().closed.some(x => x.d === iso);
 function nextOpen(iso) { const d = new Date(iso + 'T12:00:00'); for (let i = 0; i < 60 && isClosed(isoOf(d)); i++) d.setDate(d.getDate() + 1); return isoOf(d); }
@@ -1518,13 +1531,14 @@ function compute(state, mode) {
   const estLines = Object.values(groups).reduce((n, g) => n + g.est, 0);
   if (estLines && !cmode) warnings.push({ sid: '', text: estLines + ' line' + (estLines > 1 ? 's are' : ' is') + (cmode ? ' priced by weight. Your host weighs them when packing, so you pay the exact weight.' : ' sold by weight (fresh produce or meat). The final bill depends on what is weighed at delivery.') });
   const list = SUP_ORDER.filter(s => groups[s]).map(s => groups[s]);
-  let fee = 0, feeKnown = true, free = false, toFree = 0; const m = state.meta || {}; const zone = m.zone || '';
+  let fee = 0, feeKnown = true, free = false, toFree = 0, codeUsed = '', codeSaved = 0, codeText = ''; const m = state.meta || {}; const zone = m.zone || '';
   if (mode === 'sell' && (zone || +m.fee > 0)) {
     const dl = dlNow();
     if (m.fee !== undefined) { if (m.fee === null) feeKnown = false; else { fee = +m.fee || 0; if (fee === 0) free = true; } }
     else { const z = zone === '__other' ? null : dl.zones.find(x => x.n === zone); if (!z || z.fee == null) feeKnown = false; else { fee = z.fee; if (dl.free > 0 && total >= dl.free) { fee = 0; free = true; } else if (dl.free > 0 && fee > 0) toFree = dl.free - total; } }
+    if (feeKnown && !free && fee > 0 && m.fee === undefined && m.dcode && !codeWhy(m.dcode, total)) { const cd = codeFind(m.dcode); const nf = codeFee(cd, fee); codeSaved = fee - nf; fee = nf; codeUsed = cd.c; codeText = codeWhat(cd); toFree = 0; if (fee === 0) free = true; }
   }
-  return { groups: list, total, unpriced, w, v, noMeasure, kgQty, unitQty, count, warnings, out, fee, feeKnown, free, toFree, zone, grand: total + fee };
+  return { groups: list, total, unpriced, w, v, noMeasure, kgQty, unitQty, count, warnings, out, fee, feeKnown, free, toFree, zone, codeUsed, codeSaved, codeText, grand: total + fee };
 }
 function lineText(ln) {
   const unit = UNIT_EN[ln.o.u] || ln.o.u;
@@ -1907,7 +1921,7 @@ function renderOrder(comp) {
   }).join('');
   const measAll = fmtMeasure(comp.w, comp.v);
   const totals = '<div class="card"><h3>Total</h3>' + (cmode ? [] : comp.groups).map(g => '<div class="sumrow band sup-' + g.sid + '"><span class="sw">' + SUPS[g.sid].name + ' <span class="hint">(' + g.lines.length + ')</span></span><span class="num">' + fmtRp(g.subtotal) + '</span></div>').join('') +
-    (hasDel(comp) ? '<div class="sumrow"><span>Delivery' + (comp.zone ? ' <span class="hint">(' + esc(zoneLabel(comp.zone)) + ')</span>' : '') + '</span><span class="num">' + delLine(comp) + '</span></div>' : '') + freeNudge(comp) + '<div class="grand"><span>' + (cmode ? 'Total' : 'Estimated total') + '</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' +
+    (hasDel(comp) ? '<div class="sumrow"><span>Delivery' + (comp.zone ? ' <span class="hint">(' + esc(zoneLabel(comp.zone)) + ')</span>' : '') + '</span><span class="num">' + (comp.codeSaved > 0 ? '<s class="was">' + fmtRp(comp.fee + comp.codeSaved) + '</s> ' : '') + delLine(comp) + '</span></div>' : '') + freeNudge(comp) + codeBoxHtml(comp) + '<div class="grand"><span>' + (cmode ? 'Total' : 'Estimated total') + '</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' +
 
     '<div class="actions full" style="margin-bottom:10px"><button type="button" class="btn ghost" data-act="savedraft"' + (canWrite ? '' : ' disabled') + '>' + (S.meta.draftId && hist.some(x => x.id === S.meta.draftId) ? 'Update saved order' : 'Save for later') + '</button></div>' +
     '<div class="actions tri"><button class="btn" ' + (cmode ? 'data-act="tosend"' : 'data-view="share"') + '>' + (cmode ? 'Send order' : 'Share and receipt') + '</button><button class="btn ghost" data-view="pick">Add items</button><button class="btn ghost" data-act="clearall"' + (canWrite ? '' : ' disabled') + '>Clear all</button></div>' +
@@ -1985,7 +1999,7 @@ function buildPdf(comp) {
     y += 6;
   });
   need(34); doc.setDrawColor(22, 32, 26); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 8;
-  if (hasDel(comp)) { doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(22, 32, 26); txt('Delivery' + (comp.zone ? ' (' + clean(zoneLabel(comp.zone)) + ')' : ''), M, y); txt(delLine(comp), W - M, y, { align: 'right' }); y += 7; }
+  if (hasDel(comp)) { doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(22, 32, 26); txt('Delivery' + (comp.zone ? ' (' + clean(zoneLabel(comp.zone)) + ')' : '') + (comp.codeUsed ? ' - code ' + clean(comp.codeUsed) : ''), M, y); txt(delLine(comp), W - M, y, { align: 'right' }); y += 7; }
   doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(22, 32, 26); txt(cmode ? 'Total' : 'Estimated total', M, y); txt(fmtRp(comp.grand), W - M, y, { align: 'right' }); y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90, 100, 94);
   const meas = fmtMeasure(comp.w, comp.v);
@@ -2238,6 +2252,19 @@ function nextStep() {
   if (priceStale()) { const a = priceAge(); return { t: a === null ? 'Check your prices, then tap "I checked today" in the Ledger so customers can see they are up to date.' : 'Prices were last checked ' + a + ' days ago. Give them a quick check, then tap "I checked today".', b: 'Open the Ledger', act: 'goled' }; }
   return { t: 'All caught up. Nothing waiting on you.', b: '' };
 }
+/* Customer side: a quiet "Have a code?" under the delivery line. */
+function codeBoxHtml(comp) {
+  if (!cmode) return ''; const dl = dlNow(); const have = S.meta.dcode || '';
+  if (!dl.codes.some(x => x.on) && !have) return ''; if (!comp.zone || !comp.feeKnown) return '';
+  if (have) {
+    if (comp.codeUsed) return '<div class="codebox ok"><span>&#10003; Code <b>' + esc(comp.codeUsed) + '</b> applied: ' + esc(comp.codeText) + '</span><button type="button" class="linkbtn" data-act="codeclear">Remove</button></div>';
+    const why = codeWhy(have, comp.total) || (comp.fee === 0 ? 'Delivery is already free for your order.' : '');
+    return '<div class="codebox warn"><span>Code <b>' + esc(have) + '</b>: ' + esc(why || 'not applied.') + '</span><button type="button" class="linkbtn" data-act="codeclear">Remove</button></div>';
+  }
+  if (comp.fee === 0) return '';
+  if (!ui.codeOpen) return '<div class="codebox"><button type="button" class="linkbtn" data-act="codeopen">Have a code?</button></div>';
+  return '<div class="codebox open"><label class="sr" for="m-code">Delivery code</label><div class="coderow"><input id="m-code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Enter your code"><button type="button" class="btn sm" data-act="codeapply">Apply</button></div>' + (ui.codeMsg ? '<p class="hint codemsg">' + esc(ui.codeMsg) + '</p>' : '') + '</div>';
+}
 function overviewHtml() {
   const ns = nextStep();
   const nx = '<div class="nextstep"><span><i>Next</i>' + esc(ns.t) + '</span>' + (ns.b ? '<button type="button" class="btn sm" ' + (ns.go ? 'data-act="goto" data-t="' + ns.go + '"' : 'data-act="' + ns.act + '"') + '>' + ns.b + '</button>' : '') + '</div><button type="button" class="btn pastebtn" data-act="pasteorder"' + (canWrite ? '' : ' disabled') + '>Paste order from clipboard</button>';
@@ -2342,7 +2369,7 @@ const unb64u = t => { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.leng
 const digitsOf = p => { let d = String(p || '').replace(/\D/g, ''); if (d.indexOf('0') === 0) d = '62' + d.slice(1); return d; };
 function makeCode(state) {
   const l = []; Object.keys(state.lines).forEach(k => { const L = state.lines[k]; if (L && L.q > 0 && L.s !== 'x' && BY_ID[k.split('|')[0]]) l.push([k, L.q, L.n || '']); });
-  const m = state.meta; const cp = compute(state, 'sell'); const dz = cp.zone ? { z: m.zone, f: cp.feeKnown ? cp.fee : null } : {}; return 'VM1:' + b64u(JSON.stringify(Object.assign({ v: 1, t: m.title, n: m.who, p: m.phone || '', a: m.addr, y: m.pay, d: m.need, x: m.notes, s: m.slot || '', l }, dz, m.pin ? { pn: m.pin } : {})));
+  const m = state.meta; const cp = compute(state, 'sell'); const dz = cp.zone ? { z: m.zone, f: cp.feeKnown ? cp.fee : null } : {}; return 'VM1:' + b64u(JSON.stringify(Object.assign({ v: 1, t: m.title, n: m.who, p: m.phone || '', a: m.addr, y: m.pay, d: m.need, x: m.notes, s: m.slot || '', l }, dz, m.pin ? { pn: m.pin } : {}, m.dcode ? { dc: codeKey(m.dcode) } : {})));
 }
 function decodeCode(code) {
   try {
@@ -2350,7 +2377,7 @@ function decodeCode(code) {
     const lines = {}; j.l.slice(0, 300).forEach(a => { if (!Array.isArray(a)) return; const k = String(a[0]), q = +a[1]; const id = k.split('|')[0], ix = +k.split('|')[1]; if (BY_ID[id] && BY_ID[id].o[ix] && q > 0 && q < 1000) lines[k] = { q: Math.round(q * 100) / 100, n: String(a[2] || '').slice(0, 120) }; });
     if (!Object.keys(lines).length) return null; const c = (x, n) => String(x || '').slice(0, n);
     const rec = { name: c(j.n, 60), phone: c(j.p, 24), addr: c(j.a, 200), pay: c(j.y, 60), need: c(j.d, 10), notes: c(j.x, 300), title: c(j.t, 60) || 'Order', lines, zone: c(j.z, 60), slot: c(j.s, 30) }; if (/^-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$/.test(String(j.pn || ''))) rec.pin = String(j.pn);
-    if (j.z) rec.fee = j.f === null || j.f === undefined ? null : Math.max(0, Math.min(1e7, Math.round(+j.f) || 0));
+    if (j.dc) rec.dcode = codeKey(j.dc); if (j.z) rec.fee = j.f === null || j.f === undefined ? null : Math.max(0, Math.min(1e7, Math.round(+j.f) || 0));
     return rec;
   } catch (e) { return null; }
 }
@@ -2359,7 +2386,7 @@ function customerMessage(state, comp) {
   out.push('Name: ' + (m.who || '(please add your name)') + (m.phone ? '  |  WhatsApp: ' + m.phone : ''));
   if (m.pin) out.push('Pin: https://maps.google.com/?q=' + m.pin); if (m.need) out.push('Needed by: ' + fmtDate(m.need)); if (m.slot) out.push('Delivery time: ' + m.slot); if (m.zone) out.push('Area: ' + zoneLabel(m.zone)); if (m.addr) out.push('Deliver to: ' + m.addr); if (m.pay) out.push('Payment: ' + m.pay); if (m.notes) out.push('Notes: ' + m.notes);
   comp.groups.forEach(g => { out.push('', '*' + SUPS[g.sid].name.toUpperCase() + '*'); g.lines.forEach((ln, i) => { out.push((i + 1) + '. ' + lineText(ln)); if (ln.note) out.push('   Note: ' + ln.note); }); out.push('Subtotal: ' + fmtRp(g.subtotal)); });
-  if (hasDel(comp)) out.push('', 'Delivery: ' + delLine(comp));
+  if (hasDel(comp)) out.push('', 'Delivery: ' + delLine(comp) + (comp.codeUsed ? ' (code ' + comp.codeUsed + ': ' + comp.codeText + ')' : (state.meta.dcode ? ' (code ' + state.meta.dcode + ' entered)' : '')));
   out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + ' (fresh items are weighed when packed, so you pay the exact weight)', '', 'Order code (your host pastes this into the app):', makeCode(state));
   return out.join('\n');
 }
@@ -2390,11 +2417,11 @@ function renderShareC(comp) {
     '<div class="card"><h3>Done with this order?</h3><p class="hint">Save it to history and start a fresh one. You can order the same thing again later and change it first.</p><div class="actions full"><button class="btn" data-act="archive">Save to history and start new</button></div></div>' + histHtml();
 }
 function updateCBadge() { const n = cust.filter(c => c.status === 'new').length; const b = document.getElementById('cBadge'); if (b) { b.textContent = n; b.dataset.n = n; } }
-function custState(c) { return { meta: { title: c.title, who: c.name, phone: c.phone, addr: c.addr, pay: c.pay, need: c.need, notes: c.notes, zone: c.zone || '', slot: c.slot || '', pin: c.pin || '', fee: c.fee }, lines: c.lines || {}, sup: {} }; }
+function custState(c) { return { meta: { title: c.title, who: c.name, phone: c.phone, addr: c.addr, pay: c.pay, need: c.need, notes: c.notes, zone: c.zone || '', slot: c.slot || '', pin: c.pin || '', fee: c.fee, dcode: c.dcode || '' }, lines: c.lines || {}, sup: {} }; }
 function billText(c, comp) {
   const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const out = ['Hi ' + (c.name || 'there') + ', here is your ' + (fin ? 'final bill' : 'order') + ' #' + orderNo(c) + (c.title ? ' (' + c.title + ')' : '') + ':'];
   comp.groups.forEach(g => { out.push('', '*' + SUPS[g.sid].name + '*'); g.lines.forEach(ln => out.push('- ' + lineText(ln))); out.push('Subtotal: ' + fmtRp(g.subtotal)); });
-  if (hasDel(comp)) out.push('', 'Delivery' + (c.zone && c.zone !== '__other' ? ' (' + c.zone + ')' : '') + ': ' + delLine(comp));
+  if (hasDel(comp)) out.push('', 'Delivery' + (c.zone && c.zone !== '__other' ? ' (' + c.zone + ')' : '') + ': ' + delLine(comp) + (c.dcode ? ' (code ' + c.dcode + ')' : ''));
   out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''), fin ? 'Items sold by weight use the packed weights shown above.' : 'Items sold by weight are confirmed after weighing at delivery.');
   if (c.need) out.push('Needed by: ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : '')); if (c.addr) out.push('Deliver to: ' + c.addr);
   if (/deposit/i.test(c.pay || '')) { out.push('Payment: deposit by bank transfer.'); if (bankTxt) out.push(bankTxt); } else if (c.pay) { out.push('Payment: ' + c.pay); }
@@ -2687,6 +2714,11 @@ function renderLedger() {
     '<div class="actions duo"><button class="btn" data-act="lsave">Add product</button><button class="btn ghost" data-act="ladd">Cancel</button></div></div>' : '';
   const photoCardHtml = photoCard();
   const dlc = dlNow(); const dayRow = (x, i) => '<div class="dayrow"><input type="date" data-dd="' + i + '|d" value="' + esc(x.d) + '" aria-label="Date"' + (canWrite ? '' : ' disabled') + '><input data-dd="' + i + '|n" value="' + esc(x.n || '') + '" placeholder="Reason, e.g. Nyepi" aria-label="Reason"' + (canWrite ? '' : ' disabled') + '><button type="button" class="x" data-act="ddel" data-i="' + i + '" aria-label="Remove day off"' + (canWrite ? '' : ' disabled') + '>&times;</button></div>'; const dzRow = (z, i) => '<div class="dzrow"><input data-dz="' + i + '|n" value="' + esc(z.n) + '" placeholder="Area" aria-label="Area name"' + (canWrite ? '' : ' disabled') + '><span class="lpr">Rp <input data-dz="' + i + '|f" inputmode="numeric" value="' + (z.fee == null ? '' : z.fee) + '" placeholder="ask" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span><button type="button" class="x" data-act="dzdel" data-i="' + i + '" aria-label="Remove area"' + (canWrite ? '' : ' disabled') + '>&times;</button></div>';
+  const cdRow = (x, i) => { const dis = canWrite ? '' : ' disabled'; return '<div class="cdrow' + (x.on ? '' : ' off') + '"><div class="cdtop"><input data-cd="' + i + '|c" value="' + esc(x.c) + '" placeholder="CODE, e.g. WELCOME" maxlength="24" autocapitalize="characters" aria-label="Code"' + dis + '><label class="cdon"><input type="checkbox" data-cd="' + i + '|on"' + (x.on ? ' checked' : '') + dis + '> On</label><button type="button" class="x" data-act="cddel" data-i="' + i + '" aria-label="Remove code"' + dis + '>&times;</button></div>' +
+    '<div class="grid2"><div class="field"><label for="cd-t' + i + '">What it does</label><select id="cd-t' + i + '" data-cd="' + i + '|t"' + dis + '><option value="free"' + (x.t === 'free' ? ' selected' : '') + '>Free delivery</option><option value="pct"' + (x.t === 'pct' ? ' selected' : '') + '>% off the delivery fee</option><option value="off"' + (x.t === 'off' ? ' selected' : '') + '>Rp off the delivery fee</option></select></div>' +
+    (x.t === 'free' ? '' : '<div class="field"><label for="cd-v' + i + '">' + (x.t === 'pct' ? 'Percent off' : 'Rp off') + '</label><input id="cd-v' + i + '" inputmode="numeric" data-cd="' + i + '|v" value="' + (x.v || '') + '" placeholder="' + (x.t === 'pct' ? 'e.g. 50' : 'e.g. 20.000') + '"' + dis + '></div>') +
+    '<div class="field"><label for="cd-m' + i + '">Smallest order (Rp)</label><input id="cd-m' + i + '" inputmode="numeric" data-cd="' + i + '|min" value="' + (x.min || '') + '" placeholder="Optional"' + dis + '></div>' +
+    '<div class="field"><label for="cd-u' + i + '">Valid until</label><input id="cd-u' + i + '" type="date" data-cd="' + i + '|until" value="' + esc(x.until || '') + '"' + dis + '></div></div></div>'; };
   const dlOpen = cardOpen('dlCard'); const dlSum = dlc.zones.length + ' area' + (dlc.zones.length === 1 ? '' : 's') + (dlc.min ? ' - minimum ' + fmtRp(dlc.min) : '') + (dlc.free ? ' - free over ' + fmtRp(dlc.free) : '') + (dlc.cutoff ? ' - cutoff ' + (dlc.cutoff > 12 ? dlc.cutoff - 12 : dlc.cutoff) + ' pm' : '');
   const dlCardOpen = '<div class="card" id="dlCard">' + cardHead('dlCard', 'Delivery', true) + '<p class="hint" style="margin-bottom:12px">Customers pick their area and see the delivery fee straight away, before they send. Leave a fee empty to confirm it by message. With no areas listed, no delivery fee is shown.</p>' +
     '<section class="lsec"><div class="lsec-h"><b>Order limits</b><span>Smallest order and free delivery</span></div>' +
@@ -2697,7 +2729,10 @@ function renderLedger() {
     '<section class="lsec"><div class="lsec-h"><b>Delivery areas</b><span>Where we deliver and the fee for each area</span></div>' +
     (dlc.zones.length || ui.dzNew ? '<div class="dzhead"><span>Area</span><span>Fee</span></div>' : '') + dlc.zones.slice(0, (ui.dzAll || ui.dzNew) ? 9999 : 5).map(dzRow).join('') + (dlc.zones.length > 5 && !ui.dzNew ? '<button type="button" class="linkbtn dzmore" data-act="dzall" aria-expanded="' + !!ui.dzAll + '">' + (ui.dzAll ? 'Show fewer areas' : 'Show ' + (dlc.zones.length - 5) + ' more areas') + '</button>' : '') + (ui.dzNew ? dzRow({ n: '', fee: null }, dlc.zones.length) : '') +
     '<div class="actions duo"><button type="button" class="btn ghost" data-act="dzadd"' + (canWrite ? '' : ' disabled') + '>Add an area</button>' + (DL_STARTER.some(x => !dlc.zones.some(z => z.n === x[0])) ? '<button type="button" class="btn" data-act="dzstarter"' + (canWrite ? '' : ' disabled') + '>' + (dlc.zones.length ? 'Add the rest of Bali' : 'Use Bali starter areas') + '</button>' : '') + '</div>' +
-    '<p class="hint" style="margin-top:8px">The starter list covers the whole island, with fees counted from the Tabanan cafe, nearest first. The fees are only a guess, so set yours. Add the rest of Bali keeps everything you already changed.</p></section>' + '</div>';
+    '<p class="hint" style="margin-top:8px">The starter list covers the whole island, with fees counted from the Tabanan cafe, nearest first. The fees are only a guess, so set yours. Add the rest of Bali keeps everything you already changed.</p></section>' +
+    '<section class="lsec"><div class="lsec-h"><b>Delivery codes</b><span>Offer free or cheaper delivery with a code. Product prices never change.</span></div>' + dlc.codes.map(cdRow).join('') + (ui.cdNew ? cdRow({ c: '', t: 'free', v: 0, min: 0, until: '', on: true }, dlc.codes.length) : '') +
+    '<div class="actions"><button type="button" class="btn ghost" data-act="cdadd"' + (canWrite ? '' : ' disabled') + '>Add a code</button></div>' +
+    '<p class="hint" style="margin-top:8px">Customers enter the code in their order, under the delivery fee. The code is added to the WhatsApp message so you can confirm it. Anyone with technical skills can read the codes, so use them for campaigns such as a flyer or a partner, not as secret vouchers.</p></section>' + '</div>';
   host.innerHTML = '<div class="card" id="ledCard"><div class="msg-head"><h3>Ledger</h3><span class="hint num">' + CATALOG.filter(i => !i.hidden).length + ' products</span></div>' +
     '<p class="hint lsub">All products with the supplier price, the sell price and your profit.</p>' + pubHtml() +
     lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%' + ' - checked ' + (ledger.cfg && ledger.cfg.chk ? shortDate(ledger.cfg.chk) : 'never'))) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Price check</b><span>Are the supplier prices still correct?</span></div>' +
@@ -2725,7 +2760,16 @@ function saveDlFromDom() {
   const total = Math.max(old.zones.length, ...Object.keys(rows).map(k => +k + 1), 0); const zones = [];
   for (let i = 0; i < total; i++) { const z = rows[i] !== undefined ? rows[i] : old.zones[i]; if (z && z.n) zones.push(z); }
   document.querySelectorAll('.dayrow').forEach(r => { const d = r.querySelector('[data-dd$="|d"]').value; const n = r.querySelector('[data-dd$="|n"]').value.trim().slice(0, 40); if (/^\d{4}-\d{2}-\d{2}$/.test(d)) closed.push({ d, n }); });
-  closed.sort((x, y) => x.d.localeCompare(y.d)); ui.dzNew = false; ui.ddNew = false; saveLedger({ dl: { free: num('dl-free'), min: num('dl-min'), cutoff: num('dl-cut'), closed, zones } }); renderLedger();
+  closed.sort((x, y) => x.d.localeCompare(y.d)); ui.dzNew = false; ui.ddNew = false; saveLedger({ dl: { free: num('dl-free'), min: num('dl-min'), cutoff: num('dl-cut'), closed, zones, codes: old.codes } }); renderLedger();
+}
+function saveCodesFromDom() {
+  if (!canWrite) return; const rows = {};
+  document.querySelectorAll('.cdrow').forEach(r => { const g = f => r.querySelector('[data-cd$="|' + f + '"]'); const c = g('c'); if (!c) return; const i = parseInt(c.dataset.cd, 10); const num = f => { const el = g(f); return el ? (parseInt(String(el.value).replace(/\D/g, ''), 10) || 0) : 0; }; const t = g('t').value;
+    rows[i] = { c: codeKey(c.value), t, v: t === 'pct' ? Math.min(100, num('v')) : t === 'off' ? num('v') : 0, min: num('min'), until: g('until').value || '', on: g('on').checked }; });
+  const old = dlNow().codes; const n = Math.max(old.length, ...Object.keys(rows).map(k => +k + 1), 0); const codes = [];
+  for (let i = 0; i < n; i++) { const x = rows[i] !== undefined ? rows[i] : old[i]; if (x && x.c) codes.push(x); }
+  const seen = {}; const dup = codes.find(x => seen[x.c] ? true : (seen[x.c] = 1, false)); if (dup) { toast('Two codes are the same: ' + dup.c + '. Give each its own name.'); return; }
+  ui.cdNew = false; dlSave({ codes }); renderLedger();
 }
 function bulkPrice(sid, pct) {
   if (!canWrite) { toast('This copy is view-only.'); return; }
@@ -2816,6 +2860,8 @@ document.addEventListener('click', e => {
   else if (act === 'imptog') { ui.impOpen = !(ui.impOpen === undefined ? !cust.length : ui.impOpen); renderCustomers(); }
   else if (act === 'goto') { if ((b.dataset.t === '#salesCard' || b.dataset.t === '#inviteCard') && !cardOpen(b.dataset.t.slice(1))) { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen[b.dataset.t.slice(1)] = true; renderCustomers(); } if (b.dataset.t === '#importCard' && (ui.impOpen === undefined ? !cust.length : ui.impOpen) === false) { ui.impOpen = true; renderCustomers(); } const el = document.querySelector(b.dataset.t); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); if (/^(INPUT|TEXTAREA)$/.test(el.tagName)) setTimeout(() => el.focus({ preventScroll: true }), 400); } }
   else if (act === 'setdl') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen.dlCard = true; showView('ledger'); const el = document.getElementById('dlCard'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+  else if (act === 'cdadd') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen.dlCard = true; ui.cdNew = true; renderLedger(); const rs = document.querySelectorAll('.cdrow'); const last = rs[rs.length - 1]; if (last) { const f = last.querySelector('input'); if (f) { f.scrollIntoView({ block: 'center' }); f.focus(); } } }
+  else if (act === 'cddel') { const dl = dlNow(); dl.codes.splice(+b.dataset.i, 1); dlSave({ codes: dl.codes }); renderLedger(); toast('Code removed.'); }
   else if (act === 'dzadd') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen.dlCard = true; ui.dzNew = true; renderLedger(); const rs = document.querySelectorAll('.dzrow'); const last = rs[rs.length - 1]; if (last) { last.scrollIntoView({ block: 'center' }); last.querySelector('input').focus(); } }
   else if (act === 'dzdel') { const dl = dlNow(); dl.zones.splice(+b.dataset.i, 1); dlSave({ zones: dl.zones }); renderLedger(); }
   else if (act === 'dzstarter') { const dl = dlNow(); const have = dl.zones.map(z => z.n); const add = DL_STARTER.filter(x => !have.includes(x[0])).map(x => ({ n: x[0], fee: x[1] })); dlSave({ zones: dl.zones.concat(add) }); renderLedger(); toast(add.length + ' area' + (add.length > 1 ? 's' : '') + ' added. Set the fees to yours.'); }
@@ -2855,6 +2901,15 @@ document.addEventListener('click', e => {
   else if (act === 'csvsales') { exportSalesCsv(); }
   else if (act === 'csvledger') { exportLedgerCsv(); }
   else if (act === 'resetprices') { askResetPrices(document.getElementById('bk-sup').value); }
+  else if (act === 'codeopen') { ui.codeOpen = true; ui.codeMsg = ''; renderOrder(compute(S)); const ci = document.getElementById('m-code'); if (ci) ci.focus(); }
+  else if (act === 'codeclear') { patch({ meta: { dcode: '' } }); ui.codeMsg = ''; ui.codeOpen = false; renderOrder(compute(S)); chrome(compute(S)); }
+  else if (act === 'codeapply') {
+    const ci = document.getElementById('m-code'); const v = codeKey(ci ? ci.value : ''); if (!v) { ui.codeMsg = 'Enter your code first.'; renderOrder(compute(S)); return; }
+    const why = codeWhy(v, compute(S).total); if (why) { ui.codeMsg = why; renderOrder(compute(S)); const c2 = document.getElementById('m-code'); if (c2) { c2.value = v; c2.focus(); } return; }
+    patch({ meta: { dcode: v } }); const c2 = compute(S);
+    if (!c2.codeUsed) { patch({ meta: { dcode: '' } }); ui.codeMsg = 'Delivery is already free for your order.'; renderOrder(compute(S)); return; }
+    ui.codeMsg = ''; ui.codeOpen = false; renderOrder(c2); chrome(c2); toast('Code ' + v + ' applied: ' + c2.codeText + '.');
+  }
   else if (act === 'applymk') { const inp = document.getElementById('mk-pct'); const v = Math.max(0, Math.min(300, parseFloat(String(inp.value).replace(',', '.')) || 0)); saveLedger({ cfg: { pct: v } }); renderLedger(); toast('Markup set to ' + fmtQty(v) + '%. Live for customers in a moment.'); }
   else if (act === 'bulk') { bulkPrice(document.getElementById('bk-sup').value, parseFloat(String(document.getElementById('bk-pct').value).replace(',', '.'))); }
   else if (act === 'import') { importCodes(document.getElementById('importTxt').value); }
@@ -2882,6 +2937,7 @@ document.addEventListener('change', e => {
   else if (t.id === 'la-sup') { const nb = document.getElementById('la-newsup'); if (nb) { nb.hidden = t.value !== '__new'; if (!nb.hidden) { const i = document.getElementById('la-sname'); if (i) i.focus(); } } }
   else if (t.id === 'dl-free' || t.id === 'dl-min' || t.id === 'dl-cut' || t.matches('input[data-dz], input[data-dd]')) { saveDlFromDom(); }
   else if (t.id === 'mx-kg') { const v = Math.max(1, Math.min(200, parseFloat(String(t.value).replace(',', '.')) || 10)); saveLedger({ cfg: { mx: v } }); renderLedger(); toast('Limit set to ' + fmtQty(v) + ' kg per item.'); }
+  else if (t.matches('[data-cd]')) { saveCodesFromDom(); if (t.dataset.cd.endsWith('|c') && codeKey(t.value)) toast('Code ' + codeKey(t.value) + ' saved.'); }
   else if (t.id === 'mk-round') { saveLedger({ cfg: { round: +t.value } }); renderLedger(); toast('Prices now round up to Rp ' + t.value + '. Live for customers in a moment.'); }
   else if (t.matches('input[data-ld]')) { const k = t.dataset.ld.split('|'); const val = t.value.trim(); if ((k[1] === 'n' || k[1] === 'c') && !val) { toast('That field cannot be empty.'); renderLedgerList(); return; } saveLedger({ ov: { [k[0]]: { [k[1]]: val } } }); }
   else if (t.id === 'importFile') { importFiles(t.files); t.value = ''; }
@@ -2978,7 +3034,7 @@ document.addEventListener('input', e => {
   let n = 0, i = 0; for (; i < t.value.length && n < digitsBefore; i++) { if (/\d/.test(t.value[i])) n++; } try { t.setSelectionRange(i, i); } catch (x) {}
 }, true);
 document.addEventListener('focusin', e => { const t = e.target; if (t.matches && t.matches('input[data-act="qty"]')) setTimeout(() => { try { t.select(); } catch (x) {} }, 0); });
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'q') e.target.blur(); if (e.key === 'Enter' && e.target && e.target.id === 'mk-pct') { const b = document.getElementById('mk-apply'); if (b && !b.disabled) b.click(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'q') e.target.blur(); if (e.key === 'Enter' && e.target && e.target.id === 'm-code') { const b = document.querySelector('[data-act="codeapply"]'); if (b) b.click(); } if (e.key === 'Enter' && e.target && e.target.id === 'mk-pct') { const b = document.getElementById('mk-apply'); if (b && !b.disabled) b.click(); } });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.sentPending && cmode) { ui.sentPending = false; showSentBox(); } });
 document.addEventListener('paste', e => { const t = e.target; if (!t || t.id !== 'importTxt' || !canWrite) return; const txt = ((e.clipboardData || window.clipboardData).getData('text')) || ''; if (/(?:VM1|MUMU1):/.test(txt)) { e.preventDefault(); importCodes(txt); } });
 document.addEventListener('click', e => { if (e.target.closest('#staffLink')) { e.preventDefault(); location.hash = '#staff'; location.reload(); return; } if (e.target.closest('#outBtn')) { window.SB.signOut().then(() => { location.hash = ''; location.reload(); }); return; } if (e.target.closest('#themeBtn')) { theme = effectiveTheme() === 'dark' ? 'light' : 'dark'; LS.set('mumu-theme', theme); applyTheme(); } });
