@@ -1178,6 +1178,13 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .bsresl { display: grid; margin: -4px 0 4px; border: 1px solid var(--line); background: var(--surface-2); } .bsres { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--line); } .bsres:first-child { border-top: 0; }
 .bsfoot { display: grid; gap: 8px; } .bsfoot > .btn { width: 100%; min-height: 44px; }
 .price.line .p100 { flex: 1 0 100%; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: -2px; }
+.dethide { min-height: 40px; padding: 0 16px; background: transparent; border: 1px solid var(--line-dark); color: var(--ink); font-weight: 600; font-size: 13.5px; cursor: pointer; }
+.dettogbig { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 54px; margin-top: 14px; padding: 0 16px; background: var(--surface); color: var(--ink); border: 1.5px solid var(--gold); font-size: 15px; font-weight: 700; letter-spacing: .01em; cursor: pointer; }
+.dettogbig .lbchev { width: 22px; height: 22px; color: var(--gold-text); }
+.dettogbig.pulse { animation: detpulse 1.9s ease-out infinite; }
+@keyframes detpulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 55%, transparent); } 70% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--gold) 0%, transparent); } 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 0%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .dettogbig.pulse { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 35%, transparent); } }
+@media (hover: hover) { .dettogbig:hover, .dethide:hover { border-color: var(--ink); } }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -1980,7 +1987,7 @@ function chrome(comp) {
 function renderOrder(comp) {
   const host = document.getElementById('orderBody'); const m = S.meta; const ro = canWrite ? '' : ' disabled';
   const detOpen = !cmode || ui.detOpen !== false;
-  const meta = '<div class="card detcard' + (detOpen ? '' : ' shut') + '"><div class="msg-head"><h3>Order details' + (cmode ? ' <span class="reqnote"><i class="req">*</i> required</span>' : '') + '</h3>' + (cmode ? '<button type="button" class="linkbtn" data-act="dettog" aria-expanded="' + detOpen + '">' + (detOpen ? 'Hide' : 'Show') + '</button>' : '') + '</div>' + (cmode ? orderProgHtml() : '') + (detOpen ? '' : detSummary(m)) + (detOpen ? '<div class="grid2">' +
+  const meta = '<div class="card detcard' + (detOpen ? '' : ' shut') + '"><div class="msg-head"><h3>Order details' + (cmode ? ' <span class="reqnote"><i class="req">*</i> required</span>' : '') + '</h3>' + (cmode && detOpen ? '<button type="button" class="dethide" data-act="dettog" aria-expanded="true">Hide</button>' : '') + '</div>' + (cmode ? orderProgHtml() : '') + (detOpen ? '' : detSummary(m) + '<button type="button" class="dettogbig' + (orderProg().done < orderProg().total ? ' pulse' : '') + '" data-act="dettog" aria-expanded="false"><span>Show order details</span>' + LB_CHEV + '</button>') + (detOpen ? '<div class="grid2">' +
     '<div class="field"><label for="m-title">Order name</label><input id="m-title" data-meta="title" value="' + esc(m.title) + '"' + ro + '></div>' +
     '<div class="field' + (cmode && !String(m.who || '').trim() ? ' miss' : '') + '"><label for="m-who">' + (cmode ? 'Your name <i class="req" aria-hidden="true">*</i>' : 'Requested by') + '</label><input id="m-who" data-meta="who" value="' + esc(m.who) + '" placeholder="Your name"' + ro + '></div>' +
     '<div class="field' + (cmode && !reqOk('need', m) ? ' miss' : '') + '"><label for="m-need">Needed by' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><input id="m-need" type="date" data-meta="need" min="' + minNeed() + '" value="' + esc(m.need) + '"' + ro + '>' + quickDates() + needHint() + '</div>' +
