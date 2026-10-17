@@ -1113,8 +1113,15 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .pubstat { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; padding: 9px 12px; background: var(--surface-2); font-size: 13.5px; color: var(--muted); border-left: 3px solid var(--line-dark); }
 .pubstat[data-s="saving"] { border-left-color: var(--gold); } .pubstat[data-s="live"] { border-left-color: #2E7D5B; color: var(--ink); } .pubstat[data-s="error"] { border-left-color: var(--warn); color: var(--warn); }
 .mkapply { margin: 12px 0 4px; display: grid; gap: 6px; } .mkapply .btn { width: 100%; } .mkapply .btn[disabled] { opacity: .5; }
-.lbhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; } .lbhead b { font-size: 16px; display: block; } .lbhead span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
-.lbhead .linkbtn { flex: none; min-height: 44px; padding: 0 4px; }
+.lblock { margin-top: 14px; border: 1px solid var(--line-dark); background: var(--surface); border-left-width: 1px; transition: border-color .16s ease; }
+.lblock.open { border-color: var(--ink); border-left: 3px solid var(--gold); }
+.lbhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 60px; padding: 12px 16px; background: transparent; border: 0; text-align: left; color: var(--ink); cursor: pointer; }
+.lbt { display: grid; gap: 3px; min-width: 0; } .lbt b { font-size: 16px; font-weight: 700; letter-spacing: -.005em; } .lbt span { font-size: 13px; color: var(--muted); }
+.lbchev { flex: none; color: var(--muted); transition: transform .2s ease; } .lblock.open .lbchev { transform: rotate(180deg); color: var(--ink); }
+.lbbody { padding: 0 16px 18px; border-top: 1px solid var(--line); }
+.lbbody .lsec { margin-top: 0; padding-top: 18px; background: none; } .lbbody .lsec + .lsec { margin-top: 18px; background: var(--dotline); }
+@media (hover: hover) { .lblock:not(.open) .lbhead:hover .lbchev { color: var(--ink); } .lblock:not(.open):hover { border-color: var(--gold); } }
+@media (prefers-reduced-motion: reduce) { .lbchev, .lblock { transition: none; } }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -2283,7 +2290,10 @@ function driverHtml() {
 function orderNo(c) { if (c.no) return c.no; const un = cust.filter(x => !x.no).sort((a, b) => (a.at || 0) - (b.at || 0)); return un.findIndex(x => x.id === c.id) + 1; }
 const cardDefault = id => id === 'inviteCard' ? (!cust.length || !myWA) : id === 'dlCard' ? !dlNow().zones.length : false;
 const cardOpen = id => (ui.cardOpen && ui.cardOpen[id] !== undefined) ? ui.cardOpen[id] : cardDefault(id);
-const lbHead = (id, title, sum) => { const open = cardOpen(id); return '<section class="lsec lbh"><div class="lbhead"><div><b>' + title + '</b>' + (open ? '' : '<span>' + sum + '</span>') + '</div><button type="button" class="linkbtn" data-act="cardtog" data-id="' + id + '" aria-expanded="' + open + '">' + (open ? 'Hide' : 'Show') + '</button></div></section>'; };
+/* Collapsible Ledger panels: one bordered container per topic, header always shows the title and a live summary. */
+const LB_CHEV = '<svg class="lbchev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const lbOpen = (id, title, sum) => { const open = cardOpen(id); return '<section class="lblock' + (open ? ' open' : '') + '" id="' + id + '"><button type="button" class="lbhead" data-act="cardtog" data-id="' + id + '" aria-expanded="' + open + '"><span class="lbt"><b>' + title + '</b><span>' + sum + '</span></span>' + LB_CHEV + '</button>' + (open ? '<div class="lbbody">' : ''); };
+const lbClose = id => (cardOpen(id) ? '</div>' : '') + '</section>';
 const cardHead = (id, title, open) => '<div class="msg-head"><h3>' + title + '</h3><button type="button" class="linkbtn" data-act="cardtog" data-id="' + id + '" aria-expanded="' + open + '">' + (open ? 'Hide' : 'Show') + '</button></div>';
 const mapUrl = c => c.pin ? 'https://maps.google.com/?q=' + c.pin : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((c.addr || '') + ' Bali');
 function ccardHead(c, comp, date) {
@@ -2681,7 +2691,7 @@ function renderLedger() {
     '<p class="hint" style="margin-top:8px">The starter list covers the whole island, with fees counted from the Tabanan cafe, nearest first. The fees are only a guess, so set yours. Add the rest of Bali keeps everything you already changed.</p></section>' + '</div>';
   host.innerHTML = '<div class="card" id="ledCard"><div class="msg-head"><h3>Ledger</h3><span class="hint num">' + CATALOG.filter(i => !i.hidden).length + ' products</span></div>' +
     '<p class="hint lsub">All products with the supplier price, the sell price and your profit.</p>' + pubHtml() +
-    lbHead('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%' + ' - checked ' + (ledger.cfg && ledger.cfg.chk ? shortDate(ledger.cfg.chk) : 'never'))) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Price check</b><span>Are the supplier prices still correct?</span></div>' +
+    lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%' + ' - checked ' + (ledger.cfg && ledger.cfg.chk ? shortDate(ledger.cfg.chk) : 'never'))) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Price check</b><span>Are the supplier prices still correct?</span></div>' +
     '<div class="chkrow' + (priceStale() ? ' stale' : '') + '"><span>Last checked: <b>' + (ledger.cfg && ledger.cfg.chk ? esc(shortDate(ledger.cfg.chk)) : 'never') + '</b></span><button type="button" class="btn ghost sm" data-act="chkprices"' + (canWrite ? '' : ' disabled') + '>I checked today</button></div>' +
     '<p class="hint" style="margin-top:6px">Tap the button after you check the supplier list. Customers see this date.</p></section>' +
     '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' +
@@ -2690,8 +2700,8 @@ function renderLedger() {
     '<section class="lsec"><div class="lsec-h"><b>Your markup</b><span>What you add on top. This sets what customers pay.</span></div>' +
     '<div class="mkrow grid2"><div class="field"><label for="mk-pct">Markup (%)</label><input id="mk-pct" inputmode="decimal" value="' + cfgNow().pct + '"' + (canWrite ? '' : ' disabled') + '><p class="hint">Added on top of the supplier price.</p></div><div class="field"><label for="mk-round">Round prices up to</label><select id="mk-round"' + (canWrite ? '' : ' disabled') + '>' + [100, 500, 1000].map(r => '<option value="' + r + '"' + (cfgNow().round === r ? ' selected' : '') + '>Rp ' + r + '</option>').join('') + '</select><p class="hint">Customer prices end in a round number.</p></div></div>' +
     '<div class="mkapply"><button type="button" class="btn" id="mk-apply" data-act="applymk" disabled>Apply markup</button><p class="hint">Changes the sell price of all ' + CATALOG.filter(i => !i.hidden).length + ' products. Customers see it right away.</p></div>' +
-    '<p class="hint lex">Example: supplier price Rp 100.000 becomes <b id="mk-ex">' + fmtRp(Math.ceil(100000 * (1 + cfgNow().pct / 100) / cfgNow().round) * cfgNow().round) + '</b> for the customer. Average profit: <b>' + avgMargin() + '%</b>.</p></section>' : '') +
-    lbHead('lb-limit', 'Weight limit', ((ledger.cfg && +ledger.cfg.mx > 0 ? +ledger.cfg.mx : 10) + ' kg per item')) + (cardOpen('lb-limit') ? '<section class="lsec"><div class="field"><label for="mx-kg">Most kg per item</label><input id="mx-kg" inputmode="decimal" value="' + (+(ledger.cfg && ledger.cfg.mx) > 0 ? ledger.cfg.mx : 10) + '"' + (canWrite ? '' : ' disabled') + '><p class="hint">Items sold by weight. Above this, the customer is asked to message us on WhatsApp. Other items stop at 99.</p></div></section>' : '') +
+    '<p class="hint lex">Example: supplier price Rp 100.000 becomes <b id="mk-ex">' + fmtRp(Math.ceil(100000 * (1 + cfgNow().pct / 100) / cfgNow().round) * cfgNow().round) + '</b> for the customer. Average profit: <b>' + avgMargin() + '%</b>.</p></section>' : '') + lbClose('lb-price') +
+    lbOpen('lb-limit', 'Weight limit', ((ledger.cfg && +ledger.cfg.mx > 0 ? +ledger.cfg.mx : 10) + ' kg per item')) + (cardOpen('lb-limit') ? '<section class="lsec"><div class="field"><label for="mx-kg">Most kg per item</label><input id="mx-kg" inputmode="decimal" value="' + (+(ledger.cfg && ledger.cfg.mx) > 0 ? ledger.cfg.mx : 10) + '"' + (canWrite ? '' : ' disabled') + '><p class="hint">Items sold by weight. Above this, the customer is asked to message us on WhatsApp. Other items stop at 99.</p></div></section>' : '') + lbClose('lb-limit') +
     '<section class="lsec"><div class="lsec-h"><b>Find a product</b><span>Search or filter the list below</span></div>' +
     '<div class="search"><input id="lq" type="search" placeholder="Search by product name" value="' + esc(ui.lq) + '" autocomplete="off" aria-label="Search the ledger"></div>' +
     '<span class="lgl">Supplier</span><div class="chips lchips">' + chip('lsup', 'all', ui.lsup, 'All suppliers', 'data-k="all"') + SUP_ORDER.map(x => '<button class="chip" data-act="lsup" data-s="' + x + '" data-k="' + x + '" aria-pressed="' + (ui.lsup === x) + '"><span class="dot"></span>' + esc(SUPS[x].name) + '</button>').join('') + '</div>' +
