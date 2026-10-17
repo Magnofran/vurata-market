@@ -1189,6 +1189,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .bkic { display: inline-grid; place-items: center; width: 28px; height: 28px; margin-right: 0; vertical-align: middle; color: var(--gold-text); background: var(--surface-2); border: 1px solid var(--line); } .bkic svg { width: 18px; height: 18px; }
 .cdconf { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--warn); text-align: center; } .cdconfbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .cdconfbtns .btn { width: 100%; min-height: 46px; }
 .btn.danger.solid { background: var(--warn); border-color: var(--warn); color: #fff; } .cdrestore { width: 100%; min-height: 46px; }
+.price.line .custp { color: var(--gold-text); font-weight: 500; }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -1481,6 +1482,8 @@ function didYouMean(q) {
 }
 /* For meat, seafood and pantry items sold by weight, a small per 100 g line helps first-time visitors compare with shop labels. Fresh produce stays per kg only. */
 const per100 = (it, o) => (cmode && o.u === 'kg' && o.sp > 0 && it.s !== 'fv') ? '<span class="p100">Rp ' + Math.round(o.sp / 10).toLocaleString('id-ID') + ' per 100 g</span>' : '';
+/* Staff only: next to the wholesale price, show what the customer pays with the current markup. */
+const custPays = o => (!cmode && o.sp > 0 && o.pr > 0) ? '<span class="p100 custp">Customers pay ' + fmtRp(o.sp) + '</span>' : '';
 function optLabel(o) { return o.lb || ('per ' + o.u); }
 const plainLabel = o => /^(per (kg|pcs|pack|can|ltr|btl|jar)|pack|can)$/.test(optLabel(o));
 function needsCheck(it) { return !!(it.x && /confirm|not stated|blank|does not match/i.test(it.x)); }
@@ -1508,7 +1511,7 @@ const basketsNow = () => (Array.isArray(ledger.baskets) ? ledger.baskets : DEFAU
 function basketInfo(b) {
   const keys = Object.keys(b.l).filter(k => { const p = k.split('|'); const it = BY_ID[p[0]]; return it && !it.hidden && !it.so && it.o[+p[1]] && b.l[k] > 0; });
   const lines = {}; keys.forEach(k => { lines[k] = { q: b.l[k] }; });
-  const c = compute({ meta: {}, lines, sup: {} }); return { keys, n: keys.length, total: c.total, unpriced: c.unpriced };
+  const c = compute({ meta: {}, lines, sup: {} }); const cs = compute({ meta: {}, lines, sup: {} }, 'sell'); return { keys, n: keys.length, total: c.total, sell: cs.total, unpriced: c.unpriced };
 }
 function basketsHtml() {
   const list = basketsNow().filter(b => !b.h); if (!list.length) return ''; const dl = dlNow();
@@ -1520,7 +1523,7 @@ function basketsHtml() {
 function bkPanelHtml() {
   const list = basketsNow(); const dis = canWrite ? '' : ' disabled'; const nItems = Object.keys(S.lines).filter(k => S.lines[k] && S.lines[k].q > 0).length;
   const card = (b, i) => { const inf = basketInfo(b); const open = !!(ui.bkOpen && ui.bkOpen[i]); const chip = b.h ? ['Hidden', 'off'] : !inf.n ? ['Empty', 'off'] : ['Shown', 'on'];
-    const line = inf.n ? inf.n + ' item' + (inf.n === 1 ? '' : 's') + ' - ' + fmtRp(inf.total) : 'No items yet';
+    const line = inf.n ? inf.n + ' item' + (inf.n === 1 ? '' : 's') + ' - ' + fmtRp(inf.total) + ' wholesale, ' + fmtRp(inf.sell) + ' to customers' : 'No items yet';
     const bar = '<div class="cdbar"><button type="button" class="cdhead" data-act="bktog" data-i="' + i + '" aria-expanded="' + open + '"><span class="cdtitle"><span class="bkic">' + bIcon(b.ic) + '</span><span class="cdname">' + esc(b.n) + '</span><span class="cdchip ' + chip[1] + '">' + chip[0] + '</span></span><span class="cdline">' + esc(line) + '</span>' + LB_CHEV + '</button><label class="cdsw" title="Show or hide this basket for customers"><input type="checkbox" class="sr" data-bs="' + i + '|v" aria-label="Basket is shown to customers"' + (b.h ? '' : ' checked') + dis + '><span class="cdsw-off">Off</span><span class="cdsw-on">On</span></label></div>';
     if (!open) return '<div class="cdrow ' + (b.h ? 'off' : 'on') + '">' + bar + '</div>';
     return '<div class="cdrow open ' + (b.h ? 'off' : 'on') + '">' + bar + '<div class="cdbody"><div class="field"><label for="bk-n' + i + '">Basket name</label><input id="bk-n' + i + '" data-bs="' + i + '|n" value="' + esc(b.n) + '" maxlength="40"' + dis + '></div>' +
@@ -1543,7 +1546,7 @@ function bsEditRender() {
   const orig = basketOriginal(b);
   el.innerHTML = '<div class="sentbox bviewbox"><button type="button" class="sentx" data-act="bsclose" aria-label="Close">&times;</button><div class="bhead"><span class="bic">' + bIcon(b.ic) + '</span><h3>Edit ' + esc(b.n) + '</h3></div>' +
     '<div class="field"><label for="bse-q">Add a product</label><input id="bse-q" type="search" placeholder="Search by name" autocomplete="off" value="' + esc(e.q || '') + '"></div>' + (res ? '<div class="bsresl">' + res + '</div>' : '') +
-    '<div class="bvlist">' + (rows || '<p class="hint" style="padding:12px 0;margin:0">No items yet. Search above to add some.</p>') + '</div><div class="bvtot"><span>' + Object.keys(e.l).length + ' items</span><b class="num">' + fmtRp(compute({ meta: {}, lines: Object.fromEntries(Object.keys(e.l).map(k => [k, { q: e.l[k] }])), sup: {} }).total) + '</b></div>' +
+    '<div class="bvlist">' + (rows || '<p class="hint" style="padding:12px 0;margin:0">No items yet. Search above to add some.</p>') + '</div><div class="bvtot"><span>' + Object.keys(e.l).length + ' items</span><b class="num">' + fmtRp(compute({ meta: {}, lines: Object.fromEntries(Object.keys(e.l).map(k => [k, { q: e.l[k] }])), sup: {} }).total) + '</b></div><p class="hint" style="margin:-6px 0 0;text-align:right">Wholesale. Customers pay ' + fmtRp(compute({ meta: {}, lines: Object.fromEntries(Object.keys(e.l).map(k => [k, { q: e.l[k] }])), sup: {} }, 'sell').total) + '.</p>' +
     '<div class="bsfoot">' + (orig ? '<button type="button" class="btn ghost" data-act="bsreset">Reset to original items</button>' : '') + '<div class="actions duo"><button type="button" class="btn ghost" data-act="bsclose">Cancel</button><button type="button" class="btn" data-act="bssave">Save changes</button></div></div></div>';
   el.hidden = false; const nl = el.querySelector('.bvlist'); if (nl) nl.scrollTop = top;
 }
@@ -1882,7 +1885,7 @@ function itemHtml(it, showSup) {
     const o = it.o[0]; const key = keyOf(it.id, 0); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
     return '<article class="item single s-' + it.s + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '">' + thumb + '<div class="main">' + title + flags + '</div>' +
       '<div class="opt' + (q ? ' on' : '') + '" data-key="' + esc(key) + '">' + stepperHtml(it, o, 0, q) + '</div>' +
-      '<div class="price line">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + '</div></article>';
+      '<div class="price line">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div></article>';
   }
   const opts = it.o.map((o, i) => {
     const key = keyOf(it.id, i); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
