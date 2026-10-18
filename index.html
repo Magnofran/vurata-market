@@ -2027,7 +2027,7 @@ function chrome(comp) {
 /* ================= order view ================= */
 function renderOrder(comp) {
   const host = document.getElementById('orderBody'); const m = S.meta; const ro = canWrite ? '' : ' disabled';
-  const detOpen = !cmode || ui.detOpen !== false;
+  const detOpen = !cmode || ui.detOpen === true;
   const meta = '<div class="card detcard' + (detOpen ? '' : ' shut') + '"><div class="msg-head"><h3>Order details' + (cmode ? ' <span class="reqnote"><i class="req">*</i> required</span>' : '') + '</h3>' + (cmode && detOpen ? '<button type="button" class="dethide" data-act="dettog" aria-expanded="true">Hide</button>' : '') + '</div>' + (cmode ? orderProgHtml() : '') + (detOpen ? '' : detSummary(m) + '<button type="button" class="dettogbig' + (orderProg().done < orderProg().total ? ' pulse' : '') + '" data-act="dettog" aria-expanded="false"><span>Show order details</span>' + LB_CHEV + '</button>') + (detOpen ? '<div class="grid2">' +
     (cmode ? '<div class="field"><label for="m-title">Order name</label><input id="m-title" data-meta="title" value="' + esc(m.title) + '"' + ro + '></div>' : orderTypeHtml(m, ro)) +
     '<div class="field' + (cmode && !String(m.who || '').trim() ? ' miss' : '') + '"><label for="m-who">' + (cmode ? 'Your name <i class="req" aria-hidden="true">*</i>' : 'Requested by') + '</label><input id="m-who" data-meta="who" value="' + esc(m.who) + '" placeholder="Your name"' + ro + '></div>' +
@@ -2193,7 +2193,7 @@ function renderOrderKeepFocus(comp) {
   if (keep) { let el = keep.id ? document.getElementById(keep.id) : (keep.key ? document.querySelector('#orderBody [data-key="' + CSS.escape(keep.key) + '"] [data-act="' + keep.act + '"]') : null); if (el && el.focus) el.focus({ preventScroll: true }); }
 }
 function fixFirst() {
-  showView('order'); toast(missingReq(S.meta).length + ' detail' + (missingReq(S.meta).length > 1 ? 's' : '') + ' still needed. They are marked in red.');
+  ui.detOpen = true; showView('order'); toast(missingReq(S.meta).length + ' detail' + (missingReq(S.meta).length > 1 ? 's' : '') + ' still needed. They are marked in red.');
   setTimeout(() => { const f = document.querySelector('#orderBody .field.miss'); if (!f) return; f.classList.add('pulse'); setTimeout(() => f.classList.remove('pulse'), 1900); f.scrollIntoView({ block: 'center', behavior: 'smooth' }); const i = f.querySelector('.phnum') || f.querySelector('input,select'); if (i) setTimeout(() => i.focus({ preventScroll: true }), 350); }, 60);
 }
 function showView(v) {
@@ -3012,7 +3012,7 @@ document.addEventListener('click', e => {
   else if (act === 'goto') { if ((b.dataset.t === '#salesCard' || b.dataset.t === '#inviteCard') && !cardOpen(b.dataset.t.slice(1))) { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen[b.dataset.t.slice(1)] = true; renderCustomers(); } if (b.dataset.t === '#importCard' && (ui.impOpen === undefined ? !cust.length : ui.impOpen) === false) { ui.impOpen = true; renderCustomers(); } const el = document.querySelector(b.dataset.t); if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); if (/^(INPUT|TEXTAREA)$/.test(el.tagName)) setTimeout(() => el.focus({ preventScroll: true }), 400); } }
   else if (act === 'setdl') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen.dlCard = true; showView('ledger'); const el = document.getElementById('dlCard'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
   else if (act === 'otype') { const v = b.dataset.v; if (v === '__other') { ui.titleOther = true; patch({ meta: { title: '' } }); renderOrder(compute(S)); const f = document.getElementById('m-title'); if (f) f.focus(); } else { ui.titleOther = false; patch({ meta: { title: v } }); renderOrder(compute(S)); } }
-  else if (act === 'dettog') { ui.detOpen = ui.detOpen === false; renderOrder(compute(S)); }
+  else if (act === 'dettog') { ui.detOpen = ui.detOpen !== true; renderOrder(compute(S)); }
   else if (act === 'basketview') { const bk = basketsNow().find(x => x.id === b.dataset.id); if (!bk) return; const el = sentBox(); el.innerHTML = basketViewHtml(bk); el.hidden = false; const f = el.querySelector('button'); if (f) f.focus(); }
   else if (act === 'basketadd') {
     const bk = basketsNow().find(x => x.id === b.dataset.id); if (!bk) return; const inf = basketInfo(bk); if (!inf.n) { toast('That basket is not available right now.'); return; }
