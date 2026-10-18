@@ -1253,6 +1253,18 @@ select:not([multiple]) { -webkit-appearance: none; appearance: none; padding-rig
   #supChips { justify-content: space-between; gap: 10px 24px; }
   .chipgrp { display: flex; flex-wrap: wrap; gap: 8px; }
 }
+/* total card: quiet delivery progress with a truck, hairline above the total */
+.fdel { background: transparent; box-shadow: none; border: 1px solid var(--line); padding: 12px 14px; gap: 11px; margin: 12px 0 4px; }
+.fdel .fdt { display: flex; align-items: center; gap: 10px; }
+.fdel .fdt svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--gold-text); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.fdel i { height: 4px; background: var(--line); }
+.fdel u { background: var(--gold); }
+.fdel.near { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); box-shadow: none; }
+.fdel.near i u { background: var(--gold); }
+.fdel.warn { background: transparent; border-color: color-mix(in srgb, var(--warn) 50%, var(--line)); }
+.grand { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 18px; }
+.grand > span { font-size: 12.5px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.grand b { font-size: 28px; font-weight: 600; letter-spacing: -.015em; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -1612,6 +1624,7 @@ function goalOf(c) {
   if (dl.free > 0 && dl.zones.some(z => z.fee > 0)) return c.total >= dl.free ? { t: 'Free delivery unlocked', p: 1, k: 'ok' } : (dl.free - c.total <= NEAR_FREE ? { t: 'Only ' + fmtRp(dl.free - c.total) + ' more for free delivery', p: c.total / dl.free, k: 'near' } : { t: fmtRp(dl.free - c.total) + ' to free delivery', p: c.total / dl.free, k: 'free' });
   return null;
 }
+const FD_TRUCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6.5h11.5v9.5H2.5z"/><path d="M14 9.5h4l3.5 3.6V16H14"/><circle cx="7" cy="17.5" r="1.9"/><circle cx="17.5" cy="17.5" r="1.9"/></svg>';
 function freeNudge(c) {
   const dl = dlNow(); const mg = minGap(c);
   if (mg > 0) return '<div class="fdel warn"><span>Minimum order is <b>' + fmtRp(dl.min) + '</b>. Add <b>' + fmtRp(mg) + '</b> more to send it.</span><i><u style="width:' + Math.round(c.total / dl.min * 100) + '%"></u></i></div>';
@@ -1619,8 +1632,8 @@ function freeNudge(c) {
   if (c.zone && c.feeKnown && c.fee === 0 && !c.free) return '';
   if (c.total >= dl.free) return '<div class="fdel ok"><span><b>Free delivery unlocked.</b> Your delivery is on us.</span></div>';
   const gap = dl.free - c.total;
-  if (gap <= NEAR_FREE) { const br = bridgeItems(gap); return '<div class="fdel near"><span><b>Only ' + fmtRp(gap) + ' more</b> and delivery is free.</span><i><u style="width:' + Math.round(c.total / dl.free * 100) + '%"></u></i>' + (br.length ? '<div class="bridge"><small>Add something you like:</small>' + br.map(x => '<button type="button" data-act="addq" data-key="' + esc(x.k) + '" data-q="' + x.q + '">+ ' + esc(x.it.n) + ' <em>' + fmtRp(x.add) + '</em></button>').join('') + '</div>' : '') + '</div>'; }
-  return '<div class="fdel"><span>Add <b>' + fmtRp(gap) + '</b> more for free delivery</span><i><u style="width:' + Math.round(c.total / dl.free * 100) + '%"></u></i></div>';
+  if (gap <= NEAR_FREE) { const br = bridgeItems(gap); return '<div class="fdel near"><span class="fdt">' + FD_TRUCK + '<span><b>Only ' + fmtRp(gap) + ' more</b> and delivery is free.</span></span><i><u style="width:' + Math.round(c.total / dl.free * 100) + '%"></u></i>' + (br.length ? '<div class="bridge"><small>Add something you like:</small>' + br.map(x => '<button type="button" data-act="addq" data-key="' + esc(x.k) + '" data-q="' + x.q + '">+ ' + esc(x.it.n) + ' <em>' + fmtRp(x.add) + '</em></button>').join('') + '</div>' : '') + '</div>'; }
+  return '<div class="fdel"><span class="fdt">' + FD_TRUCK + '<span>Add <b>' + fmtRp(gap) + '</b> more for free delivery</span></span><i><u style="width:' + Math.round(c.total / dl.free * 100) + '%"></u></i></div>';
 }
 const SUP_HUES = [275, 28, 178, 330, 48, 205, 120, 8];
 function hsl2rgb(h, s, l) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), g = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return [Math.round(255 * g(0)), Math.round(255 * g(8)), Math.round(255 * g(4))]; }
