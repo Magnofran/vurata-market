@@ -1258,6 +1258,8 @@ select:not([multiple]) { -webkit-appearance: none; appearance: none; padding-rig
 @media (hover: hover) { .ln .linkbtn[data-act="note"]:hover { border-color: var(--gold); color: var(--ink); } }
 /* filter chips fill their row on desktop */
 @media (min-width: 521px) { .chipgrp { flex: 1 1 100%; } .chipgrp .chip { flex: 1 1 auto; justify-content: center; } }
+/* the four browse chips stay on one row; compact until the row has room for the full size */
+@media (min-width: 521px) and (max-width: 670px) { .chipgrp:first-child { flex-wrap: nowrap; gap: 6px; } .chipgrp:first-child .chip { min-width: 0; padding-inline: 8px; gap: 6px; font-size: 13px; } .chipgrp:first-child .chip .dot { display: none; } }
 .dym { margin: 6px 0 0; } .dymbtn { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 3px; }
 .pastebtn { width: 100%; min-height: 48px; margin: 12px 0 4px; }
 @media (hover: hover) { .pastebtn:not([disabled]):hover { background: var(--gold); border-color: var(--gold); color: #0F172A; } }
