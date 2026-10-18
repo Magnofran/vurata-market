@@ -1193,6 +1193,8 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .otype { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0; border: 1px solid var(--line-dark); } .otype button { min-height: 48px; padding: 6px 10px; background: var(--surface); border: 0; border-left: 1px solid var(--line-dark); font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; line-height: 1.25; } .otype button:first-child { border-left: 0; }
 .otype button small { display: block; font-size: 11.5px; font-weight: 400; color: var(--muted); } .otype button[aria-pressed="true"] { background: var(--ink); color: var(--bg); } .otype button[aria-pressed="true"] small { color: color-mix(in srgb, var(--bg) 70%, transparent); }
 .otype + input { margin-top: 8px; }
+.search::before { content: ''; position: absolute; left: 15px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); background: var(--muted); pointer-events: none; z-index: 1; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat; }
+.search input { padding-left: 44px; }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -1316,7 +1318,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
           <div class="sticky">
           <div class="chips" id="supChips"></div></div>
           <div class="row2"><label class="sr" for="catSel">Category</label><select id="catSel"></select></div>
-          <div class="search"><label class="sr" for="q">Search items</label><input id="q" type="search" enterkeyhint="search" placeholder="Search: buah naga, dragon fruit, kecap" autocomplete="off"></div>
+          <div class="search"><label class="sr" for="q">Search items</label><input id="q" type="search" enterkeyhint="search" placeholder="Search: buah naga, dragon fruit" autocomplete="off"></div>
         </div>
         <div id="pickList"></div>
       </div>
@@ -1484,7 +1486,7 @@ function didYouMean(q) {
   return changed ? out.join(' ') : '';
 }
 /* For meat, seafood and pantry items sold by weight, a small per 100 g line helps first-time visitors compare with shop labels. Fresh produce stays per kg only. */
-const per100 = (it, o) => (cmode && o.u === 'kg' && o.sp > 0 && it.s !== 'fv') ? '<span class="p100">Rp ' + Math.round(o.sp / 10).toLocaleString('id-ID') + ' per 100 g</span>' : '';
+const per100 = (it, o) => (cmode && o.u === 'kg' && o.sp > 0) ? '<span class="p100">Rp ' + Math.round(o.sp / 10).toLocaleString('id-ID') + ' per 100 g</span>' : '';
 /* Staff only: next to the wholesale price, show what the customer pays with the current markup. */
 const custPays = o => (!cmode && o.sp > 0 && o.pr > 0) ? '<span class="p100 custp">Customers pay ' + fmtRp(o.sp) + '</span>' : '';
 function optLabel(o) { return o.lb || ('per ' + o.u); }
@@ -1899,7 +1901,7 @@ function itemHtml(it, showSup) {
   }
   const opts = it.o.map((o, i) => {
     const key = keyOf(it.id, i); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
-    return '<div class="opt multi' + (q ? ' on' : '') + '" data-key="' + esc(key) + '"><div class="price">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span></div>' + stepperHtml(it, o, i, q) + '</div>';
+    return '<div class="opt multi' + (q ? ' on' : '') + '" data-key="' + esc(key) + '"><div class="price">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div>' + stepperHtml(it, o, i, q) + '</div>';
   }).join('');
   return '<article class="item s-' + it.s + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '"><div class="head">' + thumb + '<div>' + title + pk + flags + '</div></div>' + opts + '</article>';
 }
