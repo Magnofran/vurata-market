@@ -1153,8 +1153,6 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .cdrow .grid2 { align-items: start; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); } .cdrow .field .hint { margin: 4px 0 0; }
 .cdempty { margin: 2px 2px 0; font-size: 13.5px; color: var(--muted); }
 .cdadd { width: 100%; min-height: 48px; border: 1px dashed var(--line-dark); background: transparent; color: var(--ink); font-weight: 600; font-size: 14px; cursor: pointer; } .cdadd:hover { border-color: var(--gold); }
-.stamp { display: grid; gap: 3px; margin: 0 0 16px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); } .stamp[hidden] { display: none; }
-.stamphead { display: flex; align-items: center; gap: 8px; } .stamp svg { flex: none; color: #2E7D5B; } .stamp b { font-size: 14px; font-weight: 600; } .stamp span { font-size: 12.5px; white-space: nowrap; color: var(--muted); line-height: 1.45; } .stamp a { justify-self: start; margin-top: 2px; font-size: 12.5px; color: var(--gold-text); text-underline-offset: 3px; }
 .baskets { margin-top: 18px; } .brow { display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 10px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
 .bsrow { display: grid; gap: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--line); background: var(--surface); } .bshead { display: grid; gap: 4px; } .bshead input { font-weight: 600; } .bsrow .actions { margin-top: 2px; }
 .bsact { display: grid; gap: 8px; margin-top: 2px; } .bsact .btn { width: 100%; min-height: 46px; white-space: normal; }
@@ -1195,6 +1193,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .otype + input { margin-top: 8px; }
 .search::before { content: ''; position: absolute; left: 15px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); background: var(--muted); pointer-events: none; z-index: 1; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat; }
 .search input { padding-left: 44px; }
+.ordnote { margin: 12px 0 14px; font-size: 12.5px; line-height: 1.6; color: var(--muted); } .ordnote a { color: var(--gold-text); text-underline-offset: 3px; }
 /* Larger product photo: it grows into the row's left padding so the name, price and stepper columns stay exactly where they were. */
 .item.single > .thw { width: 54px; margin-left: -8px; } .item.single > .thw .thumb { width: 54px; height: 54px; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item.single > .thw { width: 48px; margin-left: -8px; } .item.single > .thw .thumb { width: 48px; height: 48px; font-size: 25px; border-radius: 12px; } }
@@ -1313,7 +1312,6 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
         <div class="how" id="howCard" hidden></div>
         <div class="dlinfo" id="dlInfo" hidden></div>
         <button type="button" class="howlink" id="cNote" data-act="showhow" hidden aria-label="Show how it works"><span>How it works</span><i aria-hidden="true">+</i></button>
-        <div class="stamp" id="stampBar" hidden></div>
         <div class="filters">
           <div class="sticky">
           <div class="chips" id="supChips"></div></div>
@@ -1486,7 +1484,9 @@ function didYouMean(q) {
   return changed ? out.join(' ') : '';
 }
 /* For meat, seafood and pantry items sold by weight, a small per 100 g line helps first-time visitors compare with shop labels. Fresh produce stays per kg only. */
-const per100 = (it, o) => (cmode && o.u === 'kg' && o.sp > 0) ? '<span class="p100">Rp ' + Math.round(o.sp / 10).toLocaleString('id-ID') + ' per 100 g</span>' : '';
+const PACK100 = new Set(['Cheese', 'Mozzarella', 'Cheddar block', 'Cheddar slices', 'Butter Block', 'Butter portions', 'Seafood', 'Go Lite granola & nuts', 'Quinoa & chia', 'Muesli']);
+const perKg = (it, o) => o.u === 'kg' ? o.sp : (PACK100.has(it.c) && o.w >= 0.03 && o.w <= 5 && !o.est ? o.sp / o.w : 0);
+const per100 = (it, o) => { if (!cmode || !(o.sp > 0)) return ''; const pk = perKg(it, o); return pk > 0 ? '<span class="p100">Rp ' + Math.round(pk / 10).toLocaleString('id-ID') + ' per 100 g</span>' : ''; };
 /* Staff only: next to the wholesale price, show what the customer pays with the current markup. */
 const custPays = o => (!cmode && o.sp > 0 && o.pr > 0) ? '<span class="p100 custp">Customers pay ' + fmtRp(o.sp) + '</span>' : '';
 function optLabel(o) { return o.lb || ('per ' + o.u); }
@@ -1974,7 +1974,6 @@ function renderFilters() {
     const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
     if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span>Pick what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().join(' ') + '</p>' : '');
   }
-  const sb = document.getElementById('stampBar'); if (sb) { sb.hidden = !cmode; if (cmode) { const chk = ledger.cfg && ledger.cfg.chk; sb.innerHTML = '<div class="stamphead"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>' + (chk ? 'Prices checked ' + esc(shortDate(chk)) : 'Fresh, frozen and pantry in Bali') + '</b></div><span>Fresh produce arrives the morning of delivery.</span><a href="https://vurata.com" target="_blank" rel="noopener">From the team behind Vurata Bali Experiences</a>'; } }
   const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; SUP_ORDER.forEach(s => { counts[s] = CATALOG.filter(i => i.s === s && !i.hidden).length; });
   const chipHost = document.getElementById('supChips'); if (!chipHost.dataset.bound) { chipHost.dataset.bound = '1'; chipHost.addEventListener('scroll', chipsFade, { passive: true }); window.addEventListener('resize', chipsFade); }
@@ -2063,7 +2062,7 @@ function renderOrder(comp) {
   }).join('');
   const measAll = fmtMeasure(comp.w, comp.v);
   const totals = '<div class="card"><h3>Total</h3>' + (cmode ? [] : comp.groups).map(g => '<div class="sumrow band sup-' + g.sid + '"><span class="sw">' + SUPS[g.sid].name + ' <span class="hint">(' + g.lines.length + ')</span></span><span class="num">' + fmtRp(g.subtotal) + '</span></div>').join('') +
-    (hasDel(comp) ? '<div class="sumrow"><span>Delivery' + (comp.zone ? ' <span class="hint">(' + esc(zoneLabel(comp.zone)) + ')</span>' : '') + '</span><span class="num">' + (comp.codeSaved > 0 ? '<s class="was">' + fmtRp(comp.fee + comp.codeSaved) + '</s> ' : '') + delLine(comp) + '</span></div>' : '') + freeNudge(comp) + codeBoxHtml(comp) + '<div class="grand"><span>' + (cmode ? 'Total' : 'Estimated total') + '</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' +
+    (hasDel(comp) ? '<div class="sumrow"><span>Delivery' + (comp.zone ? ' <span class="hint">(' + esc(zoneLabel(comp.zone)) + ')</span>' : '') + '</span><span class="num">' + (comp.codeSaved > 0 ? '<s class="was">' + fmtRp(comp.fee + comp.codeSaved) + '</s> ' : '') + delLine(comp) + '</span></div>' : '') + freeNudge(comp) + codeBoxHtml(comp) + '<div class="grand"><span>' + (cmode ? 'Total' : 'Estimated total') + '</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (cmode ? '<p class="ordnote">Fresh produce arrives the morning of delivery.<br><a href="https://vurata.com" target="_blank" rel="noopener">From the team behind Vurata Bali Experiences</a></p>' : '') +
 
     '<div class="actions full" style="margin-bottom:10px"><button type="button" class="btn ghost" data-act="savedraft"' + (canWrite ? '' : ' disabled') + '>' + (S.meta.draftId && hist.some(x => x.id === S.meta.draftId) ? 'Update saved order' : 'Save for later') + '</button></div>' +
     '<div class="actions tri"><button class="btn" ' + (cmode ? 'data-act="tosend"' : 'data-view="share"') + '>' + (cmode ? 'Send order' : 'Share and receipt') + '</button><button class="btn ghost" data-view="pick">Add items</button><button class="btn ghost" data-act="clearall"' + (canWrite ? '' : ' disabled') + '>Clear all</button></div>' +
@@ -2154,7 +2153,8 @@ function buildPdf(comp) {
   }
   need(14); doc.setTextColor(90, 100, 94); doc.setFontSize(8);
   const fl2 = cmode ? doc.splitTextToSize('Items marked est. are sold by weight. They are weighed when packed, so you pay for the exact weight.', W - 2 * M) : doc.splitTextToSize(clean('Prices come from the supplier lists: ' + comp.groups.map(g => SUPS[g.sid].short + ' (' + SUPS[g.sid].list + ')').join('; ') + '. Suppliers say prices can change at any time, so confirm the total when ordering.'), W - 2 * M);
-  doc.text(fl2, M, y); y += fl2.length * 3.6 + 6;
+  doc.text(fl2, M, y); y += fl2.length * 3.6 + 2;
+  if (cmode) { doc.text('Fresh produce arrives the morning of delivery.', M, y); y += 4; doc.text('From the team behind Vurata Bali Experiences', M, y); y += 6; } else { y += 4; }
   if (cmode) { const qm = qrModules(ocode); if (qm) { const n = qm.length, size = 78, mod = size / (n + 4); need(size + 14); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(22, 32, 26); txt('Order code for your host (scan it, or send this page)', M, y); y += 3; doc.setFillColor(255, 255, 255); doc.rect(M, y, size, size, 'F'); doc.setFillColor(0, 0, 0); for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qm[r][c]) doc.rect(M + (c + 2) * mod, y + (r + 2) * mod, mod + 0.04, mod + 0.04, 'F'); y += size + 4; } }
   const n = doc.getNumberOfPages(); for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(140, 148, 143); txt('Vurata Market order  |  page ' + i + ' of ' + n, W / 2, 291, { align: 'center' }); }
   return doc;
@@ -2382,8 +2382,6 @@ function payRow(c) {
   return '<div class="payrow"><label class="lf dep"><span>Deposit received</span><span class="lpr">Rp <input data-cdep="' + esc(c.id) + '" inputmode="numeric" value="' + (c.dep || '') + '" placeholder="0"' + ro + '></span></label><span class="due ' + (due > 0 ? 'neg' : 'pos') + '">' + (c.paid ? 'Paid in full' : 'Balance due ' + fmtRp(due)) + '</span></div>';
 }
 const shortDate = iso => new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-const priceAge = () => { const c = ledger.cfg && ledger.cfg.chk; if (!c) return null; return Math.floor((new Date(isoOf(baliNow()) + 'T12:00:00') - new Date(c + 'T12:00:00')) / 864e5); };
-const priceStale = () => { const a = priceAge(); return a === null || a > 7; };
 function nextStep() {
   const n = x => cust.filter(c => c.status === x).length; const toCollect = cust.reduce((t, c) => t + dueOf(c), 0);
   if (!myWA) return { t: 'First, add your WhatsApp number so customers\' orders come back to you.', b: 'Add my number', go: '#mywa' };
@@ -2391,7 +2389,6 @@ function nextStep() {
   if (!cust.length) return { t: 'No orders yet. Send your invite link to your first customers.', b: 'Send invite', go: '#inviteCard' };
   if (n('new')) return { t: n('new') + ' new order' + (n('new') > 1 ? 's' : '') + ' to look at. When you are ready, send the combined order to your suppliers.', b: 'Combined order', go: '#combCard' };
   if (toCollect > 0) return { t: fmtRp(toCollect) + ' still to collect from customers.', b: 'Show unpaid', act: 'unpaid' };
-  if (priceStale()) { const a = priceAge(); return { t: a === null ? 'Check your prices, then tap "I checked today" in the Ledger so customers can see they are up to date.' : 'Prices were last checked ' + a + ' days ago. Give them a quick check, then tap "I checked today".', b: 'Open the Ledger', act: 'goled' }; }
   return { t: 'All caught up. Nothing waiting on you.', b: '' };
 }
 /* Customer side: a quiet "Have a code?" under the delivery line. */
@@ -2731,7 +2728,7 @@ function publicLedger() {
   });
   const add = {}; Object.keys(ledger.add || {}).forEach(id => { const a = clone(ledger.add[id]); (a.o || []).forEach(op => { delete op.pr; delete op.sp; }); delete a.x; add[id] = a; });
   const sups = {}; Object.keys(ledger.sups || {}).forEach(id => { const s = ledger.sups[id] || {}; sups[id] = { name: s.what || s.name, short: s.short, what: s.what || s.name, h: s.h }; });
-  const cfg = {}; if (ledger.cfg && ledger.cfg.chk) cfg.chk = ledger.cfg.chk; if (ledger.cfg && +ledger.cfg.mx > 0) cfg.mx = +ledger.cfg.mx; if (myWA) cfg.wa = myWA;
+  const cfg = {}; if (ledger.cfg && +ledger.cfg.mx > 0) cfg.mx = +ledger.cfg.mx; if (myWA) cfg.wa = myWA;
   return { ov, add, cfg, sups, dl: ledger.dl || null, baskets: basketsNow() };
 }
 async function publishPublic(force) {
@@ -2883,10 +2880,7 @@ function renderLedger() {
     '<p class="hint" style="margin-top:8px">Customers enter a code in their order, under the delivery fee. It is added to the WhatsApp message so you can confirm it. Anyone with technical skills can read the codes, so use them for campaigns such as a flyer or a partner, not as secret vouchers.</p></section>' + '</div>';
   host.innerHTML = '<div class="card" id="ledCard"><div class="msg-head"><h3>Ledger</h3><span class="hint num">' + CATALOG.filter(i => !i.hidden).length + ' products</span></div>' +
     '<p class="hint lsub">All products with the supplier price, the sell price and your profit.</p>' + pubHtml() +
-    lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%' + ' - checked ' + (ledger.cfg && ledger.cfg.chk ? shortDate(ledger.cfg.chk) : 'never'))) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Price check</b><span>Are the supplier prices still correct?</span></div>' +
-    '<div class="chkrow' + (priceStale() ? ' stale' : '') + '"><span>Last checked: <b>' + (ledger.cfg && ledger.cfg.chk ? esc(shortDate(ledger.cfg.chk)) : 'never') + '</b></span><button type="button" class="btn ghost sm" data-act="chkprices"' + (canWrite ? '' : ' disabled') + '>I checked today</button></div>' +
-    '<p class="hint" style="margin-top:6px">Tap the button after you check the supplier list. Customers see this date.</p></section>' +
-    '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' +
+    lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%')) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' +
     '<div class="grid2"><div class="field"><label for="bk-sup">Which supplier</label><select id="bk-sup"><option value="all">All suppliers</option>' + SUP_ORDER.map(x => '<option value="' + x + '">' + esc(SUPS[x].name) + '</option>').join('') + '</select></div><div class="field"><label for="bk-pct">Change by (%)</label><input id="bk-pct" inputmode="decimal" placeholder="5 or -3"><p class="hint">5 = 5% higher. -3 = 3% lower.</p></div></div>' +
     '<div class="lact2"><div><button class="btn ghost" data-act="bulk"' + (canWrite ? '' : ' disabled') + '>Apply change</button><p class="hint">Changes the supplier prices by the % above.</p></div><div><button class="btn ghost" data-act="resetprices"' + (canWrite ? '' : ' disabled') + '>Reset to uploaded</button><p class="hint">Goes back to the prices in your uploaded list.</p></div></div></section>' +
     '<section class="lsec"><div class="lsec-h"><b>Your markup</b><span>What you add on top. This sets what customers pay.</span></div>' +
@@ -3054,7 +3048,6 @@ document.addEventListener('click', e => {
   else if (act === 'backup') { exportBackup(); }
   else if (act === 'lft') { saveLedger({ ov: { [b.dataset.id]: { ft: b.dataset.s === '1' } } }); }
   else if (act === 'featadd') { const k = b.dataset.key; const o = BY_ID[k.split('|')[0]].o[0]; const cur = (S.lines[k] && S.lines[k].q) || 0; setQty(k, cur ? cur + (o.st || 1) : (o.mn || o.st || 1), false); renderPick(); }
-  else if (act === 'chkprices') { saveLedger({ cfg: { chk: isoOf(baliNow()) } }); renderLedger(); toast('Marked as checked today.'); }
   else if (act === 'goled') { showView('ledger'); }
   else if (act === 'shareapp') { const hw = hostWA || LS.get('mumu-hostwa') || ''; const url = ARTIFACT_URL + (hw ? '#f-' + hw : '#f'); const text = 'Fresh fruit, vegetables, meat and groceries delivered in Bali. Order here:'; if (navigator.share) { navigator.share({ title: 'Vurata Market', text, url }).catch(() => {}); } else { window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener'); } }
   else if (act === 'totop') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -3226,13 +3219,12 @@ function termsHtml() {
   const dl = dlNow(), hw = hostWA || LS.get('mumu-hostwa') || '';
   const cutoff = dl.cutoff ? ' Orders placed after ' + (dl.cutoff > 12 ? dl.cutoff - 12 : dl.cutoff) + ' pm are delivered from the day after tomorrow.' : '';
   const money = (dl.min ? ' The minimum order is ' + fmtRp(dl.min) + '.' : '') + (dl.free ? ' Delivery is free on orders over ' + fmtRp(dl.free) + '.' : '');
-  const chk = ledger.cfg && ledger.cfg.chk ? 'Prices were last checked on ' + shortDate(ledger.cfg.chk) + '. ' : '';
   const sec = (h, b) => '<div class="tsec"><b>' + h + '</b><span>' + b + '</span></div>';
   return '<div class="sentbox termsbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Privacy and order terms</h3><p class="hint">The short version, in plain words.</p><div class="tlist">' +
     sec('Your details', 'Your name, phone and address stay on your phone until you send your order. When you send it, Vurata receives it on WhatsApp and keeps it to prepare and deliver your order.') +
     sec('Your location', 'We only get your location if you tap <b>Add my pin location</b>, and only together with your order.') +
     sec('Ordering', 'Orders need 24 hours notice.' + cutoff + money) +
-    sec('Prices and weight', chk + 'Fresh items are sold by weight and weighed when packed, so you pay the exact weight. We confirm stock and your final total with you on WhatsApp.') +
+    sec('Prices and weight', 'Fresh items are sold by weight and weighed when packed, so you pay the exact weight. We confirm stock and your final total with you on WhatsApp.') +
     sec('Payment', 'Pay on delivery in cash, or by bank transfer as a deposit, as agreed with us on WhatsApp.') +
     sec('Changes', 'To change or cancel an order, message us on WhatsApp as early as you can.') + '</div>' +
     (hw ? '<div class="actions full"><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Questions? Chat with us</a></div>' : '') + '</div>';
