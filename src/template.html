@@ -1276,6 +1276,14 @@ body { margin: 0; padding-inline: 8px; }
 @media (hover: hover) { .tab:not([aria-selected="true"]):hover { border-bottom-color: transparent; } }
 @media (min-width: 700px) { .tabs:not(.c5) { grid-template-columns: repeat(3, max-content); justify-content: start; column-gap: 36px; } .tabs:not(.c5) .tab { padding-inline: 2px; } }
 @media (prefers-reduced-motion: reduce) { .tab::after { transition: none; } }
+/* baskets carousel: no scrollbar, dots show the position and the amber one is the basket in view */
+.brow { scrollbar-width: none; padding-bottom: 6px; } .brow::-webkit-scrollbar { display: none; }
+.bdots { display: flex; justify-content: center; margin-top: 2px; }
+.baskets.fits .bdots { display: none; }
+.bdot { appearance: none; border: 0; background: none; width: 22px; height: 22px; padding: 0; position: relative; cursor: pointer; }
+.bdot::before { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; background: var(--line-dark); transition: width .24s cubic-bezier(.2, .7, .2, 1), margin .24s cubic-bezier(.2, .7, .2, 1), background-color .2s ease; }
+.bdot.on::before { width: 18px; margin-left: -9px; background: var(--gold); }
+@media (prefers-reduced-motion: reduce) { .bdot::before { transition: none; } }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -1553,7 +1561,8 @@ function basketsHtml() {
   const list = basketsNow().filter(b => !b.h); if (!list.length) return ''; const dl = dlNow();
   const cards = list.map(b => { const i = basketInfo(b); if (!i.n) return ''; const free = dl.free > 0 && i.total >= dl.free && dl.zones.some(z => z.fee > 0);
     return '<div class="bcard"><div class="bhead"><span class="bic">' + bIcon(b.ic) + '</span><b>' + esc(b.n) + '</b></div><span class="bdesc">' + esc(b.d || '') + '</span><div class="bfoot"><span class="bmeta">' + i.n + ' item' + (i.n === 1 ? '' : 's') + (free ? ' &middot; <em>Free delivery</em>' : '') + '</span><span class="bprice num">' + fmtRp(i.total) + '</span></div><div class="bbtns"><button type="button" class="btn ghost sm" data-act="basketview" data-id="' + esc(b.id) + '">View basket</button><button type="button" class="btn sm" data-act="basketadd" data-id="' + esc(b.id) + '">Add to order</button></div></div>'; }).join('');
-  return cards ? '<div class="baskets"><h3 class="feath">Ready-made baskets</h3><div class="brow">' + cards + '</div></div>' : '';
+  const nCards = (cards.match(/class="bcard"/g) || []).length;
+  return cards ? '<div class="baskets"><h3 class="feath">Ready-made baskets</h3><div class="brow">' + cards + '</div>' + (nCards > 1 ? '<div class="bdots">' + Array.from({ length: nCards }, (_, n) => '<button type="button" class="bdot' + (n ? '' : ' on') + '" data-act="bdot" data-bi="' + n + '" aria-label="Basket ' + (n + 1) + ' of ' + nCards + '"></button>').join('') + '</div>' : '') + '</div>' : '';
 }
 /* Staff: one panel, one card per basket, same pattern as Delivery codes. */
 function bkPanelHtml() {
@@ -1987,7 +1996,18 @@ function renderPick() {
     html.push('</div>');
   });
   box.innerHTML = html.join('');
+  document.querySelectorAll('.brow').forEach(bdotsSync);
 }
+function bdotsSync(row) {
+  if (!row) return; const host = row.parentElement; const dots = host && host.querySelectorAll('.bdot'); if (!dots || !dots.length) return;
+  const cards = row.querySelectorAll('.bcard'); const rl = row.getBoundingClientRect().left; const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 2;
+  let best = 0, bd = 1e9; cards.forEach((c, n) => { const d = Math.abs(c.getBoundingClientRect().left - rl - 2); if (d < bd) { bd = d; best = n; } });
+  if (atEnd && row.scrollLeft > 0) best = cards.length - 1;
+  host.classList.toggle('fits', row.scrollWidth <= row.clientWidth + 1);
+  dots.forEach((d, n) => d.classList.toggle('on', n === best));
+}
+document.addEventListener('scroll', e => { const t = e.target; if (t && t.classList && t.classList.contains('brow')) bdotsSync(t); }, true);
+window.addEventListener('resize', () => document.querySelectorAll('.brow').forEach(bdotsSync));
 function chipsFade() { const c = document.getElementById('supChips'); if (c) c.classList.toggle('at-end', c.scrollLeft + c.clientWidth >= c.scrollWidth - 2); }
 function dlParts() {
   const dl = dlNow(); const fees = dl.zones.map(z => z.fee).filter(x => x != null); const parts = [];
@@ -3037,6 +3057,7 @@ document.addEventListener('click', e => {
   else if (act === 'setdl') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen.dlCard = true; showView('ledger'); const el = document.getElementById('dlCard'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
   else if (act === 'otype') { const v = b.dataset.v; if (v === '__other') { ui.titleOther = true; patch({ meta: { title: '' } }); renderOrder(compute(S)); const f = document.getElementById('m-title'); if (f) f.focus(); } else { ui.titleOther = false; patch({ meta: { title: v } }); renderOrder(compute(S)); } }
   else if (act === 'dettog') { ui.detOpen = ui.detOpen !== true; renderOrder(compute(S)); }
+  else if (act === 'bdot') { const row = b.closest('.baskets').querySelector('.brow'); const c = row.querySelectorAll('.bcard')[+b.dataset.bi]; if (c) row.scrollTo({ left: row.scrollLeft + c.getBoundingClientRect().left - row.getBoundingClientRect().left - 2, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
   else if (act === 'basketview') { const bk = basketsNow().find(x => x.id === b.dataset.id); if (!bk) return; const el = sentBox(); el.innerHTML = basketViewHtml(bk); el.hidden = false; const f = el.querySelector('button'); if (f) f.focus(); }
   else if (act === 'basketadd') {
     const bk = basketsNow().find(x => x.id === b.dataset.id); if (!bk) return; const inf = basketInfo(bk); if (!inf.n) { toast('That basket is not available right now.'); return; }
