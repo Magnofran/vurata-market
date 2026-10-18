@@ -1265,6 +1265,17 @@ select:not([multiple]) { -webkit-appearance: none; appearance: none; padding-rig
 .grand { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 18px; }
 .grand > span { font-size: 12.5px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
 .grand b { font-size: 28px; font-weight: 600; letter-spacing: -.015em; }
+/* top bar: full-bleed with a straight hairline; tabs are quiet text with a short gold indicator */
+body { margin: 0; padding-inline: 8px; }
+.bar { margin-inline: -8px; padding: 14px 24px 0; border-radius: 0 !important; }
+.tab, .tab[aria-selected="true"] { position: relative; border-bottom: 0; padding-block: 13px 14px; font-weight: 500; letter-spacing: .01em; }
+.tab[aria-selected="true"] { font-weight: 600; }
+.tab::after { content: ''; position: absolute; left: 50%; bottom: -1px; width: 28px; height: 2px; margin-left: -14px; background: var(--gold); border-radius: 0 !important; transform: scaleX(0); transition: transform .24s cubic-bezier(.2, .7, .2, 1); }
+.tab[aria-selected="true"]::after { transform: scaleX(1); }
+.tab .badge { font-size: 11.5px; font-weight: 600; line-height: 18px; min-width: 18px; padding: 0 5px; }
+@media (hover: hover) { .tab:not([aria-selected="true"]):hover { border-bottom-color: transparent; } }
+@media (min-width: 700px) { .tabs:not(.c5) { grid-template-columns: repeat(3, max-content); justify-content: start; column-gap: 36px; } .tabs:not(.c5) .tab { padding-inline: 2px; } }
+@media (prefers-reduced-motion: reduce) { .tab::after { transition: none; } }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
