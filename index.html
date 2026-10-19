@@ -1291,6 +1291,9 @@ body { margin: 0; padding-inline: 8px; }
 .sclear { appearance: none; border: 0; background: none; position: absolute; right: 3px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; display: grid; place-items: center; padding: 0; color: var(--muted); cursor: pointer; z-index: 2; }
 .sclear svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 @media (hover: hover) { .sclear:hover { color: var(--ink); } }
+/* delivery row: area on its own line, the price never wraps */
+.dlvrow .dlv { min-width: 0; } .dlvrow .dlv small { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.4; }
+.dlvrow .num { flex: none; white-space: nowrap; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -2129,7 +2132,7 @@ function renderOrder(comp) {
   }).join('');
   const measAll = fmtMeasure(comp.w, comp.v);
   const totals = '<div class="card"><h3>Total</h3>' + (cmode ? [] : comp.groups).map(g => '<div class="sumrow band sup-' + g.sid + '"><span class="sw">' + SUPS[g.sid].name + ' <span class="hint">(' + g.lines.length + ')</span></span><span class="num">' + fmtRp(g.subtotal) + '</span></div>').join('') +
-    (hasDel(comp) ? '<div class="sumrow"><span>Delivery' + (comp.zone ? ' <span class="hint">(' + esc(zoneLabel(comp.zone)) + ')</span>' : '') + '</span><span class="num">' + (comp.codeSaved > 0 ? '<s class="was">' + fmtRp(comp.fee + comp.codeSaved) + '</s> ' : '') + delLine(comp) + '</span></div>' : '') + freeNudge(comp) + codeBoxHtml(comp) + '<div class="grand"><span>' + (cmode ? 'Total' : 'Estimated total') + '</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (cmode ? '<p class="ordnote">Fresh produce arrives the morning of delivery.<br><a href="https://vurata.com" target="_blank" rel="noopener">From the team behind Vurata Bali Experiences</a></p>' : '') +
+    (hasDel(comp) ? '<div class="sumrow dlvrow"><span class="dlv">Delivery' + (comp.zone ? '<small class="hint">' + esc(zoneLabel(comp.zone)) + '</small>' : '') + '</span><span class="num">' + (comp.codeSaved > 0 ? '<s class="was">' + fmtRp(comp.fee + comp.codeSaved) + '</s> ' : '') + delLine(comp) + '</span></div>' : '') + freeNudge(comp) + codeBoxHtml(comp) + '<div class="grand"><span>' + (cmode ? 'Total' : 'Estimated total') + '</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (cmode ? '<p class="ordnote">Fresh produce arrives the morning of delivery.<br><a href="https://vurata.com" target="_blank" rel="noopener">From the team behind Vurata Bali Experiences</a></p>' : '') +
 
     '<div class="actions full" style="margin-bottom:10px"><button type="button" class="btn ghost" data-act="savedraft"' + (canWrite ? '' : ' disabled') + '>' + (S.meta.draftId && hist.some(x => x.id === S.meta.draftId) ? 'Update saved order' : 'Save for later') + '</button></div>' +
     '<div class="actions tri"><button class="btn" ' + (cmode ? 'data-act="tosend"' : 'data-view="share"') + '>' + (cmode ? 'Send order' : 'Share and receipt') + '</button><button class="btn ghost" data-view="pick">Add items</button><button class="btn ghost" data-act="clearall"' + (canWrite ? '' : ' disabled') + '>Clear all</button></div>' +
