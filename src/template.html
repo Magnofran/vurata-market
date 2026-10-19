@@ -2225,7 +2225,7 @@ function buildPdf(comp) {
     ['Items marked est. are sold by weight. They are weighed when packed, so you pay for the exact weight.', 'Fresh produce arrives the morning of delivery.'].forEach(t => { const l = doc.splitTextToSize(t, W - 2 * M); doc.text(l, M, y); y += l.length * 4.4 + 2; });
     y += 7;
     if (/qris/i.test(S.meta.pay || '')) {
-      const body = doc.splitTextToSize('Pay with QRIS after your host replies on WhatsApp to confirm your order. If an item is out of stock, your host sends you the updated total first.', W - 2 * M - 14); const bh = body.length * 4.6 + 16; need(bh + 10);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); const body = doc.splitTextToSize('Pay with QRIS after your host replies on WhatsApp to confirm your order. If an item is out of stock, your host sends you the updated total first.', W - 2 * M - 16); const bh = body.length * 4.6 + 16; need(bh + 10);
       doc.setFillColor(250, 246, 238); doc.rect(M, y, W - 2 * M, bh, 'F'); doc.setFillColor(...GOLD); doc.rect(M, y, 1.2, bh, 'F');
       doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...GOLDT); tracked('PAYMENT', M + 7, y + 7, 0.9);
       doc.setFontSize(9.5); doc.setTextColor(...INK); doc.text(body, M + 7, y + 13.5); y += bh + 12;
