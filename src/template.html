@@ -1690,12 +1690,12 @@ function compute(state, mode) {
     g.lines.push(ln); count++;
     if (st === 'o') g.ordered++;
     if (skip) { g.out++; out++; continue; }
-    if (tot != null) { g.subtotal += tot; total += tot; } else { g.unpriced++; unpriced++; warnings.push({ sid: it.s, text: it.n + ' (' + optLabel(o) + '): no price on the list. Ask ' + (cmode ? 'the host' : SUPS[it.s].short) + ' before ordering.' }); }
+    if (tot != null) { g.subtotal += tot; total += tot; } else { g.unpriced++; unpriced++; warnings.push({ sid: it.s, text: (cmode ? nm(it).m : it.n) + ' (' + optLabel(o) + '): no price on the list. Ask ' + (cmode ? 'the host' : SUPS[it.s].short) + ' before ordering.' }); }
     if (o.est) g.est++;
     if (o.w || o.v) { g.w += ln.w; g.v += ln.v; w += ln.w; v += ln.v; } else { g.noMeasure++; noMeasure++; }
     if (o.u === 'kg') kgQty += q; else unitQty += q;
-    if (o.mn && q < o.mn) warnings.push({ sid: it.s, text: it.n + ': the minimum for this item is ' + o.mn + ' ' + o.u + ' (you have ' + fmtQty(q) + ').' });
-    if (needsCheck(it)) warnings.push({ sid: it.s, text: it.n + ': ' + it.x });
+    if (o.mn && q < o.mn) warnings.push({ sid: it.s, text: (cmode ? nm(it).m : it.n) + ': the minimum for this item is ' + o.mn + ' ' + o.u + ' (you have ' + fmtQty(q) + ').' });
+    if (needsCheck(it)) warnings.push({ sid: it.s, text: (cmode ? nm(it).m : it.n) + ': ' + it.x });
   }
   if (out) warnings.push({ sid: '', text: out + ' line' + (out > 1 ? 's are' : ' is') + ' marked out of stock and not counted in the total.' });
   const estLines = Object.values(groups).reduce((n, g) => n + g.est, 0);
@@ -1710,7 +1710,7 @@ function compute(state, mode) {
   }
   return { groups: list, total, unpriced, w, v, noMeasure, kgQty, unitQty, count, warnings, out, fee, feeKnown, free, toFree, zone, codeUsed, codeSaved, codeText, grand: total + fee };
 }
-function lineText(ln) {
+function lineText(ln, cust) {
   const unit = UNIT_EN[ln.o.u] || ln.o.u;
   const qtyTxt = fmtQty(ln.q) + ' ' + unit + (ln.q0 != null && ln.q0 !== ln.q ? ' (ordered ' + fmtQty(ln.q0) + ')' : '');
   const lbl = plainLabel(ln.o) ? '' : ' [' + optLabel(ln.o) + ']';
@@ -1719,7 +1719,7 @@ function lineText(ln) {
   if (ln.st === 'x') money = ' (not counted)';
   else if (ln.price) money = ' x ' + fmtRp(ln.price) + ' = ' + fmtRp(ln.total) + (ln.o.est && ln.q0 === ln.q ? ' (est.)' : '') + (ln.listPrice && ln.price !== ln.listPrice ? ' (list price ' + fmtRp(ln.listPrice) + ')' : (!ln.listPrice ? ' (price set by hand)' : ''));
   else money = ' = PRICE NEEDED';
-  const nv = cmode ? nm(ln.it) : null;
+  const nv = cmode || cust ? nm(ln.it) : null;
   return tag + (nv ? nv.m + (nv.s ? ' (' + nv.s + ')' : '') : ln.it.n) + lbl + ': ' + qtyTxt + money;
 }
 function buildSummary(state, comp) {
@@ -1914,10 +1914,11 @@ function pickedByCat() {
 function itemPicked(it) { return it.o.some((o, i) => { const L = S.lines[keyOf(it.id, i)]; return L && L.q > 0; }); }
 const ltText = (o, q, key) => { const L = (key && S.lines[key]) || {}; const p = +L.p > 0 ? +L.p : (cmode ? o.sp : o.pr); return q > 0 && p ? '= ' + fmtRp(p * q) : ''; };
 const imgSrc = id => /^(data:image\/|photos\/)/.test(id) ? id : window.SB.imgUrl(id);
-/* customers see the English name first in bold and the Indonesian one in grey; staff keep the supplier's own name first */
+/* English name first in bold and the Indonesian one in grey, for customers and on staff screens. Messages and PDFs addressed to suppliers keep the supplier's own name. */
 const NM_UNIT = { KG: 'Kg', GR: 'Gr', ML: 'Ml', LTR: 'Ltr', PCS: 'Pcs', SAK: 'Sak' };
 const nmCase = t => t.replace(/\b[A-Za-z]+\b/g, w => NM_UNIT[w] || (w.length >= 4 && w === w.toUpperCase() ? w.charAt(0) + w.slice(1).toLowerCase() : w));
-const nm = it => { const e = (it.e || '').trim(), n = it.n.trim(), same = e.toLowerCase() === n.toLowerCase(); if (!cmode) return { m: n, s: same ? '' : e }; const f = x => nmCase(x).replace(/^[a-z]/, c => c.toUpperCase()); return e && !same && !/^unclear/i.test(e) && n.indexOf(' / ') < 0 ? { m: f(e), s: f(n) } : { m: f(n), s: same || !e ? '' : f(e) }; };
+const nm = it => { const e = (it.e || '').trim(), n = it.n.trim(), same = e.toLowerCase() === n.toLowerCase(); const f = x => nmCase(x).replace(/^[a-z]/, c => c.toUpperCase()); return e && !same && !/^unclear/i.test(e) && n.indexOf(' / ') < 0 ? { m: f(e), s: f(n) } : { m: f(n), s: same || !e ? '' : f(e) }; };
+const nmBoth = it => { const v = nm(it); return v.m + (v.s ? ' (' + v.s + ')' : ''); };
 const thumbIn = it => it.img ? '<img loading="lazy" decoding="async" alt="" data-e="' + esc(it.i || '') + '" data-zoomname="' + esc(it.n) + '" src="' + esc(imgSrc(it.img)) + '">' : (it.i || '');
 /* Generated placeholder photos (photos/...) are not tappable. Real photos uploaded by staff still open full size. */
 const thumbCls = it => it.img ? (/^photos\//.test(it.img) ? ' img gen' : ' img') : '';
@@ -2278,7 +2279,7 @@ function histHtml() {
       Object.keys(h.lines || {}).forEach(k => { const it = BY_ID[k.split('|')[0]]; if (!it) return; const o = it.o[+k.split('|')[1]]; if (!o) return; (by[it.s] = by[it.s] || []).push({ it, o, q: h.lines[k].q, n: h.lines[k].n }); });
       const ask = ui.delConfirm[h.id];
       det = '<div class="hdet">' + SUP_ORDER.filter(x => by[x]).map(x => '<div class="hgrp" style="--c:var(--' + x + '); --t:var(--' + x + '-t)"><b>' + esc(SUPS[x].name) + '</b><span>' + by[x].length + ' item' + (by[x].length > 1 ? 's' : '') + '</span></div>' +
-        by[x].map(l => '<div class="hline"><div class="hname">' + esc(l.it.n) + (l.n ? '<em>' + esc(l.n) + '</em>' : '') + '</div><span class="hqty"><b>' + fmtQty(l.q) + '</b> ' + esc(UNIT_EN[l.o.u] || l.o.u) + '</span></div>').join('')).join('') +
+        by[x].map(l => '<div class="hline"><div class="hname">' + esc(cmode ? nm(l.it).m : l.it.n) + (l.n ? '<em>' + esc(l.n) + '</em>' : '') + '</div><span class="hqty"><b>' + fmtQty(l.q) + '</b> ' + esc(UNIT_EN[l.o.u] || l.o.u) + '</span></div>').join('')).join('') +
         '<p class="hint" style="margin-top:10px">Prices are refreshed from the current list when you order again.</p>' +
         '<div class="hdel">' + (ask ? '<span>Delete this saved order?</span><button type="button" class="btn danger sm" data-act="hdelyes" data-id="' + esc(h.id) + '">Delete</button><button type="button" class="btn ghost sm" data-act="hdelno" data-id="' + esc(h.id) + '">Keep</button>' : '<button type="button" class="linkbtn" data-act="hdelask" data-id="' + esc(h.id) + '">Delete this order</button>') + '</div></div>';
     }
@@ -2497,7 +2498,7 @@ function driverText() {
     if (c.addr) out.push('   ' + c.addr);
     if (c.pin || c.addr) out.push('   ' + (id ? 'Peta' : 'Map') + ': ' + mapUrl(c));
     out.push('   ' + [c.need ? (id ? idDate(c.need) : fmtDate(c.need)) : '', c.slot ? (id ? (ID_SLOT[c.slot] || c.slot) : c.slot) : ''].filter(Boolean).join(', '));
-    const items = []; comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st !== 'x') items.push(fmtQty(ln.q) + ' ' + (UNIT_EN[ln.o.u] || ln.o.u) + ' ' + ln.it.n); }));
+    const items = []; comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st !== 'x') items.push(fmtQty(ln.q) + ' ' + (UNIT_EN[ln.o.u] || ln.o.u) + ' ' + nmBoth(ln.it)); }));
     out.push('   ' + T.items + ': ' + items.join('; '));
     out.push('   ' + T.packed + ': ' + ps.done + '/' + ps.n + (ps.n && ps.done === ps.n ? ' - ' + T.ready : ''));
     out.push('   ' + (due > 0 ? T.collect + ' ' + fmtRp(due) + (c.pay ? ' (' + payTxt(c.pay) + ')' : '') + (comp.fee > 0 ? ' ' + T.incl : '') : T.paid));
@@ -2513,7 +2514,7 @@ function driverHtml() {
     const comp = compute(custState(c), 'sell'); const ps = packState(c, comp); const due = dueOf(c); const open = !!ui.stopOpen[c.id]; const ready = ps.n > 0 && ps.done === ps.n; const dis = canWrite ? '' : ' disabled';
     const body = open ? '<div class="stopbody">' + ((c.pin || c.addr) ? '<a class="maplink" target="_blank" rel="noopener" href="' + mapUrl(c) + '">Open map</a>' : '') + comp.groups.map(g => g.lines.filter(ln => ln.st !== 'x').map(ln => {
       const wt = ln.o.est || ln.o.u === 'kg'; const aq = (c.lines[ln.key] || {}).aq; const un = esc(UNIT_EN[ln.o.u] || ln.o.u);
-      return '<div class="prow"><label class="check"><input type="checkbox" data-cpk="' + esc(c.id) + '|' + esc(ln.key) + '"' + (c.pk && c.pk[ln.key] ? ' checked' : '') + dis + '><span>' + esc(ln.it.n) + ' <small>' + fmtQty(ln.q0) + ' ' + un + ' ordered</small></span></label>' +
+      return '<div class="prow"><label class="check"><input type="checkbox" data-cpk="' + esc(c.id) + '|' + esc(ln.key) + '"' + (c.pk && c.pk[ln.key] ? ' checked' : '') + dis + '><span>' + esc(nmBoth(ln.it)) + ' <small>' + fmtQty(ln.q0) + ' ' + un + ' ordered</small></span></label>' +
         (wt ? '<span class="lpr">Weighed <input data-caq="' + esc(c.id) + '|' + esc(ln.key) + '" inputmode="decimal" value="' + (aq ? fmtQty(aq) : '') + '" placeholder="' + fmtQty(ln.q0) + '"' + dis + '> ' + un + '</span>' : '') + '</div>';
     }).join('')).join('') + '<div class="actions full"><button type="button" class="btn ghost sm" data-act="packall" data-id="' + esc(c.id) + '"' + dis + '>Mark all packed</button></div></div>' : '';
     return '<div class="stop' + (ready ? ' ready' : '') + '"><button type="button" class="stophead" data-act="stopopen" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"><span class="sh1"><b><span class="ono sm">#' + orderNo(c) + '</span> ' + esc(c.name || 'Customer') + '</b><span>' + esc([c.zone ? zoneLabel(c.zone) : '', c.slot || ''].filter(Boolean).join(' - ') || 'No area') + '</span></span><span class="sh2"><em class="packpill' + (ready ? ' ok' : '') + '">' + (ready ? 'Packed' : ps.done + '/' + ps.n + ' packed') + '</em><span class="num">' + (due > 0 ? 'Collect ' + fmtRp(due) : 'Paid') + '</span></span></button>' + body + '</div>';
@@ -2618,7 +2619,7 @@ function updateCBadge() { const n = cust.filter(c => c.status === 'new').length;
 function custState(c) { return { meta: { title: c.title, who: c.name, phone: c.phone, addr: c.addr, pay: c.pay, need: c.need, notes: c.notes, zone: c.zone || '', slot: c.slot || '', pin: c.pin || '', fee: c.fee, dcode: c.dcode || '' }, lines: c.lines || {}, sup: {} }; }
 function billText(c, comp) {
   const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const out = ['Hi ' + (c.name || 'there') + ', here is your ' + (fin ? 'final bill' : 'order') + ' #' + orderNo(c) + (c.title ? ' (' + c.title + ')' : '') + ':'];
-  comp.groups.forEach(g => { out.push('', '*' + SUPS[g.sid].name + '*'); g.lines.forEach(ln => out.push('- ' + lineText(ln))); out.push('Subtotal: ' + fmtRp(g.subtotal)); });
+  comp.groups.forEach(g => { out.push('', '*' + SUPS[g.sid].name + '*'); g.lines.forEach(ln => out.push('- ' + lineText(ln, true))); out.push('Subtotal: ' + fmtRp(g.subtotal)); });
   if (hasDel(comp)) out.push('', 'Delivery' + (c.zone && c.zone !== '__other' ? ' (' + c.zone + ')' : '') + ': ' + delLine(comp) + (c.dcode ? ' (code ' + c.dcode + ')' : ''));
   out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''), fin ? 'Items sold by weight use the packed weights shown above.' : 'Items sold by weight are confirmed after weighing at delivery.');
   if (c.need) out.push('Needed by: ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : '')); if (c.addr) out.push('Deliver to: ' + c.addr);
@@ -2664,7 +2665,7 @@ function renderCustomers() {
     let det = '';
     if (open) {
       det = '<div class="cdet">' + comp.groups.map(g => '<div class="hsup sup-' + g.sid + '">' + SUPS[g.sid].name + '</div>' + g.lines.map(ln =>
-        '<div class="cline2"><div class="cl-top"><span class="cl-name">' + esc(ln.it.n) + '</span><span class="num cl-t">' + (ln.total != null ? fmtRp(ln.total) : 'ask') + '</span></div><div class="cl-sub"><span class="cl-meta">' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + (ln.price ? ' &times; ' + fmtRp(ln.price) : '') + (ln.q0 != null && ln.q0 !== ln.q ? ' (ordered ' + fmtQty(ln.q0) + ')' : '') + (ln.note ? '<em>' + esc(ln.note) + '</em>' : '') + '</span><div class="qmini"><button type="button" data-act="cq" data-d="-1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="Less">&minus;</button><span class="cq">' + fmtQty(ln.q0 != null ? ln.q0 : ln.q) + '</span><button type="button" data-act="cq" data-d="1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="More">+</button></div></div></div>').join('')).join('') +
+        '<div class="cline2"><div class="cl-top"><span class="cl-name">' + esc(nmBoth(ln.it)) + '</span><span class="num cl-t">' + (ln.total != null ? fmtRp(ln.total) : 'ask') + '</span></div><div class="cl-sub"><span class="cl-meta">' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + (ln.price ? ' &times; ' + fmtRp(ln.price) : '') + (ln.q0 != null && ln.q0 !== ln.q ? ' (ordered ' + fmtQty(ln.q0) + ')' : '') + (ln.note ? '<em>' + esc(ln.note) + '</em>' : '') + '</span><div class="qmini"><button type="button" data-act="cq" data-d="-1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="Less">&minus;</button><span class="cq">' + fmtQty(ln.q0 != null ? ln.q0 : ln.q) + '</span><button type="button" data-act="cq" data-d="1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="More">+</button></div></div></div>').join('')).join('') +
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
         '<div class="grand"><span>Total</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (() => { const p = profitOf(custState(c)); return '<p class="hint" style="margin-top:6px">Your cost ' + fmtRp(p.cost) + ' - profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b></p>'; })() +
         '<textarea class="pre sm" id="bill-' + esc(c.id) + '" readonly>' + esc(billText(c, comp)) + '</textarea>' +
