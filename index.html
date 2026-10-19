@@ -1314,6 +1314,10 @@ body { margin: 0; padding-inline: 8px; }
 .ln > .ln-a { grid-column: 2; grid-template-columns: minmax(0, 1fr) auto; }
 .ln > .ln-b { grid-column: 2; padding-left: 0; }
 .ln > :not(.ln-n):not(.thumb):not(.ln-a):not(.ln-b) { grid-column: 1 / -1; }
+/* Ledger rows: bigger photo that stretches over the name rows, up to about three rows */
+.lhead { align-items: stretch; }
+.lhead .lname { align-content: center; }
+.lhead > .thumb.sm { width: 56px; height: auto; min-height: 80px; max-height: 88px; align-self: stretch; flex: none; border-radius: 12px; font-size: 26px; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
