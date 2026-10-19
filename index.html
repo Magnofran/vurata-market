@@ -2225,7 +2225,7 @@ function buildPdf(comp) {
     ['Items marked est. are sold by weight. They are weighed when packed, so you pay for the exact weight.', 'Fresh produce arrives the morning of delivery.'].forEach(t => { const l = doc.splitTextToSize(t, W - 2 * M); doc.text(l, M, y); y += l.length * 4.4 + 2; });
     y += 7;
     if (/qris/i.test(S.meta.pay || '')) {
-      const body = doc.splitTextToSize('Payment by QRIS: pay after your host confirms the final total, and type the amount from the final bill.', W - 2 * M - 14); const bh = body.length * 4.6 + 16; need(bh + 10);
+      const body = doc.splitTextToSize('Pay with QRIS after your host replies on WhatsApp to confirm your order. If an item is out of stock, your host sends you the updated total first.', W - 2 * M - 14); const bh = body.length * 4.6 + 16; need(bh + 10);
       doc.setFillColor(250, 246, 238); doc.rect(M, y, W - 2 * M, bh, 'F'); doc.setFillColor(...GOLD); doc.rect(M, y, 1.2, bh, 'F');
       doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...GOLDT); tracked('PAYMENT', M + 7, y + 7, 0.9);
       doc.setFontSize(9.5); doc.setTextColor(...INK); doc.text(body, M + 7, y + 13.5); y += bh + 12;
@@ -2259,7 +2259,6 @@ function buildPdf(comp) {
   need(14); doc.setTextColor(90, 100, 94); doc.setFontSize(8);
   const fl2 = cmode ? doc.splitTextToSize('Items marked est. are sold by weight. They are weighed when packed, so you pay for the exact weight.', W - 2 * M) : doc.splitTextToSize(clean('Prices come from the supplier lists: ' + comp.groups.map(g => SUPS[g.sid].short + ' (' + SUPS[g.sid].list + ')').join('; ') + '. Suppliers say prices can change at any time, so confirm the total when ordering.'), W - 2 * M);
   doc.text(fl2, M, y); y += fl2.length * 3.6 + 2;
-  if (cmode && /qris/i.test(S.meta.pay || '')) { doc.setFont('helvetica', 'bold'); doc.text('Payment by QRIS: pay after your host confirms the final total, and type the amount from the final bill.', M, y); doc.setFont('helvetica', 'normal'); y += 4.6; }
   if (cmode) { doc.text('Fresh produce arrives the morning of delivery.', M, y); y += 4; doc.text('From the team behind Vurata Bali Experiences', M, y); y += 6; } else { y += 4; }
   if (cmode) { const qm = qrModules(ocode); if (qm) { const n = qm.length, size = 78, mod = size / (n + 4); need(size + 14); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(22, 32, 26); txt('Order code for your host (scan it, or send this page)', M, y); y += 3; doc.setFillColor(255, 255, 255); doc.rect(M, y, size, size, 'F'); doc.setFillColor(0, 0, 0); for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qm[r][c]) doc.rect(M + (c + 2) * mod, y + (r + 2) * mod, mod + 0.04, mod + 0.04, 'F'); y += size + 4; } }
   }
@@ -2658,7 +2657,7 @@ function renderShareC(comp) {
     '<p class="choose">Choose <b>one</b> way to send it. Your host gets the same order whichever you pick.</p>' +
     '<div class="lseg three sendseg" role="group" aria-label="How to send">' + seg + '</div><div class="sendpanel">' + panel + '</div>' +
     (hw ? '' : '<div class="field" style="margin-top:14px"><label for="hostwa">Your host\'s WhatsApp number</label><input id="hostwa" inputmode="numeric" placeholder="e.g. 6281234567890"><span class="hint">Not needed if you open the link your host sent. Without it, WhatsApp asks who to send to.</span></div>') + '</div>' +
-    (/qris/i.test(S.meta.pay || '') ? '<div class="card qriscard"><div class="msg-head"><h3>Pay with QRIS</h3></div><p class="hint">Pay <b>after</b> your host sends the final bill, because fresh items are weighed when packed. Then scan this code in any banking app or e-wallet and type the total from your bill.</p><div class="qrisimg"><img src="assets/qris.jpg" alt="QRIS code for Vurata Market" width="380" height="438" loading="lazy"></div><p class="hint">On your phone, press and hold the code to save it, then choose it from your gallery in your banking app. When you have paid, send your host a screenshot.</p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div></div>' : '') +
+    (/qris/i.test(S.meta.pay || '') ? '<div class="card qriscard"><div class="msg-head"><h3>Pay with QRIS</h3></div><p class="hint">Pay <b>after</b> your host replies on WhatsApp to confirm your order. If an item is out of stock, your host sends you the updated total first. Then scan this code in any banking app or e-wallet and enter your order total.</p><div class="qrisimg"><img src="assets/qris.jpg" alt="QRIS code for Vurata Market" width="380" height="438" loading="lazy"></div><p class="hint">On your phone, press and hold the code to save it, then choose it from your gallery in your banking app. When you have paid, send your host a screenshot.</p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div></div>' : '') +
     '<div class="card"><h3>What happens next</h3><ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Your host reads your order and confirms it with you on WhatsApp.</span></div></li><li><i>02</i><div><b>Final bill</b><span>Fresh items are weighed when packed, so the final bill can differ a little. Your host sends it to you.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day' + (S.meta.slot ? ' (' + esc(S.meta.slot) + ')' : '') + ', and you pay the way you chose.</span></div></li></ol></div>' +
     '<div class="card"><h3>Know someone who would like this?</h3><p class="hint">Share the app with a friend. They can order the same way you did.</p><div class="actions full"><button type="button" class="btn ghost" data-act="shareapp">Share this app</button></div></div>' +
     '<div class="card"><h3>Done with this order?</h3><p class="hint">Save it to history and start a fresh one. You can order the same thing again later and change it first.</p><div class="actions full"><button class="btn" data-act="archive">Save to history and start new</button></div></div>' + histHtml();
@@ -2671,7 +2670,7 @@ function billText(c, comp) {
   if (hasDel(comp)) out.push('', 'Delivery' + (c.zone && c.zone !== '__other' ? ' (' + c.zone + ')' : '') + ': ' + delLine(comp) + (c.dcode ? ' (code ' + c.dcode + ')' : ''));
   out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''), fin ? 'Items sold by weight use the packed weights shown above.' : 'Items sold by weight are confirmed after weighing at delivery.');
   if (c.need) out.push('Needed by: ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : '')); if (c.addr) out.push('Deliver to: ' + c.addr);
-  if (/qris/i.test(c.pay || '')) { out.push('Payment: QRIS (QR code). Please pay once we have confirmed your final total, and type the amount from this bill. Scan or save the QR here: ' + QRIS_URL); }
+  if (/qris/i.test(c.pay || '')) { out.push('Payment: QRIS (QR code). Please scan or save the QR here and enter the total above: ' + QRIS_URL); }
   else if (/deposit/i.test(c.pay || '')) { out.push('Payment: deposit by bank transfer.'); if (bankTxt) out.push(bankTxt); } else if (c.pay) { out.push('Payment: ' + c.pay); }
   if (+c.dep > 0) out.push('Received so far: ' + fmtRp(c.dep) + '. Balance: ' + fmtRp(Math.max(0, comp.grand - c.dep)) + '.');
   out.push('', 'Thank you!'); return out.join('\n');
@@ -3335,7 +3334,7 @@ function termsHtml() {
     sec('Your location', 'We only get your location if you tap <b>Add my pin location</b>, and only together with your order.') +
     sec('Ordering', 'Orders need 24 hours notice.' + cutoff + money) +
     sec('Prices and weight', 'Fresh items are sold by weight and weighed when packed, so you pay the exact weight. We confirm stock and your final total with you on WhatsApp.') +
-    sec('Payment', 'Pay on delivery in cash, or with QRIS (QR code) once we have confirmed your final total.') +
+    sec('Payment', 'Pay on delivery in cash, or with QRIS (QR code) after your host confirms your order on WhatsApp.') +
     sec('Changes', 'To change or cancel an order, message us on WhatsApp as early as you can.') + '</div>' +
     (hw ? '<div class="actions full"><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Questions? Chat with us</a></div>' : '') + '</div>';
 }
