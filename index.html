@@ -1286,6 +1286,11 @@ body { margin: 0; padding-inline: 8px; }
 @media (prefers-reduced-motion: reduce) { .bdot::before { transition: none; } }
 /* QRIS payment card */
 .qrisimg { display: grid; place-items: center; margin: 12px 0; } .qrisimg img { display: block; width: min(100%, 340px); height: auto; border: 1px solid var(--line); background: #fff; }
+/* search clear button: always available, on phones too */
+.search input { padding-right: 46px; } .search input::-webkit-search-cancel-button, .search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+.sclear { appearance: none; border: 0; background: none; position: absolute; right: 3px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; display: grid; place-items: center; padding: 0; color: var(--muted); cursor: pointer; z-index: 2; }
+.sclear svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+@media (hover: hover) { .sclear:hover { color: var(--ink); } }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -1357,7 +1362,7 @@ body { margin: 0; padding-inline: 8px; }
           <div class="sticky">
           <div class="chips" id="supChips"></div></div>
           <div class="row2"><label class="sr" for="catSel">Category</label><select id="catSel"></select></div>
-          <div class="search"><label class="sr" for="q">Search items</label><input id="q" type="search" enterkeyhint="search" placeholder="Search: buah naga, dragon fruit" autocomplete="off"></div>
+          <div class="search"><label class="sr" for="q">Search items</label><input id="q" type="search" enterkeyhint="search" placeholder="Search: buah naga, dragon fruit" autocomplete="off"><button type="button" class="sclear" data-act="qclear" aria-label="Clear search" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
         </div>
         <div id="pickList"></div>
       </div>
@@ -1976,7 +1981,7 @@ function askHost() {
   return '<a class="btn ghost" style="margin-top:12px" target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent('Hi! Do you have "' + q + '"? I could not find it in the app.') + '">Ask about "' + esc(q.slice(0, 40)) + '" on WhatsApp</a>';
 }
 function renderPick() {
-  const box = document.getElementById('pickList');
+  const box = document.getElementById('pickList'); { const qi = document.getElementById('q'), qc = document.querySelector('.sclear'); if (qi && qc) qc.hidden = !qi.value; }
   if (ui.loading) { box.innerHTML = '<div class="skel" aria-busy="true"><p class="hint">Loading today\'s prices...</p>' + '<div class="skrow"><i></i><span></span></div>'.repeat(6) + '</div>'; return; }
   if (ui.saved) { box.innerHTML = histHtml(); return; }
   const flat = ui.q.trim() || ui.cat !== 'all' || ui.picked || ui.fav;
@@ -3068,6 +3073,7 @@ document.addEventListener('click', e => {
   else if (act === 'sup') { ui.saved = false; ui.fav = false; ui.picked = false; ui.sup = b.dataset.s; ui.cat = 'all'; ui.limit = 80; renderFilters(); renderPick(); }
   else if (act === 'picked') { setListMode(ui.picked ? 'browse' : 'picked'); }
   else if (act === 'favf') { setListMode(ui.fav ? 'browse' : 'fav'); }
+  else if (act === 'qclear') { const qi = document.getElementById('q'); ui.q = ''; ui.limit = 80; if (qi) { qi.value = ''; } renderPick(); if (qi) qi.focus(); }
   else if (act === 'dym') { ui.q = b.dataset.q || ''; const qi = document.getElementById('q'); if (qi) qi.value = ui.q; ui.limit = 80; renderPick(); }
   else if (act === 'clearf') { ui.q = ''; ui.cat = 'all'; const qi = document.getElementById('q'); if (qi) qi.value = ''; setListMode('browse'); }
   else if (act === 'fav') {
