@@ -1308,6 +1308,12 @@ body { margin: 0; padding-inline: 8px; }
 @media (min-width: 1000px) { .sendcols .recapm, .sendcols .qriscard.qm { display: none; } }
 .sidecol .recap { margin: 4px 0 0 !important; }
 @media (min-width: 1000px) and (max-height: 860px) { .sendcols > .sidecol { position: static; } }
+/* My order lines: the photo sits in its own column and stretches over the name and price rows, up to about four rows */
+.ln { grid-template-columns: 50px minmax(0, 1fr); column-gap: 12px; row-gap: 10px; }
+.ln > .thumb { grid-column: 1; grid-row: 1 / span 2; width: 50px; height: auto; min-height: 50px; max-height: 100px; align-self: stretch; border-radius: 12px; font-size: 25px; }
+.ln > .ln-a { grid-column: 2; grid-template-columns: minmax(0, 1fr) auto; }
+.ln > .ln-b { grid-column: 2; padding-left: 0; }
+.ln > :not(.ln-n):not(.thumb):not(.ln-a):not(.ln-b) { grid-column: 1 / -1; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -2128,7 +2134,7 @@ function renderOrder(comp) {
       const unitTxt = ln.price ? fmtQty(ln.q) + ' x ' + fmtRp(ln.price) + (ln.listPrice && ln.price !== ln.listPrice ? ' (list ' + fmtRp(ln.listPrice) + ')' : '') : '';
       const priceBlock = cmode ? '<span class="pbtn" style="cursor:default">' + esc(unitTxt || 'price to be confirmed') + '</span>' : pe ? '<span class="pedit">Rp <input data-price="1" inputmode="numeric" value="' + (ln.price || '') + '" placeholder="list price" aria-label="Price per unit"></span>'
         : '<button type="button" class="pbtn" data-act="price"' + (canWrite ? '' : ' disabled') + '>' + (ln.st === 'x' ? 'not counted' : unitTxt ? esc(unitTxt) + ' <u>edit</u>' : '<u>Set price</u>') + '</button>';
-      return '<div class="ln' + (ln.st === 'x' ? ' out' : '') + '" data-key="' + esc(ln.key) + '"><span class="ln-n" aria-hidden="true">' + (idx + 1) + '</span><div class="ln-a"><span class="thumb sm s-' + ln.it.s + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span>' +
+      return '<div class="ln' + (ln.st === 'x' ? ' out' : '') + '" data-key="' + esc(ln.key) + '"><span class="ln-n" aria-hidden="true">' + (idx + 1) + '</span><span class="thumb sm s-' + ln.it.s + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="ln-a">' +
         '<div class="ln-name"><div class="nmrow"><b>' + esc(nm(ln.it).m) + '</b>' + (nm(ln.it).s ? '<p class="en">' + esc(nm(ln.it).s) + '</p>' : '') + '</div><p>' + esc(lb) + (ln.it.k && ln.it.k.length < 60 && !/pack|box|carton/.test(lb) ? ' - listed as ' + esc(ln.it.k) : '') + (o.est ? ' - sold by weight' : '') + '</p>' +
         (ln.it.x ? '<p class="' + (needsCheck(ln.it) ? 'chk' : '') + '">' + esc(ln.it.x) + '</p>' : '') +
         (cmode ? '' : '<button type="button" class="stbtn st-' + (ln.st || 'n') + '" data-act="status"' + (canWrite ? '' : ' disabled') + '>' + stl + '</button>') + '</div>' +
