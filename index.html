@@ -1284,6 +1284,8 @@ body { margin: 0; padding-inline: 8px; }
 .bdot::before { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; background: var(--line-dark); transition: width .24s cubic-bezier(.2, .7, .2, 1), margin .24s cubic-bezier(.2, .7, .2, 1), background-color .2s ease; }
 .bdot.on::before { width: 18px; margin-left: -9px; background: var(--gold); }
 @media (prefers-reduced-motion: reduce) { .bdot::before { transition: none; } }
+/* QRIS payment card */
+.qrisimg { display: grid; place-items: center; margin: 12px 0; } .qrisimg img { display: block; width: min(100%, 340px); height: auto; border: 1px solid var(--line); background: #fff; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -1443,7 +1445,8 @@ const SUPS = {
 };
 const SUP_ORDER = ['fv', 'mt', 'gr'];
 const STATUS = { new: 'Not ordered yet', ordered: 'Ordered', received: 'Delivered' };
-const PAYMENTS = ['', 'Cash on delivery', 'Deposit (bank transfer)', 'Add to the cafe order, I pay my share'];
+const PAYMENTS = ['', 'Cash on delivery', 'QRIS (QR code)', 'Add to the cafe order, I pay my share'];
+const QRIS_URL = 'https://market.vurata.com/assets/qris.jpg';
 const UNIT_ID = { kg: 'kg', pcs: 'pcs', pack: 'pak', box: 'dus', carton: 'karton', can: 'kaleng', btl: 'botol', jar: 'jar', sachet: 'sachet', ltr: 'liter', pax: 'pax', sisir: 'sisir', kotak: 'kotak', sak: 'sak' };
 const UNIT_EN = { kg: 'kg', pcs: 'pcs', pack: 'pack', box: 'box', carton: 'carton', can: 'can', btl: 'bottle', jar: 'jar', sachet: 'sachet', ltr: 'L', pax: 'pax', sisir: 'hand', kotak: 'box', sak: 'sack' };
 const BY_ID = {}; const ORDER_IX = {};
@@ -1472,7 +1475,7 @@ function fmtDate(iso, loc) {
   const d = new Date(iso + 'T12:00:00');
   return isNaN(d) ? iso : d.toLocaleDateString(loc === 'id' ? 'id-ID' : 'en-GB', { weekday: loc === 'id' ? 'long' : 'short', day: 'numeric', month: loc === 'id' ? 'long' : 'short', year: 'numeric' });
 }
-const PAY_ID = { 'Cash on delivery': 'Bayar tunai saat barang sampai (COD)', 'Deposit (bank transfer)': 'Deposit via transfer bank' };
+const PAY_ID = { 'Cash on delivery': 'Bayar tunai saat barang sampai (COD)', 'QRIS (QR code)': 'QRIS (kode QR)', 'Deposit (bank transfer)': 'Deposit via transfer bank' };
 function blankState() {
   return { meta: { title: 'Personal order', who: '', need: '', addr: '', pay: '', notes: '', zone: '', slot: '', pin: '' }, lines: {}, sup: {}, by: '', at: 0 };
 }
@@ -1529,6 +1532,7 @@ const per100 = (it, o) => { if (!cmode || !(o.sp > 0)) return ''; const pk = per
 /* Staff only: next to the wholesale price, show what the customer pays with the current markup. */
 const custPays = o => (!cmode && o.sp > 0 && o.pr > 0) ? '<span class="p100 custp">Customers pay ' + fmtRp(o.sp) + '</span>' : '';
 function optLabel(o) { return o.lb || ('per ' + o.u); }
+const labelDup = (it, o) => { const m = optLabel(o).match(/^pack \((.+)\)$/i); if (!m) return false; const f = t => t.toLowerCase().replace(/\s+/g, '').replace(/,/g, '.').replace(/gr(?![a-z])/g, 'g'); return f(it.n + ' ' + (it.e || '')).includes(f(m[1])); };
 const plainLabel = o => /^(per (kg|pcs|pack|can|ltr|btl|jar)|pack|can)$/.test(optLabel(o));
 function needsCheck(it) { return !!(it.x && /confirm|not stated|blank|does not match/i.test(it.x)); }
 
@@ -1713,7 +1717,7 @@ function compute(state, mode) {
 function lineText(ln, cust) {
   const unit = UNIT_EN[ln.o.u] || ln.o.u;
   const qtyTxt = fmtQty(ln.q) + ' ' + unit + (ln.q0 != null && ln.q0 !== ln.q ? ' (ordered ' + fmtQty(ln.q0) + ')' : '');
-  const lbl = plainLabel(ln.o) ? '' : ' [' + optLabel(ln.o) + ']';
+  const lbl = plainLabel(ln.o) || labelDup(ln.it, ln.o) ? '' : ' [' + optLabel(ln.o) + ']';
   const tag = ln.st === 'o' ? '[ORDERED] ' : ln.st === 'x' ? '[OUT OF STOCK] ' : '';
   let money;
   if (ln.st === 'x') money = ' (not counted)';
@@ -2191,7 +2195,7 @@ function buildPdf(comp) {
     doc.setTextColor(90, 100, 94); doc.setFontSize(8); txt('Item', M + 1, y); txt('Qty', 106, y); txt('Unit price', 162, y, { align: 'right' }); txt('Total', W - M - 1, y, { align: 'right' });
     doc.setDrawColor(200, 206, 201); doc.line(M, y + 1.6, W - M, y + 1.6); y += 6.6;
     g.lines.forEach(ln => {
-      const unit = UNIT_EN[ln.o.u] || ln.o.u; const nv = cmode ? nm(ln.it) : { m: ln.it.n, s: '' }; const nameLines = doc.splitTextToSize(clean(nv.m + (plainLabel(ln.o) ? '' : ' [' + optLabel(ln.o) + ']')), 88); const idLines = nv.s ? doc.splitTextToSize(clean(nv.s), 88) : [];
+      const unit = UNIT_EN[ln.o.u] || ln.o.u; const nv = cmode ? nm(ln.it) : { m: ln.it.n, s: '' }; const nameLines = doc.splitTextToSize(clean(nv.m + (plainLabel(ln.o) || labelDup(ln.it, ln.o) ? '' : ' [' + optLabel(ln.o) + ']')), 88); const idLines = nv.s ? doc.splitTextToSize(clean(nv.s), 88) : [];
       const sub = []; if (ln.note) sub.push('Note: ' + ln.note); if (ln.it.x && needsCheck(ln.it)) sub.push('Check: ' + ln.it.x);
       const subLines = sub.length ? doc.splitTextToSize(clean(sub.join('  ')), 88) : []; const h = nameLines.length * 4.4 + idLines.length * 3.8 + subLines.length * 3.8 + 2.4; need(h);
       doc.setFont('helvetica', cmode ? 'bold' : 'normal'); doc.setFontSize(9.5); doc.setTextColor(22, 32, 26); doc.text(nameLines, M + 1, y);
@@ -2221,6 +2225,7 @@ function buildPdf(comp) {
   need(14); doc.setTextColor(90, 100, 94); doc.setFontSize(8);
   const fl2 = cmode ? doc.splitTextToSize('Items marked est. are sold by weight. They are weighed when packed, so you pay for the exact weight.', W - 2 * M) : doc.splitTextToSize(clean('Prices come from the supplier lists: ' + comp.groups.map(g => SUPS[g.sid].short + ' (' + SUPS[g.sid].list + ')').join('; ') + '. Suppliers say prices can change at any time, so confirm the total when ordering.'), W - 2 * M);
   doc.text(fl2, M, y); y += fl2.length * 3.6 + 2;
+  if (cmode && /qris/i.test(S.meta.pay || '')) { doc.text('Payment by QRIS: pay after your host confirms the final total, and type the amount from the final bill.', M, y); y += 4.6; }
   if (cmode) { doc.text('Fresh produce arrives the morning of delivery.', M, y); y += 4; doc.text('From the team behind Vurata Bali Experiences', M, y); y += 6; } else { y += 4; }
   if (cmode) { const qm = qrModules(ocode); if (qm) { const n = qm.length, size = 78, mod = size / (n + 4); need(size + 14); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(22, 32, 26); txt('Order code for your host (scan it, or send this page)', M, y); y += 3; doc.setFillColor(255, 255, 255); doc.rect(M, y, size, size, 'F'); doc.setFillColor(0, 0, 0); for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qm[r][c]) doc.rect(M + (c + 2) * mod, y + (r + 2) * mod, mod + 0.04, mod + 0.04, 'F'); y += size + 4; } }
   const n = doc.getNumberOfPages(); for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(140, 148, 143); txt('Vurata Market order  |  page ' + i + ' of ' + n, W / 2, 291, { align: 'center' }); }
@@ -2496,7 +2501,7 @@ const idDate = iso => new Date(iso + 'T12:00:00').toLocaleDateString('id-ID', { 
 function driverText() {
   const stops = stopsList(); if (!stops.length) return ''; const id = (ui.dlang || 'id') === 'id';
   const T = id ? { run: 'Rute pengantaran', stop: 'titik', noarea: 'Tanpa area', items: 'Barang', packed: 'Dikemas', ready: 'SIAP', collect: 'TAGIH', incl: 'termasuk ongkir', paid: 'Sudah lunas', note: 'Catatan', foot: 'Berat adalah perkiraan sampai ditimbang. Jumlah akhir mengikuti berat yang dikemas.' } : { run: 'Delivery run', stop: 'stop', noarea: 'No area', items: 'Items', packed: 'Packed', ready: 'READY', collect: 'COLLECT', incl: 'incl. delivery', paid: 'Already paid', note: 'Note', foot: 'Weights are estimates until weighed. Final amounts follow the packed weight.' };
-  const payTxt = p => !id ? p : /cash/i.test(p) ? 'Tunai saat diterima' : /deposit/i.test(p) ? 'Deposit (transfer bank)' : p;
+  const payTxt = p => !id ? p : /cash/i.test(p) ? 'Tunai saat diterima' : /qris/i.test(p) ? 'QRIS (kode QR)' : /deposit/i.test(p) ? 'Deposit (transfer bank)' : p;
   const out = [T.run + ' - ' + stops.length + ' ' + T.stop + (!id && stops.length > 1 ? 's' : '')]; let cur = null;
   stops.forEach(c => {
     const area = c.zone ? zoneLabel(c.zone) : T.noarea; if (area !== cur) { out.push('', '== ' + area.toUpperCase() + ' =='); cur = area; }
@@ -2612,12 +2617,13 @@ function renderShareC(comp) {
       ? '<h4 class="opt-h">Option 2: send a PDF receipt</h4><p class="hint">Save the receipt, then attach it in your WhatsApp chat with your host. Your order is inside it, so they can add it automatically.</p><ol class="steps"><li>Save the PDF</li><li>Open WhatsApp and attach the file</li></ol><div class="actions duo"><button class="btn" data-act="pdf">Save PDF receipt</button>' + openWa + '</div>'
       : '<h4 class="opt-h">Option 3: send a picture of this QR code</h4><p class="hint">Take a screenshot of the code below, then send the picture to your host on WhatsApp.</p>' + (q ? '<div class="qrbox">' + q + '</div>' : '<p class="hint">This order is too big for a QR code. Use option 1 or 2.</p>') + '<div class="actions full">' + openWa + '</div>';
   host.innerHTML = '<div class="card"><div class="msg-head"><h3>Send your order</h3></div>' +
-    (S.meta.who ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Add your name in My order first, so your host knows who it is from.</p>') + (S.meta.pay ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Choose how you will pay in My order: cash on delivery or a deposit.</p>') +
+    (S.meta.who ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Add your name in My order first, so your host knows who it is from.</p>') + (S.meta.pay ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Choose how you will pay in My order: cash on delivery or QRIS.</p>') +
     '<div class="recap"><div class="rcap-top"><div class="rcap-who"><b>' + esc(S.meta.who || 'Your order') + '</b><span>' + comp.count + ' item' + (comp.count === 1 ? '' : 's') + '</span></div><b class="rcap-tot num">' + fmtRp(comp.grand) + '</b></div>' +
     (S.meta.need || S.meta.slot || S.meta.zone || S.meta.addr ? '<dl class="rcap-rows">' + [['Day', S.meta.need ? fmtDate(S.meta.need) : ''], ['Time', S.meta.slot || ''], ['Area', S.meta.zone ? zoneLabel(S.meta.zone) : ''], ['Deliver to', S.meta.addr || '']].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>').join('') + '</dl>' : '') + '</div>' +
     '<p class="choose">Choose <b>one</b> way to send it. Your host gets the same order whichever you pick.</p>' +
     '<div class="lseg three sendseg" role="group" aria-label="How to send">' + seg + '</div><div class="sendpanel">' + panel + '</div>' +
     (hw ? '' : '<div class="field" style="margin-top:14px"><label for="hostwa">Your host\'s WhatsApp number</label><input id="hostwa" inputmode="numeric" placeholder="e.g. 6281234567890"><span class="hint">Not needed if you open the link your host sent. Without it, WhatsApp asks who to send to.</span></div>') + '</div>' +
+    (/qris/i.test(S.meta.pay || '') ? '<div class="card qriscard"><div class="msg-head"><h3>Pay with QRIS</h3></div><p class="hint">Pay <b>after</b> your host sends the final bill, because fresh items are weighed when packed. Then scan this code in any banking app or e-wallet and type the total from your bill.</p><div class="qrisimg"><img src="assets/qris.jpg" alt="QRIS code for Vurata Market" width="380" height="438" loading="lazy"></div><p class="hint">On your phone, press and hold the code to save it, then choose it from your gallery in your banking app. When you have paid, send your host a screenshot.</p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div></div>' : '') +
     '<div class="card"><h3>What happens next</h3><ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Your host reads your order and confirms it with you on WhatsApp.</span></div></li><li><i>02</i><div><b>Final bill</b><span>Fresh items are weighed when packed, so the final bill can differ a little. Your host sends it to you.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day' + (S.meta.slot ? ' (' + esc(S.meta.slot) + ')' : '') + ', and you pay the way you chose.</span></div></li></ol></div>' +
     '<div class="card"><h3>Know someone who would like this?</h3><p class="hint">Share the app with a friend. They can order the same way you did.</p><div class="actions full"><button type="button" class="btn ghost" data-act="shareapp">Share this app</button></div></div>' +
     '<div class="card"><h3>Done with this order?</h3><p class="hint">Save it to history and start a fresh one. You can order the same thing again later and change it first.</p><div class="actions full"><button class="btn" data-act="archive">Save to history and start new</button></div></div>' + histHtml();
@@ -2630,7 +2636,8 @@ function billText(c, comp) {
   if (hasDel(comp)) out.push('', 'Delivery' + (c.zone && c.zone !== '__other' ? ' (' + c.zone + ')' : '') + ': ' + delLine(comp) + (c.dcode ? ' (code ' + c.dcode + ')' : ''));
   out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''), fin ? 'Items sold by weight use the packed weights shown above.' : 'Items sold by weight are confirmed after weighing at delivery.');
   if (c.need) out.push('Needed by: ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : '')); if (c.addr) out.push('Deliver to: ' + c.addr);
-  if (/deposit/i.test(c.pay || '')) { out.push('Payment: deposit by bank transfer.'); if (bankTxt) out.push(bankTxt); } else if (c.pay) { out.push('Payment: ' + c.pay); }
+  if (/qris/i.test(c.pay || '')) { out.push('Payment: QRIS (QR code). Please pay once we have confirmed your final total, and type the amount from this bill. Scan or save the QR here: ' + QRIS_URL); }
+  else if (/deposit/i.test(c.pay || '')) { out.push('Payment: deposit by bank transfer.'); if (bankTxt) out.push(bankTxt); } else if (c.pay) { out.push('Payment: ' + c.pay); }
   if (+c.dep > 0) out.push('Received so far: ' + fmtRp(c.dep) + '. Balance: ' + fmtRp(Math.max(0, comp.grand - c.dep)) + '.');
   out.push('', 'Thank you!'); return out.join('\n');
 }
@@ -2647,7 +2654,7 @@ function renderCustomers() {
   const host = document.getElementById('custBody'); if (!host) return;
   const prevTxt = (document.getElementById('importTxt') || {}).value || '';
   const link = ARTIFACT_URL + (myWA ? '#f-' + myWA : '#f');
-  const invMsg = 'Hi! You can order fresh fruit, vegetables, meat and groceries from us here: ' + link + '\nPick what you want, choose cash on delivery or a deposit, then tap Send. It comes straight to us on WhatsApp.';
+  const invMsg = 'Hi! You can order fresh fruit, vegetables, meat and groceries from us here: ' + link + '\nPick what you want, choose cash on delivery or QRIS, then tap Send. It comes straight to us on WhatsApp.';
   const invite = '<div class="card" id="inviteCard"><h3>Invite customers</h3><p class="hint" style="margin-bottom:12px">Send this message on WhatsApp. They build their own order and send it back as a PDF, a picture or a message. They never see your orders or anyone else\'s. In this page\'s Share menu, allow anyone with the link to view.</p>' +
     '<div class="field"><label for="mywa-n">Your WhatsApp number</label>' + phoneField('mywa', myWA ? '+' + myWA : '', canWrite ? '' : ' disabled') + '</div>' +
     (myWA ? '' : '<p class="hint" style="color:var(--warn);margin-top:6px">Add your number first so orders come back to you.</p>') +
@@ -3293,7 +3300,7 @@ function termsHtml() {
     sec('Your location', 'We only get your location if you tap <b>Add my pin location</b>, and only together with your order.') +
     sec('Ordering', 'Orders need 24 hours notice.' + cutoff + money) +
     sec('Prices and weight', 'Fresh items are sold by weight and weighed when packed, so you pay the exact weight. We confirm stock and your final total with you on WhatsApp.') +
-    sec('Payment', 'Pay on delivery in cash, or by bank transfer as a deposit, as agreed with us on WhatsApp.') +
+    sec('Payment', 'Pay on delivery in cash, or with QRIS (QR code) once we have confirmed your final total.') +
     sec('Changes', 'To change or cancel an order, message us on WhatsApp as early as you can.') + '</div>' +
     (hw ? '<div class="actions full"><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Questions? Chat with us</a></div>' : '') + '</div>';
 }
