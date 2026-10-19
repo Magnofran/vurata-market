@@ -1301,6 +1301,8 @@ body { margin: 0; padding-inline: 8px; }
 .item:not(.single) > .head > .thw { width: 54px; margin-left: -8px; align-self: stretch; display: flex; flex-direction: column; }
 .item:not(.single) > .head > .thw .thumb { width: 54px; height: auto; min-height: 54px; flex: 1; font-size: 28px; border-radius: 13px; }
 @media (max-width: 520px) { .item:not(.single) > .head > .thw { width: 48px; } .item:not(.single) > .head > .thw .thumb { width: 48px; min-height: 48px; font-size: 25px; border-radius: 12px; } }
+/* the photo never grows past about four rows, so long names don't shrink the product */
+.item.single > .thw .thumb, .item:not(.single) > .head > .thw .thumb { max-height: 100px; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
