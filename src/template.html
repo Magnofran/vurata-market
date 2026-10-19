@@ -1719,7 +1719,8 @@ function lineText(ln) {
   if (ln.st === 'x') money = ' (not counted)';
   else if (ln.price) money = ' x ' + fmtRp(ln.price) + ' = ' + fmtRp(ln.total) + (ln.o.est && ln.q0 === ln.q ? ' (est.)' : '') + (ln.listPrice && ln.price !== ln.listPrice ? ' (list price ' + fmtRp(ln.listPrice) + ')' : (!ln.listPrice ? ' (price set by hand)' : ''));
   else money = ' = PRICE NEEDED';
-  return tag + ln.it.n + lbl + ': ' + qtyTxt + money;
+  const nv = cmode ? nm(ln.it) : null;
+  return tag + (nv ? nv.m + (nv.s ? ' (' + nv.s + ')' : '') : ln.it.n) + lbl + ': ' + qtyTxt + money;
 }
 function buildSummary(state, comp) {
   const m = state.meta; const out = [];
@@ -1914,7 +1915,9 @@ function itemPicked(it) { return it.o.some((o, i) => { const L = S.lines[keyOf(i
 const ltText = (o, q, key) => { const L = (key && S.lines[key]) || {}; const p = +L.p > 0 ? +L.p : (cmode ? o.sp : o.pr); return q > 0 && p ? '= ' + fmtRp(p * q) : ''; };
 const imgSrc = id => /^(data:image\/|photos\/)/.test(id) ? id : window.SB.imgUrl(id);
 /* customers see the English name first in bold and the Indonesian one in grey; staff keep the supplier's own name first */
-const nm = it => { const e = (it.e || '').trim(), n = it.n.trim(), same = e.toLowerCase() === n.toLowerCase(); return cmode && e && !same && !/^unclear/i.test(e) && n.indexOf(' / ') < 0 ? { m: e, s: n } : { m: n, s: same ? '' : e }; };
+const NM_UNIT = { KG: 'Kg', GR: 'Gr', ML: 'Ml', LTR: 'Ltr', PCS: 'Pcs', SAK: 'Sak' };
+const nmCase = t => t.replace(/\b[A-Za-z]+\b/g, w => NM_UNIT[w] || (w.length >= 4 && w === w.toUpperCase() ? w.charAt(0) + w.slice(1).toLowerCase() : w));
+const nm = it => { const e = (it.e || '').trim(), n = it.n.trim(), same = e.toLowerCase() === n.toLowerCase(); if (!cmode) return { m: n, s: same ? '' : e }; const f = x => nmCase(x).replace(/^[a-z]/, c => c.toUpperCase()); return e && !same && !/^unclear/i.test(e) && n.indexOf(' / ') < 0 ? { m: f(e), s: f(n) } : { m: f(n), s: same || !e ? '' : f(e) }; };
 const thumbIn = it => it.img ? '<img loading="lazy" decoding="async" alt="" data-e="' + esc(it.i || '') + '" data-zoomname="' + esc(it.n) + '" src="' + esc(imgSrc(it.img)) + '">' : (it.i || '');
 /* Generated placeholder photos (photos/...) are not tappable. Real photos uploaded by staff still open full size. */
 const thumbCls = it => it.img ? (/^photos\//.test(it.img) ? ' img gen' : ' img') : '';
@@ -2180,12 +2183,14 @@ function buildPdf(comp) {
     doc.setTextColor(90, 100, 94); doc.setFontSize(8); txt('Item', M + 1, y); txt('Qty', 106, y); txt('Unit price', 162, y, { align: 'right' }); txt('Total', W - M - 1, y, { align: 'right' });
     doc.setDrawColor(200, 206, 201); doc.line(M, y + 1.6, W - M, y + 1.6); y += 6.6;
     g.lines.forEach(ln => {
-      const unit = UNIT_EN[ln.o.u] || ln.o.u; const nameLines = doc.splitTextToSize(clean(ln.it.n + (plainLabel(ln.o) ? '' : ' [' + optLabel(ln.o) + ']')), 88);
+      const unit = UNIT_EN[ln.o.u] || ln.o.u; const nv = cmode ? nm(ln.it) : { m: ln.it.n, s: '' }; const nameLines = doc.splitTextToSize(clean(nv.m + (plainLabel(ln.o) ? '' : ' [' + optLabel(ln.o) + ']')), 88); const idLines = nv.s ? doc.splitTextToSize(clean(nv.s), 88) : [];
       const sub = []; if (ln.note) sub.push('Note: ' + ln.note); if (ln.it.x && needsCheck(ln.it)) sub.push('Check: ' + ln.it.x);
-      const subLines = sub.length ? doc.splitTextToSize(clean(sub.join('  ')), 88) : []; const h = nameLines.length * 4.4 + subLines.length * 3.8 + 2.4; need(h);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(22, 32, 26); doc.text(nameLines, M + 1, y);
+      const subLines = sub.length ? doc.splitTextToSize(clean(sub.join('  ')), 88) : []; const h = nameLines.length * 4.4 + idLines.length * 3.8 + subLines.length * 3.8 + 2.4; need(h);
+      doc.setFont('helvetica', cmode ? 'bold' : 'normal'); doc.setFontSize(9.5); doc.setTextColor(22, 32, 26); doc.text(nameLines, M + 1, y);
+      if (idLines.length) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120, 128, 123); doc.text(idLines, M + 1, y + nameLines.length * 4.4 - 0.6); doc.setFontSize(9.5); doc.setTextColor(22, 32, 26); }
+      doc.setFont('helvetica', 'normal');
       txt(fmtQty(ln.q) + ' ' + unit + (ln.o.est ? ' (est.)' : ''), 106, y); txt(ln.st === 'x' ? 'out of stock' : ln.price ? fmtRp(ln.price) : 'ask price', 162, y, { align: 'right' }); txt(ln.total != null ? fmtRp(ln.total) : '-', W - M - 1, y, { align: 'right' });
-      if (subLines.length) { doc.setFontSize(8); doc.setTextColor(120, 78, 0); doc.text(subLines, M + 1, y + nameLines.length * 4.4 - 0.6); }
+      if (subLines.length) { doc.setFontSize(8); doc.setTextColor(120, 78, 0); doc.text(subLines, M + 1, y + nameLines.length * 4.4 + idLines.length * 3.8 - 0.6); }
       y += h; doc.setDrawColor(230, 233, 231); doc.line(M, y - 3.9, W - M, y - 3.9);
     });
     need(10); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(22, 32, 26);
