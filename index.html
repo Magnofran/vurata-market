@@ -1194,7 +1194,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .otype + input { margin-top: 8px; }
 .search::before { content: ''; position: absolute; left: 15px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); background: var(--muted); pointer-events: none; z-index: 1; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat; }
 .search input { padding-left: 44px; }
-.ordnote { margin: 12px 0 14px; font-size: 12.5px; line-height: 1.6; color: var(--muted); } .ordnote a { color: var(--gold-text); text-underline-offset: 3px; }
+.ordnote { margin: 16px 0 18px; font-size: 12.5px; line-height: 1.7; color: var(--muted); text-align: center; } .ordnote a { color: var(--gold-text); text-underline-offset: 3px; }
 /* Drop-down arrows: drawn by us so they sit 16px from the edge, level with the + of the How it works band. */
 select:not([multiple]) { -webkit-appearance: none; appearance: none; padding-right: 42px !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2356615A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px 16px; }
 :root[data-theme="dark"] select:not([multiple]) { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239AA69F' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); }
@@ -1656,7 +1656,7 @@ function goalOf(c) {
 const FD_TRUCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6.5h11.5v9.5H2.5z"/><path d="M14 9.5h4l3.5 3.6V16H14"/><circle cx="7" cy="17.5" r="1.9"/><circle cx="17.5" cy="17.5" r="1.9"/></svg>';
 function freeNudge(c) {
   const dl = dlNow(); const mg = minGap(c);
-  if (mg > 0) return '<div class="fdel warn"><span>Minimum order is <b>' + fmtRp(dl.min) + '</b>. Add <b>' + fmtRp(mg) + '</b> more to send it.</span><i><u style="width:' + Math.round(c.total / dl.min * 100) + '%"></u></i></div>';
+  if (mg > 0) return '<div class="fdel warn"><span>Minimum order is <b>' + fmtRp(dl.min) + '</b>.<br>Add <b>' + fmtRp(mg) + '</b> more to send it.</span><i><u style="width:' + Math.round(c.total / dl.min * 100) + '%"></u></i></div>';
   if (!cmode || !dl.free || !c.total || !dl.zones.some(z => z.fee > 0)) return '';
   if (c.zone && c.feeKnown && c.fee === 0 && !c.free) return '';
   if (c.total >= dl.free) return '<div class="fdel ok"><span><b>Free delivery unlocked.</b> Your delivery is on us.</span></div>';
