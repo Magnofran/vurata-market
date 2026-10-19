@@ -2155,7 +2155,14 @@ function renderShare(comp) {
 /* ================= PDF receipt ================= */
 const clean = s => String(s == null ? '' : s).replace(/[–—]/g, '-').replace(/×/g, 'x').replace(/≈/g, '~').replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
 let WM_PNG = '';
-function ensureWordmark() {
+let MK_PNG = '';
+const MK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="120" height="120" fill="none" stroke="#C2A679" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h17"/><path d="M5 12l1.3 7a2 2 0 0 0 2 1.7h7.4a2 2 0 0 0 2-1.7l1.3-7"/><path d="M9.5 15v3M12 15v3M14.5 15v3"/><circle cx="9" cy="8.6" r="2.7"/><path d="M9 5.9c0-1 .6-1.8 1.6-2"/><path d="M15 12V7.5"/><path d="M15 9c0-1.8 1.2-3 3-3.2"/><path d="M15 10.4c0-1.4-1-2.3-2.4-2.5"/></svg>';
+function ensureMark() {
+  if (MK_PNG) return Promise.resolve();
+  return new Promise(res => { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = 120; c.height = 120; c.getContext('2d').drawImage(im, 0, 0, 120, 120); MK_PNG = c.toDataURL('image/png'); } catch (e) {} res(); }; im.onerror = () => res(); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(MK_SVG); });
+}
+function ensureWordmark() { return ensureWordmark0().then(v => ensureMark().then(() => v)); }
+function ensureWordmark0() {
   if (WM_PNG) return Promise.resolve(WM_PNG);
   return new Promise(res => { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = 600; c.height = 126; c.getContext('2d').drawImage(im, 0, 0, 600, 126); WM_PNG = c.toDataURL('image/png'); } catch (e) {} res(WM_PNG); }; im.onerror = () => res(''); im.src = 'assets/wordmark-light.svg'; });
 }
@@ -2166,7 +2173,7 @@ function buildPdf(comp) {
   const need = h => { if (y + h > 284) { doc.addPage(); y = 16; } };
   const txt = (t, x, yy, o) => doc.text(clean(t), x, yy, o);
   if (WM_PNG) { try { doc.addImage(WM_PNG, 'PNG', M - 0.9, y - 6.6, 38, 7.98, 'vmwm', 'FAST'); } catch (e) { WM_PNG = ''; } }
-  if (WM_PNG) { doc.setDrawColor(194, 166, 121); doc.setLineWidth(0.3); doc.line(M + 40, y - 5, M + 40, y + 0.5); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139); txt('M A R K E T', M + 43, y - 0.8); }
+  if (WM_PNG) { doc.setDrawColor(194, 166, 121); doc.setLineWidth(0.3); doc.line(M + 40, y - 5, M + 40, y + 0.5); let mx = M + 43; if (MK_PNG) { try { doc.addImage(MK_PNG, 'PNG', mx, y - 4.9, 5.2, 5.2, 'vmmk', 'FAST'); mx += 7.6; } catch (e) { MK_PNG = ''; } } doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100, 116, 139); txt('M A R K E T', mx, y - 0.8); }
   else { doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(22, 32, 26); txt('VURATA MARKET', M, y); }
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 100, 94); txt('Created ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), W - M, y, { align: 'right' });
   y += 8; doc.setFontSize(11); doc.setTextColor(22, 32, 26); doc.setFont('helvetica', 'bold'); txt(S.meta.title || 'Order', M, y); y += 6;
