@@ -1749,7 +1749,7 @@ function lineText(ln, cust) {
   const tag = ln.st === 'o' ? '[ORDERED] ' : ln.st === 'x' ? '[OUT OF STOCK] ' : '';
   let money;
   if (ln.st === 'x') money = ' (not counted)';
-  else if (ln.price) money = ' x ' + fmtRp(ln.price) + ' = ' + fmtRp(ln.total) + (ln.o.est && ln.q0 === ln.q ? ' (est.)' : '') + (ln.listPrice && ln.price !== ln.listPrice ? ' (list price ' + fmtRp(ln.listPrice) + ')' : (!ln.listPrice ? ' (price set by hand)' : ''));
+  else if (ln.price) money = ' x ' + fmtRp(ln.price) + ' = ' + fmtRp(ln.total) + (ln.o.est && ln.q0 === ln.q && !(cmode || cust) ? ' (est.)' : '') + (ln.listPrice && ln.price !== ln.listPrice ? ' (list price ' + fmtRp(ln.listPrice) + ')' : (!ln.listPrice ? ' (price set by hand)' : ''));
   else money = ' = PRICE NEEDED';
   const nv = cmode || cust ? nm(ln.it) : null;
   return tag + (nv ? nv.m + (nv.s ? ' (' + nv.s + ')' : '') : ln.it.n) + lbl + ': ' + qtyTxt + money;
@@ -2229,7 +2229,7 @@ function buildPdf(comp) {
       doc.setFont('helvetica', cmode ? 'bold' : 'normal'); doc.setFontSize(9.5); doc.setTextColor(22, 32, 26); doc.text(nameLines, M + 1, y);
       if (idLines.length) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120, 128, 123); doc.text(idLines, M + 1, y + nameLines.length * 4.4 - 0.6); doc.setFontSize(9.5); doc.setTextColor(22, 32, 26); }
       doc.setFont('helvetica', 'normal');
-      txt(fmtQty(ln.q) + ' ' + unit + (ln.o.est ? ' (est.)' : ''), 106, y); txt(ln.st === 'x' ? 'out of stock' : ln.price ? fmtRp(ln.price) : 'ask price', 162, y, { align: 'right' }); txt(ln.total != null ? fmtRp(ln.total) : '-', W - M - 1, y, { align: 'right' });
+      txt(fmtQty(ln.q) + ' ' + unit + (ln.o.est && !cmode ? ' (est.)' : ''), 106, y); txt(ln.st === 'x' ? 'out of stock' : ln.price ? fmtRp(ln.price) : 'ask price', 162, y, { align: 'right' }); txt(ln.total != null ? fmtRp(ln.total) : '-', W - M - 1, y, { align: 'right' });
       if (subLines.length) { doc.setFontSize(8); doc.setTextColor(120, 78, 0); doc.text(subLines, M + 1, y + nameLines.length * 4.4 + idLines.length * 3.8 - 0.6); }
       y += h; doc.setDrawColor(230, 233, 231); doc.line(M, y - 3.9, W - M, y - 3.9);
     });
@@ -2250,7 +2250,7 @@ function buildPdf(comp) {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...MUTE); const fl = doc.splitTextToSize(clean(facts), W - 2 * M); doc.text(fl, W - M, y, { align: 'right' }); y += fl.length * 4 + 12;
     need(30); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...GOLDT); tracked('GOOD TO KNOW', M, y, 0.9); y += 6;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...MUTE);
-    ['Items marked est. are sold by weight. They are weighed when packed, so you pay for the exact weight.', 'Fresh produce arrives the morning of delivery.'].forEach(t => { const l = doc.splitTextToSize(t, W - 2 * M); doc.text(l, M, y); y += l.length * 4.4 + 2; });
+    ['Items sold by weight are ordered in 500 g steps, so the total you see is the total you pay.', 'Fresh produce arrives the morning of delivery.'].forEach(t => { const l = doc.splitTextToSize(t, W - 2 * M); doc.text(l, M, y); y += l.length * 4.4 + 2; });
     y += 7;
     if (/qris/i.test(S.meta.pay || '')) {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); const body = doc.splitTextToSize('Pay with QRIS after your host replies on WhatsApp to confirm your order. If an item is out of stock, your host sends you the updated total first.', W - 2 * M - 16); const bh = body.length * 4.6 + 16; need(bh + 10);
@@ -2285,7 +2285,7 @@ function buildPdf(comp) {
     y += 2;
   }
   need(14); doc.setTextColor(90, 100, 94); doc.setFontSize(8);
-  const fl2 = cmode ? doc.splitTextToSize('Items marked est. are sold by weight. They are weighed when packed, so you pay for the exact weight.', W - 2 * M) : doc.splitTextToSize(clean('Prices come from the supplier lists: ' + comp.groups.map(g => SUPS[g.sid].short + ' (' + SUPS[g.sid].list + ')').join('; ') + '. Suppliers say prices can change at any time, so confirm the total when ordering.'), W - 2 * M);
+  const fl2 = doc.splitTextToSize(clean('Prices come from the supplier lists: ' + comp.groups.map(g => SUPS[g.sid].short + ' (' + SUPS[g.sid].list + ')').join('; ') + '. Suppliers say prices can change at any time, so confirm the total when ordering.'), W - 2 * M);
   doc.text(fl2, M, y); y += fl2.length * 3.6 + 2;
   if (cmode) { doc.text('Fresh produce arrives the morning of delivery.', M, y); y += 4; doc.text('From the team behind Vurata Bali Experiences', M, y); y += 6; } else { y += 4; }
   if (cmode) { const qm = qrModules(ocode); if (qm) { const n = qm.length, size = 78, mod = size / (n + 4); need(size + 14); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(22, 32, 26); txt('Order code for your host (scan it, or send this page)', M, y); y += 3; doc.setFillColor(255, 255, 255); doc.rect(M, y, size, size, 'F'); doc.setFillColor(0, 0, 0); for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qm[r][c]) doc.rect(M + (c + 2) * mod, y + (r + 2) * mod, mod + 0.04, mod + 0.04, 'F'); y += size + 4; } }
@@ -2660,7 +2660,7 @@ function customerMessage(state, comp) {
   if (m.pin) out.push('Pin: https://maps.google.com/?q=' + m.pin); if (m.need) out.push('Needed by: ' + fmtDate(m.need)); if (m.slot) out.push('Delivery time: ' + m.slot); if (m.zone) out.push('Area: ' + zoneLabel(m.zone)); if (m.addr) out.push('Deliver to: ' + m.addr); if (m.pay) out.push('Payment: ' + m.pay); if (m.notes) out.push('Notes: ' + m.notes);
   comp.groups.forEach(g => { out.push('', '*' + SUPS[g.sid].name.toUpperCase() + '*'); g.lines.forEach((ln, i) => { out.push((i + 1) + '. ' + lineText(ln)); if (ln.note) out.push('   Note: ' + ln.note); }); out.push('Subtotal: ' + fmtRp(g.subtotal)); });
   if (hasDel(comp)) out.push('', 'Delivery: ' + delLine(comp) + (comp.codeUsed ? ' (code ' + comp.codeUsed + ': ' + comp.codeText + ')' : (state.meta.dcode ? ' (code ' + state.meta.dcode + ' entered)' : '')));
-  out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + ' (fresh items are weighed when packed, so you pay the exact weight)', '', 'Order code (your host pastes this into the app):', makeCode(state));
+  out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : ''), '', 'Order code (your host pastes this into the app):', makeCode(state));
   return out.join('\n');
 }
 function renderShareC(comp) {
@@ -2687,7 +2687,7 @@ function renderShareC(comp) {
     '<p class="choose">Choose <b>one</b> way to send it. Your host gets the same order whichever you pick.</p>' +
     '<div class="lseg three sendseg" role="group" aria-label="How to send">' + seg + '</div><div class="sendpanel">' + panel + '</div>' +
     (hw ? '' : '<div class="field" style="margin-top:14px"><label for="hostwa">Your host\'s WhatsApp number</label><input id="hostwa" inputmode="numeric" placeholder="e.g. 6281234567890"><span class="hint">Not needed if you open the link your host sent. Without it, WhatsApp asks who to send to.</span></div>') + '</div>';
-  const nextCards = '<div class="card"><h3>What happens next</h3><ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Your host reads your order and confirms it with you on WhatsApp.</span></div></li><li><i>02</i><div><b>Final bill</b><span>Fresh items are weighed when packed, so the final bill can differ a little. Your host sends it to you.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day' + (S.meta.slot ? ' (' + esc(S.meta.slot) + ')' : '') + ', and you pay the way you chose.</span></div></li></ol></div>' +
+  const nextCards = '<div class="card"><h3>What happens next</h3><ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Your host reads your order and confirms it with you on WhatsApp.</span></div></li><li><i>02</i><div><b>Your total</b><span>The total you see in the app is what you pay. If an item is out of stock, your host removes it and sends you the updated total.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day' + (S.meta.slot ? ' (' + esc(S.meta.slot) + ')' : '') + ', and you pay the way you chose.</span></div></li></ol></div>' +
     '<div class="card"><h3>Know someone who would like this?</h3><p class="hint">Share the app with a friend. They can order the same way you did.</p><div class="actions full"><button type="button" class="btn ghost" data-act="shareapp">Share this app</button></div></div>' +
     '<div class="card"><h3>Done with this order?</h3><p class="hint">Save it to history and start a fresh one. You can order the same thing again later and change it first.</p><div class="actions full"><button class="btn" data-act="archive">Save to history and start new</button></div></div>';
   host.innerHTML = '<div class="cols two sendcols"><div class="stack">' + sendCard + (qrisHtml ? qrisHtml.replace('class="card qriscard"', 'class="card qriscard qm"') : '') + nextCards + histHtml() + '</div>' +
@@ -2805,7 +2805,7 @@ async function importCodes(text) {
   renderCustomers(); updateCBadge();
   if (ok) { const el = document.querySelector('.ccard[data-cid="' + newId + '"]'); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => { el.classList.remove('flash'); ui.flash = ''; }, 2600); } }
   const impMsg = (ok ? 'Imported ' + ok + ' order' + (ok > 1 ? 's' : '') : 'Nothing imported') + (dup ? ', ' + dup + ' already there' : '') + (bad ? ', ' + bad + ' not readable' : '') + '.';
-  if (ok === 1 && newRec && digitsOf(newRec.phone)) { const first = (newRec.name || 'there').split(' ')[0]; const tot = compute(custState(newRec), 'sell').grand; const ack = 'Hi ' + first + ', thank you! We received your order #' + orderNo(newRec) + ' (about ' + fmtRp(tot) + '). We will confirm availability and send your final bill shortly.'; toast(impMsg, { label: 'Reply to ' + first, fn: () => window.open('https://wa.me/' + digitsOf(newRec.phone) + '?text=' + encodeURIComponent(ack), '_blank', 'noopener') }); }
+  if (ok === 1 && newRec && digitsOf(newRec.phone)) { const first = (newRec.name || 'there').split(' ')[0]; const tot = compute(custState(newRec), 'sell').grand; const ack = 'Hi ' + first + ', thank you! We received your order #' + orderNo(newRec) + ' (' + fmtRp(tot) + '). We will confirm availability and message you shortly.'; toast(impMsg, { label: 'Reply to ' + first, fn: () => window.open('https://wa.me/' + digitsOf(newRec.phone) + '?text=' + encodeURIComponent(ack), '_blank', 'noopener') }); }
   else toast(impMsg);
 }
 function offerStatusMsg(id, st) {
@@ -3365,7 +3365,7 @@ function termsHtml() {
     sec('Your details', 'Your name, phone and address stay on your phone until you send your order. When you send it, Vurata receives it on WhatsApp and keeps it to prepare and deliver your order.') +
     sec('Your location', 'We only get your location if you tap <b>Add my pin location</b>, and only together with your order.') +
     sec('Ordering', 'Orders need 24 hours notice.' + cutoff + money) +
-    sec('Prices and weight', 'Fresh items are sold by weight and weighed when packed, so you pay the exact weight. We confirm stock and your final total with you on WhatsApp.') +
+    sec('Prices and weight', 'Items sold by weight are ordered in steps of 500 g. We confirm stock with you on WhatsApp, and if an item is out of stock we send you an updated total.') +
     sec('Payment', 'Pay on delivery in cash, or with QRIS (QR code) after your host confirms your order on WhatsApp.') +
     sec('Changes', 'To change or cancel an order, message us on WhatsApp as early as you can.') + '</div>' +
     (hw ? '<div class="actions full"><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Questions? Chat with us</a></div>' : '') + '</div>';
@@ -3397,7 +3397,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { const el =
 document.addEventListener('click', e => { if (e.target && e.target.id === 'sentWrap') closeSentBox(); });
 function showSentBox() {
   if (!compute(S).count) return; const el = sentBox();
-  el.innerHTML = '<div class="sentbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Did your order go through?</h3><p class="hint">Once you have sent it on WhatsApp, your host confirms stock and your final total by message.</p><div class="actions full"><button type="button" class="btn" data-act="sentyes">Yes, I sent it</button><button type="button" class="btn ghost" data-act="sentno">Not yet</button></div></div>';
+  el.innerHTML = '<div class="sentbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Did your order go through?</h3><p class="hint">Once you have sent it on WhatsApp, your host confirms your order and stock by message.</p><div class="actions full"><button type="button" class="btn" data-act="sentyes">Yes, I sent it</button><button type="button" class="btn ghost" data-act="sentno">Not yet</button></div></div>';
   el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
 }
 function installHtml() {
@@ -3413,7 +3413,7 @@ async function confirmSent() {
   await archive(); const tt = document.getElementById('toast'); if (tt) tt.hidden = true;
   const el = sentBox();
   el.innerHTML = '<div class="sentbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Thank you' + (who ? ', ' + esc(who) : '') + '.</h3><p class="hint">Your order is with the Vurata team.</p><div class="sentrows">' + rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') + '</div>' +
-    '<ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Stock and your final total, on WhatsApp.</span></div></li><li><i>02</i><div><b>Final bill</b><span>Fresh items are weighed when packed, so you pay the exact weight.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day and you pay as agreed.</span></div></li></ol>' + (hadPin ? '' : '<p class="hint sentip"><b>Tip:</b> share your location in the same WhatsApp chat so the driver finds you faster. Tap <b>+</b>, then <b>Location</b>.</p>') + installHtml() +
+    '<ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Stock and your order, on WhatsApp.</span></div></li><li><i>02</i><div><b>Your total</b><span>The total you saw is what you pay. If an item is out of stock, you get an updated total first.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day and you pay as agreed.</span></div></li></ol>' + (hadPin ? '' : '<p class="hint sentip"><b>Tip:</b> share your location in the same WhatsApp chat so the driver finds you faster. Tap <b>+</b>, then <b>Location</b>.</p>') + installHtml() +
     '<div class="actions full"><button type="button" class="btn" data-act="sentdone">Start a new order</button>' + (hw ? '<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Chat with us</a>' : '') + '</div></div>';
   el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
 }
