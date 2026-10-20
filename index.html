@@ -1031,6 +1031,8 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .custgrid > * { min-width: 0; }
 .cline2.gone .cl-name, .cline2.gone .cl-t, .cline2.gone .cl-meta { color: var(--muted); opacity: .6; } .cline2.gone .cl-name { text-decoration: line-through; text-decoration-thickness: 1px; }
 .backbtn { flex: none; min-height: 30px; padding: 0 10px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--surface)); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.qsteps { margin: 0 0 8px; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; line-height: 1.45; color: var(--ink); }
+.payhint { margin: 6px 0 0; padding: 8px 10px; border-left: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); font-size: 12.5px; line-height: 1.45; color: var(--ink); }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2465,7 +2467,7 @@ function renderOrder(comp) {
     (cmode ? '<div class="field"><label for="m-title">Order name</label><input id="m-title" data-meta="title" value="' + esc(m.title) + '"' + ro + '></div>' : orderTypeHtml(m, ro)) +
     '<div class="field' + (cmode && !String(m.who || '').trim() ? ' miss' : '') + '"><label for="m-who">' + (cmode ? 'Your name <i class="req" aria-hidden="true">*</i>' : 'Requested by') + '</label><input id="m-who" data-meta="who" value="' + esc(m.who) + '" placeholder="Your name"' + ro + '></div>' +
     '<div class="field' + (cmode && !reqOk('need', m) ? ' miss' : '') + '"><label for="m-need">Needed by' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><input id="m-need" type="date" data-meta="need" min="' + minNeed() + '" value="' + esc(m.need) + '"' + ro + '>' + quickDates() + needHint() + '</div>' +
-    '<div class="field' + (cmode && !m.pay ? ' miss' : '') + '"><label for="m-pay">Payment' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><select id="m-pay" data-meta="pay"' + ro + '>' + PAYMENTS.filter(p => !(cmode && /cafe/.test(p))).map(p => '<option' + (p === m.pay ? ' selected' : '') + ' value="' + esc(p) + '">' + (p || 'Choose how it will be paid') + '</option>').join('') + '</select></div>' +
+    '<div class="field' + (cmode && !m.pay ? ' miss' : '') + '"><label for="m-pay">Payment' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><select id="m-pay" data-meta="pay"' + ro + '>' + PAYMENTS.filter(p => !(cmode && /cafe/.test(p))).map(p => '<option' + (p === m.pay ? ' selected' : '') + ' value="' + esc(p) + '">' + (p || 'Choose how it will be paid') + '</option>').join('') + '</select>' + (cmode && /qris/i.test(m.pay || '') ? '<p class="payhint">Pay before or when your order arrives. We hand it over once it\'s paid.</p>' : '') + '</div>' +
     (cmode ? '<div class="field span-all' + (!reqOk('phone', m) ? ' miss' : '') + '"><label for="m-phone-n">Your WhatsApp, so your host can reach you <i class="req" aria-hidden="true">*</i></label>' + phoneField('m-phone', m.phone, ro) + '</div>' : '') +
     (() => { const dlc = dlNow(); if (!cmode) return ''; const cp = compute(S);
       return (dlc.zones.length ? '<div class="field span-all' + (!reqOk('zone', m) ? ' miss' : '') + '"><label for="m-zone">Delivery area <i class="req" aria-hidden="true">*</i></label><div class="areabox"><div class="areaq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="m-zone" type="search" autocomplete="off" enterkeyhint="search" role="combobox" aria-expanded="false" aria-controls="areaList" data-areaq="1" placeholder="Type your area, e.g. Berawa or Ubud" value="' + esc(m.zone ? zoneLabel(m.zone) : '') + '"' + ro + '>' + (m.zone && canWrite ? '<button type="button" class="areaclr" data-act="areaclr" aria-label="Change area"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' : '') + '</div><div class="arealist" id="areaList" role="listbox" hidden></div>' + dlBreak(cp) + '</div></div>' : '') +
@@ -2930,8 +2932,8 @@ const KEYCAP = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣'
 const addrOnly = a => String(a || '').split('\n').filter(l => !/^Map: https?:\/\//.test(l.trim())).join(', ').trim();
 function driverMsg(stops, drv, day) {
   const id = (ui.dlang || 'id') === 'id';
-  const T = id ? { title: 'Rute Vurata Market', stops: n => n + ' titik', collect: 'Tagih', total: 'Total tagih', paid: 'Sudah lunas', items: 'barang', ready: 'siap', packed: 'dikemas', note: 'Catatan', done: 'Setelah diantar, balas:', doneW: 'selesai', foot: 'Berat masih perkiraan sampai ditimbang.', cash: 'tunai', qris: 'QRIS' }
-    : { title: 'Vurata Market delivery run', stops: n => n + ' stop' + (n === 1 ? '' : 's'), collect: 'Collect', total: 'Total to collect', paid: 'Already paid', items: 'items', ready: 'ready', packed: 'packed', note: 'Note', done: 'After each drop-off, reply:', doneW: 'done', foot: 'Weights are estimates until weighed.', cash: 'cash', qris: 'QRIS' };
+  const T = id ? { title: 'Rute Vurata Market', stops: n => n + ' titik', collect: 'Tagih', total: 'Total tagih', paid: 'Sudah lunas', items: 'barang', ready: 'siap', packed: 'dikemas', note: 'Catatan', done: 'Setelah tiap antar, balas:', doneW: 'selesai', qrisHold: '*Belum bayar QRIS.* Serahkan hanya setelah dibayar.', foot: 'Berat masih perkiraan sampai ditimbang.', cash: 'tunai', qris: 'QRIS' }
+    : { title: 'Vurata Market delivery run', stops: n => n + ' stop' + (n === 1 ? '' : 's'), collect: 'Collect', total: 'Total to collect', paid: 'Already paid', items: 'items', ready: 'ready', packed: 'packed', note: 'Note', done: 'After each drop-off, reply:', doneW: 'done', qrisHold: '*QRIS not paid yet.* Hand over only once it is paid.', foot: 'Weights are estimates until weighed.', cash: 'cash', qris: 'QRIS' };
   const dayTxt = id ? new Date(day + 'T12:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) : new Date(day + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   const payW = p => /cash/i.test(p || '') ? T.cash : /qris/i.test(p || '') ? T.qris : '';
   let sum = 0; const rows = stops.map((c, i) => { const due = dueOf(c); sum += due; const comp = compute(custState(c), 'sell'); const ps = packState(c, comp); const a = addrOnly(c.addr);
@@ -2939,12 +2941,12 @@ function driverMsg(stops, drv, day) {
     if (c.zone) L.push('📍 ' + zoneLabel(c.zone)); if (a) L.push('🏠 ' + a); if (c.pin || c.addr) L.push('🗺️ ' + mapUrl(c));
     if (c.phone) L.push('📞 ' + c.phone); if (c.slot) L.push('🕗 ' + (id ? (ID_SLOT[c.slot] || c.slot) : c.slot));
     L.push('📦 ' + ps.n + ' ' + T.items + ' · ' + (ps.n && ps.done === ps.n ? '✅ ' + T.ready : '⏳ ' + ps.done + '/' + ps.n + ' ' + T.packed));
-    L.push(due > 0 ? '💵 *' + T.collect + ' ' + fmtRp(due) + '*' + (payW(c.pay) ? ' · ' + payW(c.pay) : '') : '✅ ' + T.paid);
+    L.push(due > 0 ? '💵 *' + T.collect + ' ' + fmtRp(due) + '*' + (payW(c.pay) ? ' · ' + payW(c.pay) : '') : '✅ ' + T.paid); if (due > 0 && /qris/i.test(c.pay || '')) L.push('⚠️ ' + T.qrisHold);
     if (c.notes) L.push('📝 ' + T.note + ': ' + c.notes); if (c.hn) L.push('ℹ️ ' + c.hn);
     return L.join('\n'); });
-  const head = ['🛵 *' + T.title + '*', (drv ? '👤 ' + drv.n + ' · ' : '') + '📅 ' + dayTxt, '📦 ' + T.stops(stops.length) + (sum > 0 ? ' · 💵 ' + T.total + ' *' + fmtRp(sum) + '*' : '')].join('\n');
+  const head = ['🛵 *' + T.title + '*', (drv ? '👤 ' + drv.n + ' · ' : '') + '📅 ' + dayTxt, '📦 ' + T.stops(stops.length) + (sum > 0 ? ' · 💵 ' + T.total + ' *' + fmtRp(sum) + '*' : ''), '✅ ' + T.done + ' *' + T.doneW + ' VM-…*'].join('\n');
   const line = '━━━━━━━━━━━━';
-  return [head, line, rows.join('\n' + line + '\n'), line, '✅ ' + T.done + ' *' + T.doneW + ' #' + (stops[0] ? orderNo(stops[0]) : '') + '*', '_' + T.foot + '_'].join('\n');
+  return [head, line, rows.join('\n' + line + '\n'), line, '_' + T.foot + '_'].join('\n');
 }
 function driverText() { return driverMsg(runStops(), null, runDayOf()); }
 function driverHtml() {
@@ -3097,7 +3099,7 @@ function renderShareC(comp) {
       : '<h4 class="opt-h">Option 3: send a picture of this QR code</h4><p class="hint">Take a screenshot of the code below, then send the picture to your host on WhatsApp.</p>' + (q ? '<div class="qrbox">' + q + '</div>' : '<p class="hint">This order is too big for a QR code. Use option 1 or 2.</p>') + '<div class="actions full">' + openWa + '</div>';
   const recapHtml = '<div class="recap"><div class="rcap-top"><div class="rcap-who"><b>' + esc(S.meta.who || 'Your order') + '</b><span>' + comp.count + ' item' + (comp.count === 1 ? '' : 's') + '</span></div><b class="rcap-tot num">' + fmtRp(comp.grand) + '</b></div>' +
     (S.meta.need || S.meta.slot || S.meta.zone || S.meta.addr ? '<dl class="rcap-rows">' + [['Day', S.meta.need ? fmtDate(S.meta.need) : ''], ['Time', S.meta.slot || ''], ['Area', S.meta.zone ? zoneLabel(S.meta.zone) : ''], ['Deliver to', S.meta.addr || '']].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + (r[0] === 'Deliver to' ? addrHtml(r[1]) : esc(r[1])) + '</dd></div>').join('') + '</dl>' : '') + '</div>';
-  const qrisHtml = (/qris/i.test(S.meta.pay || '') ? '<div class="card qriscard"><div class="msg-head"><h3>Pay with QRIS</h3></div><p class="hint">Pay <b>after</b> your host replies on WhatsApp to confirm your order. If an item is out of stock, your host sends you the updated total first. Then scan this code in any banking app or e-wallet and enter your order total.</p><div class="qrisimg"><img src="assets/qris.jpg" alt="QRIS code for Vurata Market" width="380" height="438" loading="lazy"></div><p class="hint">On your phone, press and hold the code to save it, then choose it from your gallery in your banking app. When you have paid, send your host a screenshot.</p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div></div>' : '');
+  const qrisHtml = (/qris/i.test(S.meta.pay || '') ? '<div class="card qriscard"><div class="msg-head"><h3>Pay with QRIS</h3></div><ol class="qsteps"><li>Wait for our WhatsApp confirmation.</li><li>Scan this code in any banking or e-wallet app and enter your total.</li><li>Send us a screenshot.</li></ol><p class="payhint">Pay before or when your order arrives. We hand it over once it\'s paid.</p><div class="qrisimg"><img src="assets/qris.jpg" alt="QRIS code for Vurata Market" width="380" height="438" loading="lazy"></div><p class="hint">On your phone, press and hold the code to save it, then choose it from your gallery in your banking app.</p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div></div>' : '');
   const sendCard = '<div class="card"><div class="msg-head"><h3>Send your order</h3></div>' +
     (S.meta.who ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Add your name in My order first, so your host knows who it is from.</p>') + (S.meta.pay ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Choose how you will pay in My order: cash on delivery or QRIS.</p>') +
     (dlNow().cutoff && pastCutoff() ? '<div class="cutnote"><b>Ordering after ' + cutLabel(dlNow().cutoff) + '.</b> Your order goes to our suppliers tomorrow, so the earliest delivery is ' + dayLabel(minNeed()) + ' morning.</div>' : '') +
@@ -3105,7 +3107,7 @@ function renderShareC(comp) {
     '<p class="choose">Choose <b>one</b> way to send it. Your host gets the same order whichever you pick.</p>' +
     (cmode ? '<div class="sendpick" role="group" aria-label="How to send">' + pick + '</div>' : '<div class="lseg three sendseg" role="group" aria-label="How to send">' + seg + '</div>') + '<div class="sendpanel">' + panel + '</div>' +
     (hw ? '' : '<div class="field" style="margin-top:14px"><label for="hostwa">Your host\'s WhatsApp number</label><input id="hostwa" inputmode="numeric" placeholder="e.g. 6281234567890"><span class="hint">Not needed if you open the link your host sent. Without it, WhatsApp asks who to send to.</span></div>') + '</div>';
-  const nextCards = '<div class="card"><h3>What happens next</h3><ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Your host reads your order and confirms it with you on WhatsApp.</span></div></li><li><i>02</i><div><b>Your total</b><span>The total you see in the app is what you pay. If an item is out of stock, your host removes it and sends you the updated total.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day' + (S.meta.slot ? ' (' + esc(S.meta.slot) + ')' : '') + ', and you pay the way you chose.</span></div></li></ol></div>' +
+  const nextCards = '<div class="card"><h3>What happens next</h3>' + nextStepsHtml(S.meta) + '</div>' +
     '<div class="card invite warm">' + BASK_ART + '<p class="inv-eye">For friends in Bali</p><h3>Know someone who&rsquo;d love this?</h3><p class="inv-lead">Fresh produce, meat and pantry staples, brought to their villa or home. Nothing to download, and ordering takes a few minutes.</p><ul class="inv-pts"><li>Order on WhatsApp</li><li>Cash or QRIS</li><li>Next-morning delivery</li></ul><div class="inv-act"><button type="button" class="btn" data-act="shareapp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/></svg>Share with a friend</button><button type="button" class="inv-link" data-act="copyapp"><span>market.vurata.com</span><b>Copy link</b></button></div></div>' +
     '<div class="card"><h3>Done with this order?</h3><p class="hint">Save it to history and start a fresh one. You can order the same thing again later and change it first.</p><div class="actions full"><button class="btn" data-act="archive">Save to history and start new</button></div></div>';
   host.innerHTML = '<div class="cols two sendcols"><div class="stack">' + sendCard + (qrisHtml ? qrisHtml.replace('class="card qriscard"', 'class="card qriscard qm"') : '') + nextCards + histHtml() + '</div>' +
@@ -3119,17 +3121,18 @@ function payLines(c, comp) { const p = c.pay || '';
   if (/deposit/i.test(p)) return ['💳 Payment: bank transfer.'].concat(bankTxt ? [bankTxt] : []);
   if (/cash/i.test(p)) return ['💵 Payment: cash on delivery. Please have ' + fmtRp(comp.grand) + ' ready for the driver.'];
   return p ? ['💳 Payment: ' + p] : []; }
+function payAsk(c, due) { const p = c.pay || ''; const amt = fmtRp(due);
+  if (c.paid || due <= 0) return ['*Paid in full. Nothing more to pay.* Thank you!'];
+  if (/qris/i.test(p)) return ['*Please pay ' + amt + ' by QRIS:*', '1. Open our QR code: ' + QRIS_URL, '2. Scan it in any banking or e-wallet app and enter ' + amt, '3. Send us a screenshot here when it is done', '_Pay before or when your order arrives. We hand it over once it\'s paid._'];
+  if (/deposit|transfer/i.test(p)) return ['*Please transfer ' + amt + ' now:*', bankTxt || 'Reply here and we will send our bank details.', 'Then send us a screenshot here when it is done.'];
+  if (/cash/i.test(p)) return ['*Total to pay: ' + amt + '*', '💵 Pay in cash when it arrives. Please have the exact amount ready for the driver.'];
+  if (/cafe/i.test(p)) return ['*Total: ' + amt + '*', 'This is added to the cafe order.'];
+  return ['*Total to pay: ' + amt + '*', p ? 'Payment: ' + p : 'Reply here to tell us how you would like to pay.']; }
 function billText(c, comp) {
   const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const f = (c.name || 'there').split(' ')[0]; const p = c.pay || '';
   const due = c.paid ? 0 : Math.max(0, comp.grand - (+c.dep || 0)); const amt = fmtRp(due);
   /* 1. What to do, first */
-  const out = ['Hi ' + f + ', your order ' + orderNo(c) + ' is confirmed ✅'];
-  if (c.paid || due === 0) out.push('*Paid in full. Nothing more to pay.* Thank you!');
-  else if (/qris/i.test(p)) out.push('*Please pay ' + amt + ' now by QRIS:*', '1. Open our QR code: ' + QRIS_URL, '2. Scan it in any banking or e-wallet app and enter ' + amt, '3. Send us a screenshot here when it is done');
-  else if (/deposit|transfer/i.test(p)) out.push('*Please transfer ' + amt + ' now:*', bankTxt || 'Reply here and we will send our bank details.', 'Then send us a screenshot here when it is done.');
-  else if (/cash/i.test(p)) out.push('*Total to pay: ' + amt + '*', '💵 Pay in cash when it arrives. Please have the exact amount ready for the driver.');
-  else if (/cafe/i.test(p)) out.push('*Total: ' + amt + '*', 'This is added to the cafe order.');
-  else out.push('*Total to pay: ' + amt + '*', p ? 'Payment: ' + p : 'Reply here to tell us how you would like to pay.');
+  const out = ['Hi ' + f + ', your order ' + orderNo(c) + ' is confirmed ✅'].concat(payAsk(c, due));
   /* 2. When and where */
   const when = [c.need ? '📅 ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : '') : '', addrOnly(c.addr) ? '📍 ' + addrOnly(c.addr) : ''].filter(Boolean);
   if (when.length) out.push('', when.join('\n'));
@@ -3157,7 +3160,7 @@ function renderCustomers() {
   const host = document.getElementById('custBody'); if (!host) return;
   const prevTxt = (document.getElementById('importTxt') || {}).value || '';
   const link = ARTIFACT_URL + (myWA ? '#f-' + myWA : '#f');
-  const invMsg = 'Hi! You can order fresh fruit, vegetables, meat and groceries from us here: ' + link + '\nPick what you want, choose cash on delivery or QRIS, then tap Send. It comes straight to us on WhatsApp.';
+  const invMsg = 'Order fresh groceries for delivery in Bali 👉 ' + link + '\nPick items, tap Send, and it comes to us on WhatsApp. Pay cash or QRIS.';
   const invite = '<div class="card" id="inviteCard"><h3>Invite customers</h3><p class="hint" style="margin-bottom:12px">Send this message on WhatsApp. They build their own order and send it back as a PDF, a picture or a message. They never see your orders or anyone else\'s. In this page\'s Share menu, allow anyone with the link to view.</p>' +
     '<div class="field"><label for="mywa-n">Your WhatsApp number</label>' + phoneField('mywa', myWA ? '+' + myWA : '', canWrite ? '' : ' disabled') + '</div>' +
     (myWA ? '' : '<p class="hint" style="color:var(--warn);margin-top:6px">Add your number first so orders come back to you.</p>') +
@@ -3267,11 +3270,11 @@ function custMsgTxt(c, kind) { const f = (c.name || 'there').split(' ')[0]; cons
   const gone = removedLines(c).map(r => nm(r.it).m); const pl = payLines(c, comp);
   return ({
     bill: billText(c, comp),
-    oos: 'Hi ' + f + ', a quick update on order ' + n + '.\n' + (gone.length ? 'Not available today: ' + gone.join(', ') + '.' : 'One of your items is not available today.') + '\n\nWould you like a replacement, or shall we leave it out?',
+    oos: 'Hi ' + f + ', quick question on order ' + n + ':\n*' + (gone.length ? gone.join(', ') + (gone.length > 1 ? ' are' : ' is') + ' not available today.' : 'One of your items is not available today.') + '*\n\nWould you like a replacement, or shall we leave it out? Just reply here.',
     eta: 'Hi ' + f + ', good news! 🛵\nYour order ' + n + ' is on its way and should arrive soon.' + (comp.grand && !c.paid && /cash/i.test(c.pay || '') ? '\n\nPlease have ' + tot + ' ready for the driver.' : ''),
-    late: 'Hi ' + f + ', a quick note on order ' + n + '.\nWe are running a little late today.\n\nThank you for your patience!',
+    late: 'Hi ' + f + ', your order ' + n + ' will arrive *a little later than planned* today.\nSorry, and thank you for your patience!',
     done: 'Hi ' + f + ', your order ' + n + ' has been delivered. 🙏\nThank you for ordering with Vurata Market.\n\nSee you next time!',
-    pay: 'Hi ' + f + ', a friendly reminder for order ' + n + '.\nTotal: ' + tot + (+c.dep > 0 ? ' (balance ' + fmtRp(Math.max(0, comp.grand - c.dep)) + ')' : '') + (pl.length ? '\n\n' + pl.join('\n') : '') + '\n\nThank you!'
+    pay: (() => { const due = c.paid ? 0 : Math.max(0, comp.grand - (+c.dep || 0)); return due <= 0 ? 'Hi ' + f + ', order ' + n + ' is paid in full. Thank you! 🙏' : 'Hi ' + f + ', *' + fmtRp(due) + ' is still open* for order ' + n + '.\n\n' + payAsk(c, due).join('\n') + '\n\nThank you!'; })()
   })[kind] || ''; }const ICO_MSG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z"/><path d="M9 10h6M9 13.5h4"/></svg>';
 const ICO_BILL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>';
 /* Lines staff took down to zero: still listed (faded, Rp 0) so they can be brought back in one tap */
@@ -3992,8 +3995,9 @@ function installHtml() {
   if (/iPad|iPhone|iPod/.test(ua)) return '<p class="hint sentip"><b>Order faster next time:</b> tap the <b>Share</b> icon in Safari, then <b>Add to Home Screen</b>.</p>';
   return '';
 }
+function nextStepsHtml(m) { return '<ol class="nsteps"><li><i>01</i><div><b>Wait for our WhatsApp confirmation</b><span>Your confirmed total and how to pay come in one message. It only changes if an item is out of stock.</span></div></li><li><i>02</i><div><b>' + payStep(m.pay)[0] + '</b><span>' + payStep(m.pay)[1] + '</span></div></li><li><i>03</i><div><b>Delivery' + (m.need ? ' on ' + esc(fmtDate(m.need)) : '') + '</b><span>' + (m.slot ? esc(m.slot) + '. ' : '') + (m.pin ? 'We bring it to your pin.' : 'We bring it to the address you gave.') + '</span></div></li></ol>'; }
 function payStep(p) { p = String(p || '');
-  if (/qris/i.test(p)) return ['Pay with QRIS', 'Your host sends the QR code with your confirmed total. Scan it with any banking or e-wallet app.'];
+  if (/qris/i.test(p)) return ['Pay with QRIS', 'Scan our QR code in any banking or e-wallet app. Pay before or when your order arrives. We hand it over once it\'s paid.'];
   if (/cash/i.test(p)) return ['Pay on delivery', 'Pay the driver in cash when your order arrives.'];
   if (/cafe/i.test(p)) return ['Added to the cafe order', 'Your share is added to the cafe bill.'];
   return ['Payment', 'Pay as agreed with your host once your total is confirmed.']; }
@@ -4003,7 +4007,7 @@ async function confirmSent() {
   await archive(); const tt = document.getElementById('toast'); if (tt) tt.hidden = true;
   const el = sentBox();
   el.innerHTML = '<div class="sentbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Thank you' + (who ? ', ' + esc(who) : '') + '.</h3><p class="hint">Your order is with the Vurata team.</p><div class="sentrows">' + rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') + '</div>' +
-    '<p class="nhead">What happens next</p><ol class="nsteps"><li><i>01</i><div><b>We confirm on WhatsApp</b><span>Your host checks stock and replies with your final total. It only changes if an item is out of stock.</span></div></li><li><i>02</i><div><b>' + payStep(m.pay)[0] + '</b><span>' + payStep(m.pay)[1] + '</span></div></li><li><i>03</i><div><b>Delivery' + (m.need ? ' on ' + esc(fmtDate(m.need)) : '') + '</b><span>' + (m.slot ? esc(m.slot) + '. ' : '') + (m.pin ? 'We bring it to your pin.' : 'We bring it to the address you gave.') + '</span></div></li></ol>' + (hadPin || mapLinkOf(m) ? '' : '<p class="hint sentip"><b>Help the driver find you:</b> open your WhatsApp chat with us, tap <b>+</b> (or the <b>paperclip</b> on Android), then <b>Location</b>, and share where we should deliver.</p>') + installHtml() +
+    '<p class="nhead">What happens next</p>' + nextStepsHtml(m) + (hadPin || mapLinkOf(m) ? '' : '<p class="hint sentip"><b>Help the driver find you:</b> open your WhatsApp chat with us, tap <b>+</b> (or the <b>paperclip</b> on Android), then <b>Location</b>, and share where we should deliver.</p>') + installHtml() +
     '<div class="actions full"><button type="button" class="btn" data-act="sentdone">Start a new order</button>' + (hw ? '<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Chat with us</a>' : '') + '</div></div>';
   el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
 }
@@ -4254,6 +4258,12 @@ const ID_TEXT = {
   'Groceries': 'Bahan makanan', 'Rice (Beras)': 'Beras', 'HoReCa canned & Italian goods': 'Kalengan HoReCa & produk Italia', 'Korean products': 'Produk Korea', 'Frozen dim sum & dumplings': 'Dim sum & pangsit beku',
   'Frozen fish & seafood balls (SH)': 'Bakso ikan & seafood beku (SH)', 'Ground spices (Ladaku / Desaku)': 'Bumbu bubuk (Ladaku / Desaku)', 'Ready sauces & basic seasonings': 'Saus siap pakai & bumbu dasar',
   'Heinz sauces': 'Saus Heinz', 'Flours (Boladeli)': 'Tepung (Boladeli)', 'Cooking oil 18 L (carton)': 'Minyak goreng 18 L (karton)', 'Eggs': 'Telur', 'Quinoa & chia': 'Quinoa & chia',
+  'Wait for our WhatsApp confirmation': 'Tunggu konfirmasi WhatsApp dari kami', 'Wait for our WhatsApp confirmation.': 'Tunggu konfirmasi WhatsApp dari kami.',
+  'Your confirmed total and how to pay come in one message. It only changes if an item is out of stock.': 'Total yang sudah dikonfirmasi dan cara bayar datang dalam satu pesan. Total hanya berubah jika ada barang yang habis.',
+  'Scan this code in any banking or e-wallet app and enter your total.': 'Scan kode ini di aplikasi bank atau e-wallet apa pun dan masukkan total Anda.', 'Send us a screenshot.': 'Kirim screenshot ke kami.',
+  'Pay before or when your order arrives. We hand it over once it\'s paid.': 'Bayar sebelum atau saat pesanan sampai. Pesanan kami serahkan setelah dibayar.',
+  'Scan our QR code in any banking or e-wallet app. Pay before or when your order arrives. We hand it over once it\'s paid.': 'Scan kode QR kami di aplikasi bank atau e-wallet apa pun. Bayar sebelum atau saat pesanan sampai. Pesanan kami serahkan setelah dibayar.',
+  'On your phone, press and hold the code to save it, then choose it from your gallery in your banking app.': 'Di HP, tekan lama kode untuk menyimpannya, lalu pilih dari galeri di aplikasi bank Anda.', 'Save the QR code': 'Simpan kode QR',
   'Search items': 'Cari barang', 'Category': 'Kategori', 'Sections': 'Bagian', 'Country': 'Negara', 'Zoom in': 'Perbesar', 'Zoom out': 'Perkecil'
 };
 const UNIT_IDC = { pcs: 'pcs', pack: 'pak', box: 'kotak', carton: 'karton', can: 'kaleng', bottle: 'botol', jar: 'toples', sachet: 'sachet', hand: 'sisir', sack: 'karung', pax: 'pax' };
