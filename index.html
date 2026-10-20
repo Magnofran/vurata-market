@@ -1375,6 +1375,13 @@ body { margin: 0; padding-inline: 8px; }
 .delbox textarea#m-addr { border: 0 !important; border-top: 1px solid var(--line) !important; border-radius: 0 !important; width: 100%; min-height: 64px; box-shadow: none !important; }
 .dpin svg { width: 30px; height: 40px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); } .dpin path { fill: #C2A679; stroke: #6b5530; stroke-width: 1.2; } .dpin circle { fill: #fff; }
 .leaflet-container { font: inherit; } .leaflet-control-attribution { font-size: 10px; }
+/* desktop: who (name, WhatsApp), when (day, time), how (payment), then where at full width: area, then the map */
+@media (min-width: 760px) {
+  #orderBody .grid2 > .field:has(#m-phone-n) { order: 3; } #orderBody .grid2 > .field:has(#m-need) { order: 4; }
+  #orderBody .grid2 > .field:has(#m-pay) { order: 5; } #orderBody .grid2 > .field:has(#m-slot) { order: 6; }
+  #orderBody .grid2 > .field:has(#m-zone) { order: 7; grid-column: 1 / -1; } #orderBody .grid2 > .field:has(#m-addr) { order: 8; grid-column: 1 / -1; }
+  .delivf .dmap { height: 280px; }
+}
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
