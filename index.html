@@ -1033,6 +1033,23 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .backbtn { flex: none; min-height: 30px; padding: 0 10px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--surface)); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .qsteps { margin: 0 0 8px; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; line-height: 1.45; color: var(--ink); }
 .payhint { margin: 6px 0 0; padding: 8px 10px; border-left: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); font-size: 12.5px; line-height: 1.45; color: var(--ink); }
+/* staff: status + payment panel */
+.cpanel { margin-top: 10px; border: 1px solid var(--line-dark); background: var(--surface); }
+.cpsec { padding: 12px; display: grid; gap: 8px; } .cpsec + .cpsec { border-top: 1px solid var(--line); }
+.cplab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; } .cplab span { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.cplab em { font-style: normal; font-size: 12.5px; font-weight: 600; color: var(--muted); } .cplab em.neg { color: var(--warn); } .cplab em.pos { color: var(--fv); }
+.cstps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line-dark); }
+.cstp { position: relative; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 0 6px; border: 0; background: var(--surface); color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.cstp + .cstp { border-left: 1px solid var(--line-dark); }
+.cstp i { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50% !important; border: 1.5px solid currentColor; font-style: normal; font-size: 11px; font-weight: 700; flex: none; }
+.cstp.done { color: var(--ink); } .cstp.done i { background: var(--gold); border-color: var(--gold); color: #fff; }
+.cstp.now { background: var(--ink); color: var(--bg); } .cstp.now i { background: var(--bg); color: var(--ink); border-color: var(--bg); }
+.cprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; } .cprow .csel { height: 42px; }
+.paidtog { min-height: 42px; padding: 0 14px; border: 1.5px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.paidtog[aria-pressed="true"] { background: var(--fv); border-color: var(--fv); color: #fff; }
+.cpanel .dep { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); white-space: nowrap; } .cpanel .dep input { width: 120px; text-align: right; } .cpanel .cadv { margin-top: 2px; }
+.cinc { padding: 10px 12px; border-top: 1px solid var(--line); font-size: 13px; }
+@media (hover: hover) { .cstp:not(.now):hover { background: color-mix(in srgb, var(--gold) 14%, var(--surface)); color: var(--ink); } .paidtog[aria-pressed="false"]:hover { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, var(--surface)); } }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2869,8 +2886,18 @@ function custView() {
 }
 function paySelect(c) {
   const ro = canWrite ? '' : ' disabled';
-  return '<select class="csel" data-cpay="' + esc(c.id) + '" aria-label="Payment method"' + ro + '><option value="">Payment not chosen</option>' + PAYMENTS.filter(p => p && !/cafe/.test(p)).concat(c.pay && !PAYMENTS.includes(c.pay) ? [c.pay] : []).map(p => '<option value="' + esc(p) + '"' + (p === c.pay ? ' selected' : '') + '>' + esc(p.replace('(bank transfer)', '(transfer)')) + '</option>').join('') + '</select>';
+  return '<select class="csel" data-cpay="' + esc(c.id) + '" aria-label="Payment method"' + ro + '><option value="">Payment not chosen</option>' + PAYMENTS.filter(p => p && !/cafe/.test(p)).concat(c.pay && !PAYMENTS.includes(c.pay) ? [c.pay] : []).map(p => '<option value="' + esc(p) + '"' + (p === c.pay ? ' selected' : '') + '>' + esc(p.replace('(bank transfer)', '(transfer)').replace(' (QR code)', '')) + '</option>').join('') + '</select>';
 }
+/* One labelled panel: where the order is (status steps) and how it is paid. Built so a new staff member reads it at a glance. */
+function statusPanel(c) { const ro = canWrite ? '' : ' disabled'; const order = ['new', 'ordered', 'delivered']; const cur = Math.max(0, order.indexOf(c.status || 'new'));
+  const L = { new: 'New', ordered: 'Ordered', delivered: 'Delivered' }; const H = { new: 'Check stock and confirm', ordered: 'Bought, being packed', delivered: 'With the customer' };
+  const steps = order.map((st, i) => '<button type="button" class="cstp' + (i < cur ? ' done' : i === cur ? ' now' : '') + '" data-act="cstat" data-id="' + esc(c.id) + '" data-v="' + st + '" aria-pressed="' + (i === cur) + '"' + ro + '><i>' + (i < cur ? '✓' : i + 1) + '</i><span>' + L[st] + '</span></button>').join('');
+  const due = dueOf(c);
+  return '<div class="cpanel"><div class="cpsec"><div class="cplab"><span>Order status</span><em>' + H[order[cur]] + '</em></div><div class="cstps" role="group" aria-label="Order status">' + steps + '</div>' + (c.status !== 'delivered' ? '<button type="button" class="btn sm cadv" data-act="advance" data-id="' + esc(c.id) + '"' + (canWrite ? '' : ' disabled') + '>' + (c.status === 'new' ? 'Mark as ordered' : 'Mark as delivered') + '</button>' : '<button type="button" class="btn ghost sm cadv" data-act="reopen" data-id="' + esc(c.id) + '"' + (canWrite ? '' : ' disabled') + '>Delivered &#10003; Reopen order</button>') + '</div>' +
+    '<div class="cpsec"><div class="cplab"><span>Payment</span><em class="' + (c.paid || due <= 0 ? 'pos' : 'neg') + '">' + (c.paid ? 'Paid in full' : 'To collect ' + fmtRp(due)) + '</em></div>' +
+      '<div class="cprow">' + paySelect(c) + '<button type="button" class="paidtog" data-act="cpaidtog" data-id="' + esc(c.id) + '" aria-pressed="' + !!c.paid + '"' + ro + '>' + (c.paid ? '✓ Paid' : 'Mark as paid') + '</button></div>' +
+      (c.paid ? '' : '<label class="lf dep"><span>Deposit received</span><span class="lpr">Rp <input data-cdep="' + esc(c.id) + '" inputmode="numeric" value="' + (c.dep || '') + '" placeholder="0"' + ro + '></span></label>') + '</div>' +
+    '<label class="check cinc"><input type="checkbox" data-cinc="' + esc(c.id) + '"' + (c.inc !== false ? ' checked' : '') + ro + '> Include in the combined supplier order</label></div>'; }
 function payRow(c) {
   const due = dueOf(c); const ro = canWrite ? '' : ' disabled';
   return '<div class="payrow"><label class="lf dep"><span>Deposit received</span><span class="lpr">Rp <input data-cdep="' + esc(c.id) + '" inputmode="numeric" value="' + (c.dep || '') + '" placeholder="0"' + ro + '></span></label><span class="due ' + (due > 0 ? 'neg' : 'pos') + '">' + (c.paid ? 'Paid in full' : 'Balance due ' + fmtRp(due)) + '</span></div>';
@@ -3197,9 +3224,7 @@ function renderCustomers() {
         '<div class="hdel">' + (ui.custDel[c.id] ? '<span>Remove this order? You can restore it later.</span><button type="button" class="btn danger sm" data-act="cdelyes" data-id="' + esc(c.id) + '">Remove</button><button type="button" class="btn ghost sm" data-act="cdelno" data-id="' + esc(c.id) + '">Keep</button>' : '<button type="button" class="linkbtn" data-act="cdelask" data-id="' + esc(c.id) + '">Remove order</button>') + '</div></div>';
     }
     return ccardHead(c, comp, date) +
-      repeatInfo(c) + (c.status !== 'delivered' ? '<button type="button" class="btn sm cadv" data-act="advance" data-id="' + esc(c.id) + '"' + (canWrite ? '' : ' disabled') + '>' + (c.status === 'new' ? 'Mark as ordered' : 'Mark as delivered') + '</button>' : '<button type="button" class="btn ghost sm cadv" data-act="reopen" data-id="' + esc(c.id) + '"' + (canWrite ? '' : ' disabled') + '>Delivered &#10003; Reopen order</button>') + '<div class="crow2"><select class="csel" data-cstatus="' + esc(c.id) + '" aria-label="Status for ' + esc(c.name) + '"><option value="new"' + (c.status === 'new' ? ' selected' : '') + '>New</option><option value="ordered"' + (c.status === 'ordered' ? ' selected' : '') + '>Ordered</option><option value="delivered"' + (c.status === 'delivered' ? ' selected' : '') + '>Delivered</option></select>' +
-      paySelect(c) + '</div><div class="cctrl"><label class="check"><input type="checkbox" data-cpaid="' + esc(c.id) + '"' + (c.paid ? ' checked' : '') + '> Paid</label><label class="check"><input type="checkbox" data-cinc="' + esc(c.id) + '"' + (c.inc !== false ? ' checked' : '') + '> In combined order</label></div>' +
-      payRow(c) + cmdBar(c, open) + det + '</div>';
+      repeatInfo(c) + statusPanel(c) + cmdBar(c, open) + det + '</div>';
   }).join('');
   const list = '<div class="card" id="custList"><h3>Customers' + (cust.length ? ' (' + cust.length + ')' : '') + '</h3>' + (cust.length ? '<div class="lseg" role="group" aria-label="Filter customers">' + [['all', 'All'], ['new', 'New'], ['ordered', 'Ordered'], ['delivered', 'Delivered']].map(x => '<button type="button" data-act="cfil" data-k="' + x[0] + '" aria-pressed="' + (ui.cfil === x[0]) + '">' + x[1] + ' <small>' + (x[0] === 'all' ? cust.length : cust.filter(c => c.status === x[0]).length) + '</small></button>').join('') + '</div><div class="search" style="margin-top:12px"><input id="cq" type="search" placeholder="Find by name, phone or VM-1003" value="' + esc(ui.cq || '') + '" autocomplete="off" aria-label="Find a customer"></div><label class="check" style="margin:10px 0 12px"><input type="checkbox" id="unpaidOnly"' + (ui.cunpaid ? ' checked' : '') + '> Unpaid only</label>' + (ui.cfil === 'all' && !String(ui.cq || '').trim() && cust.some(c => c.status === 'delivered') ? '<button type="button" class="linkbtn delrow" data-act="deltog" aria-expanded="' + !!ui.showDel + '">' + (ui.showDel ? 'Hide delivered orders' : 'Show ' + cust.filter(c => c.status === 'delivered').length + ' delivered order' + (cust.filter(c => c.status === 'delivered').length === 1 ? '' : 's')) + '</button>' : '') : '') + (cust.some(c => c.demo) ? '<div class="hdel" style="margin-bottom:10px"><button type="button" class="linkbtn" data-act="rmdemo">' + (ui.demoAsk ? 'Tap again to remove all demo orders' : 'Remove demo orders') + '</button></div>' : '') + (rows ? '<div class="hist custgrid">' + rows + '</div>' : (cust.length ? '<p class="hint">No orders match your search or filter.</p>' : '') + '<p class="hint"' + (cust.length ? ' hidden' : '') + '>Imported orders show up here, each with its own bill you can edit and send back.</p>') + binHtml() + '</div>';
   let comb = '';
@@ -3737,6 +3762,8 @@ document.addEventListener('click', e => {
   else if (act === 'suptog') { ui.suppOpen = ui.suppOpen || {}; ui.suppOpen[b.dataset.s] = !ui.suppOpen[b.dataset.s]; renderCustomers(); }
   else if (act === 'addq') { setQty(b.dataset.key, +b.dataset.q, ui.view === 'order'); toast('Added.'); }
   else if (act === 'reopen') { updCust(b.dataset.id, { status: 'ordered', dat: 0 }); toast('Order reopened.'); }
+  else if (act === 'cstat') { const c = cust.find(x => x.id === b.dataset.id); const v = b.dataset.v; if (c && c.status !== v) { updCust(c.id, { status: v, dat: v === 'delivered' ? Date.now() : 0 }); offerStatusMsg(c.id, v); } }
+  else if (act === 'cpaidtog') { const c = cust.find(x => x.id === b.dataset.id); if (c) { updCust(c.id, { paid: !c.paid }); toast(c.paid ? 'Marked as paid.' : 'Marked as not paid.'); } }
   else if (act === 'advance') { const c = cust.find(x => x.id === b.dataset.id); if (c) { const st = c.status === 'new' ? 'ordered' : 'delivered'; updCust(c.id, { status: st, dat: st === 'delivered' ? Date.now() : 0 }); offerStatusMsg(c.id, st); } }
   else if (act === 'backup') { exportBackup(); }
   else if (act === 'lft') { saveLedger({ ov: { [b.dataset.id]: { ft: b.dataset.s === '1' } } }); }
