@@ -2089,7 +2089,11 @@ function compute(state, mode) {
   }
   return { groups: list, total, unpriced, w, v, noMeasure, kgQty, unitQty, count, warnings, out, fee, feeKnown, free, toFree, zone, codeUsed, codeSaved, codeText, grand: total + fee };
 }
-function lineText(ln, cust) {
+/* A product's name in one language: English, or Indonesian for customers who ordered in Bahasa */
+function nameIn(it, lang) { const e = (it.e || '').trim(), n = it.n.trim(), ni = (it.ni || '').trim(); const f = x => nmCase(x).replace(/^[a-z]/, c => c.toUpperCase());
+  const two = e && e.toLowerCase() !== n.toLowerCase() && !/^unclear/i.test(e) && n.indexOf(' / ') < 0;
+  const en = two ? e : n, id = two ? n : (ni || n); return f(lang === 'id' ? id : en); }
+function lineText(ln, cust, lang) {
   const unit = UNIT_EN[ln.o.u] || ln.o.u;
   const qtyTxt = fmtQty(ln.q) + ' ' + unit + (ln.q0 != null && ln.q0 !== ln.q ? ' (ordered ' + fmtQty(ln.q0) + ')' : '');
   const lbl = plainLabel(ln.o) || labelDup(ln.it, ln.o) ? '' : ' [' + optLabel(ln.o) + ']';
@@ -2098,6 +2102,7 @@ function lineText(ln, cust) {
   if (ln.st === 'x') money = ' (not counted)';
   else if (ln.price) money = ' x ' + fmtRp(ln.price) + ' = ' + fmtRp(ln.total) + (ln.o.est && ln.q0 === ln.q && !(cmode || cust) ? ' (est.)' : '') + (ln.listPrice && ln.price !== ln.listPrice ? ' (list price ' + fmtRp(ln.listPrice) + ')' : (!ln.listPrice ? ' (price set by hand)' : ''));
   else money = ' = PRICE NEEDED';
+  if (lang) return tag + nameIn(ln.it, lang) + lbl + ': ' + qtyTxt + money;
   const nv = cmode || cust ? nm(ln.it) : null;
   return tag + (nv ? nv.m + (nv.s ? ' (' + nv.s + ')' : '') : supName(ln.it)) + lbl + ': ' + qtyTxt + money;
 }
@@ -3064,6 +3069,7 @@ function ceditHtml(c) { const k = f => esc(c.id) + '|' + f; const zs = dlNow().z
     fld('Delivery area', '<select data-ced="' + k('zone') + '"><option value="">Not set</option>' + zs.map(z => '<option value="' + esc(z) + '"' + (z === c.zone ? ' selected' : '') + '>' + esc(z) + '</option>').join('') + (c.zone && zs.indexOf(c.zone) < 0 ? '<option value="' + esc(c.zone) + '" selected>' + esc(zoneLabel(c.zone)) + '</option>' : '') + '</select>', true) +
     fld('Address', '<textarea data-ced="' + k('addr') + '" rows="2">' + esc(addrOnly(c.addr)) + '</textarea>', true) +
     fld('Map pin or Google Maps link', '<input data-ced="' + k('map') + '" value="' + esc(c.pin || mapLinkOf(c) || '') + '" placeholder="Paste a Maps link or -8.65, 115.13" autocomplete="off">', true) +
+    fld('Customer language', '<select data-ced="' + k('lang') + '"><option value="en"' + (c.lang !== 'id' ? ' selected' : '') + '>English</option><option value="id"' + (c.lang === 'id' ? ' selected' : '') + '>Bahasa Indonesia</option></select>') +
     fld('Customer notes', '<textarea data-ced="' + k('notes') + '" rows="2">' + esc(c.notes || '') + '</textarea>', true) +
     '<p class="hint wide">Changes save as you go. The delivery fee updates when you change the area.</p></div>'; }
 function custEdit(id, f, v) { const c = cust.find(x => x.id === id); if (!c) return; const p = { ed: Date.now() }; v = String(v || '').trim();
@@ -3103,14 +3109,14 @@ const unb64u = t => { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.leng
 const digitsOf = p => { let d = String(p || '').replace(/\D/g, ''); if (d.indexOf('0') === 0) d = '62' + d.slice(1); return d; };
 function makeCode(state) {
   const l = []; Object.keys(state.lines).forEach(k => { const L = state.lines[k]; if (L && L.q > 0 && L.s !== 'x' && BY_ID[k.split('|')[0]]) l.push([k, L.q, L.n || '']); });
-  const m = state.meta; const cp = compute(state, 'sell'); const dz = cp.zone ? { z: m.zone, f: cp.feeKnown ? cp.fee : null } : {}; return 'VM1:' + b64u(JSON.stringify(Object.assign({ v: 1, t: m.title, n: m.who, p: m.phone || '', a: m.addr, y: m.pay, d: m.need, x: m.notes, s: m.slot || '', l }, dz, m.pin ? { pn: m.pin } : {}, m.dcode ? { dc: codeKey(m.dcode) } : {})));
+  const m = state.meta; const cp = compute(state, 'sell'); const dz = cp.zone ? { z: m.zone, f: cp.feeKnown ? cp.fee : null } : {}; return 'VM1:' + b64u(JSON.stringify(Object.assign({ v: 1, t: m.title, n: m.who, p: m.phone || '', a: m.addr, y: m.pay, d: m.need, x: m.notes, s: m.slot || '', l }, (cmode && typeof LANG !== 'undefined' && LANG === 'id') ? { lg: 'id' } : {}, dz, m.pin ? { pn: m.pin } : {}, m.dcode ? { dc: codeKey(m.dcode) } : {})));
 }
 function decodeCode(code) {
   try {
     const j = JSON.parse(unb64u(code.slice(code.indexOf(':') + 1))); if (!j || j.v !== 1 || !Array.isArray(j.l)) return null;
     const lines = {}; j.l.slice(0, 300).forEach(a => { if (!Array.isArray(a)) return; const k = String(a[0]), q = +a[1]; const id = k.split('|')[0], ix = +k.split('|')[1]; if (BY_ID[id] && BY_ID[id].o[ix] && q > 0 && q < 1000) lines[k] = { q: Math.round(q * 100) / 100, n: String(a[2] || '').slice(0, 120) }; });
     if (!Object.keys(lines).length) return null; const c = (x, n) => String(x || '').slice(0, n);
-    const rec = { name: c(j.n, 60), phone: c(j.p, 24), addr: c(j.a, 200), pay: c(j.y, 60), need: c(j.d, 10), notes: c(j.x, 300), title: c(j.t, 60) || 'Order', lines, zone: c(j.z, 60), slot: c(j.s, 30) }; if (/^-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$/.test(String(j.pn || ''))) rec.pin = String(j.pn);
+    const rec = { name: c(j.n, 60), phone: c(j.p, 24), addr: c(j.a, 200), pay: c(j.y, 60), need: c(j.d, 10), notes: c(j.x, 300), title: c(j.t, 60) || 'Order', lines, zone: c(j.z, 60), slot: c(j.s, 30), lang: j.lg === 'id' ? 'id' : 'en' }; if (/^-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$/.test(String(j.pn || ''))) rec.pin = String(j.pn);
     if (j.dc) rec.dcode = codeKey(j.dc); if (j.z) rec.fee = j.f === null || j.f === undefined ? null : Math.max(0, Math.min(1e7, Math.round(+j.f) || 0));
     return rec;
   } catch (e) { return null; }
@@ -3183,7 +3189,7 @@ function billText(c, comp) {
   /* 3. The bill, as proof */
   out.push('', '🧾 *Your bill*');
   const secs = {}; comp.groups.forEach(g => g.lines.forEach(ln => { const d = ln.it.d || ln.it.s; (secs[d] = secs[d] || []).push(ln); }));
-  Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + ((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true))); });
+  Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + ((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true, c.lang === 'id' ? 'id' : 'en'))); });
   out.push('');
   if (hasDel(comp)) out.push('🚚 Delivery' + (c.zone && c.zone !== '__other' ? ' (' + zoneLabel(c.zone) + ')' : '') + ': ' + delLine(comp) + (c.dcode ? ' (code ' + c.dcode + ')' : ''));
   out.push('*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''));
