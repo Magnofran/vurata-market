@@ -1339,9 +1339,27 @@ body { margin: 0; padding-inline: 8px; }
 .detsum2 dd { margin: 0; font-size: 14.5px; color: var(--ink); overflow-wrap: anywhere; }
 .dlbreak { margin: 8px 0 0; display: grid; border: 1px solid var(--line); }
 .dlbreak > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--line); font-size: 13.5px; } .dlbreak > div:first-child { border-top: 0; }
-.dlbreak dt { color: var(--muted); } .dlbreak dd { margin: 0; color: var(--ink); font-weight: 600; text-align: right; }
+.dlbreak dt { color: var(--muted); white-space: nowrap; } .dlbreak dd { margin: 0; color: var(--ink); font-weight: 600; text-align: right; }
 /* each sentence wraps as a whole: if it does not fit on the line, it starts a new one */
 .hownote .snt { display: inline-block; }
+.areabox { border: 1px solid var(--line-dark); background: var(--surface); }
+.field.miss .areabox { border-color: var(--danger); }
+.areaq { position: relative; display: flex; align-items: center; }
+.areaq svg { position: absolute; left: 14px; width: 18px; height: 18px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.areabox .areaq input { flex: 1; width: 100%; min-width: 0; border: 0 !important; background: transparent !important; height: 50px; padding: 0 44px 0 42px !important; font-size: 16px; box-shadow: none !important; border-radius: 0 !important; }
+.areaq input::-webkit-search-cancel-button { display: none; -webkit-appearance: none; }
+.areaclr { position: absolute; right: 4px; width: 42px; height: 42px; border: 0; background: none; display: grid; place-items: center; color: var(--muted); cursor: pointer; }
+.areaclr svg { position: static; width: 16px; height: 16px; }
+.areabox:focus-within { border-color: var(--ink); }
+.arealist { border-top: 1px solid var(--line); max-height: 300px; overflow-y: auto; }
+.areaopt { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 14px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+.areaopt:first-child { border-top: 0; } .areaopt:focus, .areaopt:hover { background: var(--surface-2); outline: none; }
+.areaopt .an { display: grid; gap: 1px; min-width: 0; } .areaopt .an b { font-weight: 600; font-size: 14.5px; } .areaopt .an small { font-size: 12.5px; color: var(--muted); }
+.areaopt .af { font-size: 13.5px; color: var(--muted); white-space: nowrap; } .areaopt.other .an b { font-weight: 500; }
+.areanone { padding: 12px 14px; font-size: 13px; color: var(--muted); margin: 0; }
+.areabox.open .dlbreak, .areabox.open .dlnote { display: none; }
+.areabox .dlbreak { margin: 0; border: 0; border-top: 1px solid var(--line); }
+.areabox + .dlnote, .areabox .dlnote { padding: 0 14px 12px; margin: 0; } .areabox > .dlnote:first-of-type { padding-top: 12px; border-top: 1px solid var(--line); }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -1715,11 +1733,50 @@ const zoneLabel = z => z === '__other' ? 'Another area' : (z || '');
 const hasDel = c => !!(c.zone || c.fee > 0);
 const delLine = c => c.feeKnown ? (c.free || c.fee === 0 ? 'Free' : fmtRp(c.fee)) : 'To be confirmed';
 /* Under the area field: the fee and the free-delivery amount for that area, laid out as two neat rows. */
+/* Places customers type, mapped to our delivery areas. Staff-made areas still match by their own name. */
+const AREA_PLACES = {
+  'Canggu / Berawa / Pererenan': 'Canggu, Berawa, Pererenan, Batu Bolong, Echo Beach, Tibubeneng, Padonan, Babakan, Nelayan, Dalung',
+  'Seminyak / Kerobokan / Umalas': 'Seminyak, Kerobokan, Umalas, Petitenget, Oberoi, Batu Belig, Kayu Aya, Basangkasa',
+  'Kuta / Legian': 'Kuta, Legian, Tuban, Airport',
+  'Denpasar / Sanur': 'Denpasar, Sanur, Renon, Sidakarya, Panjer, Serangan, Padangsambian, Ubung, Teuku Umar',
+  'Jimbaran / Nusa Dua': 'Jimbaran, Nusa Dua, Tanjung Benoa, Benoa, Kedonganan, Sawangan, Bualu, Kampial',
+  'Ubud': 'Ubud, Penestanan, Sayan, Mas, Peliatan, Nyuh Kuning, Lodtunduh, Kedewatan, Payangan',
+  'Uluwatu / Bingin': 'Uluwatu, Bingin, Padang Padang, Pecatu, Ungasan, Balangan, Dreamland, Suluban, Melasti, Nyang Nyang, Green Bowl',
+  'Tabanan town / Kediri': 'Tabanan, Kediri, Nyitdah, Pandak, Abiantuwung, Banjar Anyar, Kaba Kaba',
+  'Tanah Lot / Kerambitan / Beraban': 'Tanah Lot, Kerambitan, Beraban, Nyanyi, Kedungu, Yeh Gangga, Pasut, Tibubiu',
+  'Jatiluwih / Penebel / Baturiti': 'Jatiluwih, Penebel, Baturiti, Marga, Wongaya Gede, Sarinbuana, Batukaru',
+  'Mengwi / Munggu / Abiansemal': 'Mengwi, Munggu, Abiansemal, Seseh, Cemagi, Kapal, Sempidi, Lukluk, Blahkiuh, Sading',
+  'Munduk / Pupuan / Belimbing': 'Munduk, Pupuan, Belimbing, Gobleg, Antosari',
+  'Bedugul / Candikuning': 'Bedugul, Candikuning, Pancasari, Wanagiri, Bratan',
+  'Gianyar / Sukawati / Tegalalang': 'Gianyar, Sukawati, Tegalalang, Celuk, Batubulan, Keramas, Ketewel, Saba, Blahbatuh, Kemenuh, Tampaksiring, Taro',
+  'Medewi / Negara / Jembrana': 'Medewi, Negara, Jembrana, Balian, Soka, Selemadeg, Pekutatan, Lalang Linggah',
+  'Klungkung / Semarapura / Padang Bai': 'Klungkung, Semarapura, Padang Bai, Kusamba, Goa Lawah',
+  'Bangli / Kintamani': 'Bangli, Kintamani, Batur, Penelokan, Toya Bungkah, Sukawana',
+  'Singaraja / Lovina / Buleleng': 'Singaraja, Lovina, Buleleng, Kalibukbuk, Anturan, Tejakula, Banjar',
+  'Gilimanuk / Melaya': 'Gilimanuk, Melaya, Belimbingsari',
+  'Candidasa / Amed / Karangasem': 'Candidasa, Amed, Karangasem, Amlapura, Tulamben, Sidemen, Manggis, Jasri, Tirta Gangga, Bunutan',
+  'Seririt / Pemuteran / Menjangan': 'Seririt, Pemuteran, Menjangan, Banyuwedang, Pulaki, Gerokgak'
+};
+const areaNorm = t => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+function areaMatches(q) {
+  const zs = dlNow().zones; const n = areaNorm(q); if (!n) return zs.map(z => ({ z, hit: '' }));
+  const out = []; zs.forEach(z => { const places = [z.n].concat(String(AREA_PLACES[z.n] || '').split(',').map(x => x.trim()).filter(Boolean)); let best = null;
+    places.forEach(pl => { const pn = areaNorm(pl); const sc = pn.startsWith(n) ? 0 : pn.split(' ').some(w => w.startsWith(n)) ? 1 : pn.includes(n) ? 2 : -1; if (sc >= 0 && (!best || sc < best.sc)) best = { sc, pl }; });
+    if (best) out.push({ z, hit: areaNorm(best.pl) === areaNorm(z.n) || z.n.toLowerCase().includes(best.pl.toLowerCase()) ? '' : best.pl, sc: best.sc }); });
+  return out.sort((a, b) => a.sc - b.sc).slice(0, 8);
+}
+function areaListHtml(q) {
+  const cp = compute(S); const ms = areaMatches(q);
+  const row = x => { const fa = freeAt(x.z.n); const fee = x.z.fee == null ? 'fee by message' : x.z.fee === 0 || (fa > 0 && cp.total >= fa) ? 'Free' : fmtRp(x.z.fee);
+    return '<button type="button" class="areaopt" role="option" data-act="areapick" data-z="' + esc(x.z.n) + '"><span class="an"><b>' + esc(x.hit || x.z.n) + '</b>' + (x.hit ? '<small>' + esc(x.z.n) + '</small>' : '') + '</span><span class="af num">' + fee + '</span></button>'; };
+  return (ms.length ? ms.map(row).join('') : '<p class="areanone">No area matches that. Choose "Another area in Bali" and we will confirm the fee.</p>') +
+    '<button type="button" class="areaopt other" role="option" data-act="areapick" data-z="__other"><span class="an"><b>Another area in Bali</b><small>We confirm the fee by message</small></span></button>';
+}
 function dlBreak(c) {
   if (!c.zone || c.zone === '__other' || !c.feeKnown) return '<p class="hint dlnote">' + esc(dlNote(c)) + '</p>';
   const fa = freeAt(c.zone); const base = (dlNow().zones.find(z => z.n === c.zone) || {}).fee;
   const rows = [['Delivery to your area', c.free || base === 0 ? 'Free' : fmtRp(base)]];
-  if (base > 0 && fa > 0) rows.push(['Free delivery', c.free ? 'Yes, your order is over ' + fmtRp(fa) : 'On orders over ' + fmtRp(fa)]);
+  if (base > 0 && fa > 0) rows.push(['Free delivery', c.free ? 'Unlocked, over ' + fmtRp(fa) : 'On orders over ' + fmtRp(fa)]);
   return '<dl class="dlbreak">' + rows.map(r => '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>').join('') + '</dl>' + (base > 0 && fa > 0 && !c.free && c.toFree > 0 ? '<p class="hint dlnote">Add ' + fmtRp(c.toFree) + ' more and delivery is free.</p>' : '');
 }
 function dlNote(c) {
@@ -2202,7 +2259,7 @@ function renderOrder(comp) {
     '<div class="field' + (cmode && !m.pay ? ' miss' : '') + '"><label for="m-pay">Payment' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><select id="m-pay" data-meta="pay"' + ro + '>' + PAYMENTS.filter(p => !(cmode && /cafe/.test(p))).map(p => '<option' + (p === m.pay ? ' selected' : '') + ' value="' + esc(p) + '">' + (p || 'Choose how it will be paid') + '</option>').join('') + '</select></div>' +
     (cmode ? '<div class="field span-all' + (!reqOk('phone', m) ? ' miss' : '') + '"><label for="m-phone-n">Your WhatsApp, so your host can reach you <i class="req" aria-hidden="true">*</i></label>' + phoneField('m-phone', m.phone, ro) + '</div>' : '') +
     (() => { const dlc = dlNow(); if (!cmode) return ''; const cp = compute(S);
-      return (dlc.zones.length ? '<div class="field span-all' + (!reqOk('zone', m) ? ' miss' : '') + '"><label for="m-zone">Delivery area <i class="req" aria-hidden="true">*</i></label><select id="m-zone" data-meta="zone"' + ro + '><option value="">Choose your area</option>' + dlc.zones.map(z => '<option value="' + esc(z.n) + '"' + (z.n === m.zone ? ' selected' : '') + '>' + esc(z.n) + ' (' + (z.fee == null ? 'fee by message' : (z.fee === 0 || (freeAt(z.n) > 0 && cp.total >= freeAt(z.n))) ? 'free' : fmtRp(z.fee)) + ')</option>').join('') + '<option value="__other"' + (m.zone === '__other' ? ' selected' : '') + '>Another area in Bali</option></select>' + dlBreak(cp) + '</div>' : '') +
+      return (dlc.zones.length ? '<div class="field span-all' + (!reqOk('zone', m) ? ' miss' : '') + '"><label for="m-zone">Delivery area <i class="req" aria-hidden="true">*</i></label><div class="areabox"><div class="areaq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="m-zone" type="search" autocomplete="off" enterkeyhint="search" role="combobox" aria-expanded="false" aria-controls="areaList" data-areaq="1" placeholder="Type your area, e.g. Berawa or Ubud" value="' + esc(m.zone ? zoneLabel(m.zone) : '') + '"' + ro + '>' + (m.zone && canWrite ? '<button type="button" class="areaclr" data-act="areaclr" aria-label="Change area"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' : '') + '</div><div class="arealist" id="areaList" role="listbox" hidden></div>' + dlBreak(cp) + '</div></div>' : '') +
         '<div class="field span-all"><label for="m-slot">Delivery time</label><select id="m-slot" data-meta="slot"' + ro + '>' + ['', 'Morning (8 to 12)', 'Afternoon (12 to 4)', 'Evening (4 to 7)'].map(o => '<option value="' + o + '"' + (o === (m.slot || '') ? ' selected' : '') + '>' + (o || 'Any time on the day') + '</option>').join('') + '</select></div>'; })() +
     '<div class="field span-all' + (cmode && !reqOk('addr', m) ? ' miss' : '') + '"><label for="m-addr">Deliver to' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><textarea id="m-addr" data-meta="addr" rows="2" placeholder="Delivery address"' + ro + '>' + esc(m.addr) + '</textarea>' + (cmode ? '<div class="pinrow">' + (m.pin ? '<span class="pinok">&#10003; Pin added</span><button type="button" class="linkbtn" data-act="clrpin">Remove</button>' : '<button type="button" class="btn ghost sm" data-act="getpin">Add my pin location</button><span class="hint">' + (ui.pinFail ? 'We cannot read your location here. After you send your order, share it in the same WhatsApp chat: tap <b>+</b>, then <b>Location</b>.' : 'Optional. Helps the driver find you.') + '</span>') + '</div>' : '') + '</div>' +
     '<div class="field span-all"><label for="m-notes">' + (cmode ? 'Notes for your host' : 'Internal note for the order manager') + '</label><textarea id="m-notes" data-meta="notes" placeholder="' + (cmode ? 'Anything we should know before delivery' : 'For us only, never sent to suppliers. E.g. check stock on the salmon first') + '"' + ro + '>' + esc(m.notes) + '</textarea></div></div>' : '') + '</div>';
@@ -3313,6 +3370,8 @@ document.addEventListener('click', e => {
   else if (act === 'cdtog') { ui.cdOpen = ui.cdOpen || {}; ui.cdOpen[+b.dataset.i] = !ui.cdOpen[+b.dataset.i]; renderLedger(); }
   else if (act === 'cddel') { ui.cdOpen = {}; const dl = dlNow(); dl.codes.splice(+b.dataset.i, 1); dlSave({ codes: dl.codes }); renderLedger(); toast('Code removed.'); }
   else if (act === 'dzsuggest') { const dl = dlNow(); const zones = dl.zones.map(z => (z.free === undefined || z.free === null || z.free === '') && freeSuggest(z.n) ? Object.assign({}, z, { free: freeSuggest(z.n) }) : z); dlSave({ zones, free: Math.max(dl.free, 1500000) }); renderLedger(); toast('Suggested amounts applied. Change any area by typing a new amount.'); }
+  else if (act === 'areapick') { const z = b.dataset.z; patch({ meta: { zone: z } }); const cz = compute(S); renderOrder(cz); chrome(cz); }
+  else if (act === 'areaclr') { patch({ meta: { zone: '' } }); const cz = compute(S); renderOrder(cz); chrome(cz); const qi = document.getElementById('m-zone'); if (qi) { qi.focus(); areaOpen(qi); } }
   else if (act === 'dzadd') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen.dlCard = true; ui.dzNew = true; renderLedger(); const rs = document.querySelectorAll('.dzrow'); const last = rs[rs.length - 1]; if (last) { last.scrollIntoView({ block: 'center' }); last.querySelector('input').focus(); } }
   else if (act === 'dzdel') { const dl = dlNow(); dl.zones.splice(+b.dataset.i, 1); dlSave({ zones: dl.zones }); renderLedger(); }
   else if (act === 'dzstarter') { const dl = dlNow(); const have = dl.zones.map(z => z.n); const add = DL_STARTER.filter(x => !have.includes(x[0])).map(x => ({ n: x[0], fee: x[1] })); dlSave({ zones: dl.zones.concat(add) }); renderLedger(); toast(add.length + ' area' + (add.length > 1 ? 's' : '') + ' added. Set the fees to yours.'); }
@@ -3487,6 +3546,15 @@ document.addEventListener('input', e => {
   const pos = t.selectionStart, digitsBefore = t.value.slice(0, pos).replace(/\D/g, '').length; t.value = fmtDots(t.value);
   let n = 0, i = 0; for (; i < t.value.length && n < digitsBefore; i++) { if (/\d/.test(t.value[i])) n++; } try { t.setSelectionRange(i, i); } catch (x) {}
 }, true);
+function areaOpen(t) { const l = document.getElementById('areaList'); if (!l) return; l.innerHTML = areaListHtml(t.value === zoneLabel(S.meta.zone) ? '' : t.value); l.hidden = false; t.setAttribute('aria-expanded', 'true'); const bx = t.closest('.areabox'); if (bx) bx.classList.add('open'); }
+function areaClose() { const l = document.getElementById('areaList'); if (l && !l.hidden) { l.hidden = true; const bx = l.closest('.areabox'); if (bx) bx.classList.remove('open'); const t = document.getElementById('m-zone'); if (t) { t.setAttribute('aria-expanded', 'false'); if (t.value !== zoneLabel(S.meta.zone || '')) t.value = S.meta.zone ? zoneLabel(S.meta.zone) : ''; } } }
+document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('input[data-areaq]')) { e.target.select(); areaOpen(e.target); } });
+document.addEventListener('input', e => { if (e.target.matches && e.target.matches('input[data-areaq]')) areaOpen(e.target); });
+document.addEventListener('keydown', e => { const t = e.target; if (!t.matches || !t.matches('input[data-areaq]')) return; const l = document.getElementById('areaList'); if (!l || l.hidden) return; const opts = [...l.querySelectorAll('.areaopt')]; let i = opts.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown') { e.preventDefault(); (opts[0] || t).focus(); } else if (e.key === 'Enter') { e.preventDefault(); if (opts[0] && t.value.trim()) opts[0].click(); } else if (e.key === 'Escape') { areaClose(); } });
+document.addEventListener('keydown', e => { const t = e.target; if (!t.matches || !t.matches('.areaopt')) return; const opts = [...document.querySelectorAll('#areaList .areaopt')]; const i = opts.indexOf(t);
+  if (e.key === 'ArrowDown') { e.preventDefault(); (opts[i + 1] || t).focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); (opts[i - 1] || document.getElementById('m-zone')).focus(); } else if (e.key === 'Escape') { areaClose(); document.getElementById('m-zone').focus(); } });
+document.addEventListener('pointerdown', e => { if (!e.target.closest || !e.target.closest('.areabox')) areaClose(); });
 document.addEventListener('focusin', e => { const t = e.target; if (t.matches && t.matches('input[data-act="qty"]')) setTimeout(() => { try { t.select(); } catch (x) {} }, 0); });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'q') e.target.blur(); if (e.key === 'Enter' && e.target && e.target.id === 'm-code') { const b = document.querySelector('[data-act="codeapply"]'); if (b) b.click(); } if (e.key === 'Enter' && e.target && e.target.id === 'mk-pct') { const b = document.getElementById('mk-apply'); if (b && !b.disabled) b.click(); } });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.sentPending && cmode) { ui.sentPending = false; showSentBox(); } });
