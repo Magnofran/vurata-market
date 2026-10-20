@@ -987,6 +987,21 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 @media (min-width: 700px) { .tabs:not(.c5) { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; justify-content: stretch !important; column-gap: 0 !important; } .tabs:not(.c5) .tab { padding-inline: 4px !important; } }
 @media (min-width: 1000px) { .tabs:not(.c5) { padding-right: calc(340px + var(--colgap, 24px)) !important; } }
 .bar-in, .tabs { max-width: calc(1180px - 2 * var(--g, 16px)) !important; }
+/* delivery run: day chips, drivers, per-driver messages */
+.runday { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.runchip { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--line-dark); border-radius: 99px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.runchip b { font-weight: 700; color: var(--muted); } .runchip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); } .runchip[aria-pressed="true"] b { color: inherit; opacity: .75; }
+.rundate input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.drvmgr { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line-dark); display: grid; gap: 8px; }
+.drvlist { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.drvtag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface-2); font-size: 13.5px; font-weight: 600; } .drvtag small { color: var(--muted); font-weight: 400; }
+.drvtag .x { width: 26px; height: 26px; border: 0; background: none; color: var(--muted); font-size: 18px; cursor: pointer; border-radius: 50%; }
+.drvform { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; } .drvform input { flex: 1 1 160px; min-height: 40px; }
+.drvpick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px; } .drvpick button { min-height: 32px; padding: 0 12px; border: 1px solid var(--line-dark); border-radius: 99px; background: var(--surface); color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; } .drvpick button[aria-pressed="true"] { background: color-mix(in srgb, var(--gold) 18%, var(--surface)); border-color: var(--gold); color: var(--ink); }
+.drvmsgs { display: grid; gap: 12px; margin-top: 10px; }
+.drvmsg { border: 1px solid var(--line-dark); border-left: 3px solid var(--gold); padding: 12px 14px; display: grid; gap: 10px; background: var(--surface); } .drvmsg.none { border-left-color: var(--warn); }
+.drvmsg-h { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; } .drvmsg-h span { color: var(--muted); font-size: 13px; }
+.drvmsg details summary { cursor: pointer; font-size: 13px; color: var(--gold-text); font-weight: 600; } .drvmsg textarea { margin-top: 8px; min-height: 220px; }
 /* first-visit trust strip */
 .trust { list-style: none; margin: 12px 0 0; padding: 12px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); }
 .trust[hidden] { display: none; }
@@ -2846,48 +2861,76 @@ function overviewHtml() {
   const brkHtml = (d, a) => (d.length || a.length) ? '<div class="brkgrid">' + brkCol('Deliveries by day', d) + brkCol('Deliveries by area', a) + '</div>' : '';
   return nx + '<div class="card"><h3>Overview</h3><div class="stats"><div><b class="num">' + n('new') + '</b><span>New orders</span></div><div><b class="num">' + n('ordered') + '</b><span>With suppliers</span></div><div><b class="num">' + fmtRp(toCollect) + '</b><span>To collect</span></div></div>' + brkHtml(dayRows, areaRows) + '</div>';
 }
-function stopsList() {
-  const zi = z => { const ix = dlNow().zones.findIndex(x => x.n === z); return ix < 0 ? 999 : ix; };
-  return cust.filter(c => c.status !== 'delivered').sort((a, b) => zi(a.zone) - zi(b.zone) || String(a.need || '').localeCompare(String(b.need || '')) || String(a.slot || '').localeCompare(String(b.slot || '')));
-}
 function packState(c, comp) { let n = 0, done = 0; comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st === 'x') return; n++; if (c.pk && c.pk[ln.key]) done++; })); return { n, done }; }
 const ID_SLOT = { 'Morning (8 to 12)': 'Pagi (08.00-12.00)', 'Afternoon (12 to 4)': 'Siang (12.00-16.00)', 'Evening (4 to 7)': 'Sore (16.00-19.00)' };
 const idDate = iso => new Date(iso + 'T12:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-function driverText() {
-  const stops = stopsList(); if (!stops.length) return ''; const id = (ui.dlang || 'id') === 'id';
-  const T = id ? { run: 'Rute pengantaran', stop: 'titik', noarea: 'Tanpa area', items: 'Barang', packed: 'Dikemas', ready: 'SIAP', collect: 'TAGIH', incl: 'termasuk ongkir', paid: 'Sudah lunas', note: 'Catatan', foot: 'Berat adalah perkiraan sampai ditimbang. Jumlah akhir mengikuti berat yang dikemas.' } : { run: 'Delivery run', stop: 'stop', noarea: 'No area', items: 'Items', packed: 'Packed', ready: 'READY', collect: 'COLLECT', incl: 'incl. delivery', paid: 'Already paid', note: 'Note', foot: 'Weights are estimates until weighed. Final amounts follow the packed weight.' };
-  const payTxt = p => !id ? p : /cash/i.test(p) ? 'Tunai saat diterima' : /qris/i.test(p) ? 'QRIS (kode QR)' : /deposit/i.test(p) ? 'Deposit (transfer bank)' : p;
-  const out = [T.run + ' - ' + stops.length + ' ' + T.stop + (!id && stops.length > 1 ? 's' : '')]; let cur = null;
-  stops.forEach(c => {
-    const area = c.zone ? zoneLabel(c.zone) : T.noarea; if (area !== cur) { out.push('', '== ' + area.toUpperCase() + ' =='); cur = area; }
-    const comp = compute(custState(c), 'sell'); const due = dueOf(c); const ps = packState(c, comp);
-    out.push('', '#' + orderNo(c) + ' ' + (c.name || 'Customer') + (c.phone ? ' - ' + c.phone : ''));
-    if (c.addr) out.push('   ' + c.addr);
-    if (c.pin || c.addr) out.push('   ' + (id ? 'Peta' : 'Map') + ': ' + mapUrl(c));
-    out.push('   ' + [c.need ? (id ? idDate(c.need) : fmtDate(c.need)) : '', c.slot ? (id ? (ID_SLOT[c.slot] || c.slot) : c.slot) : ''].filter(Boolean).join(', '));
-    const items = []; comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st !== 'x') items.push(fmtQty(ln.q) + ' ' + (UNIT_EN[ln.o.u] || ln.o.u) + ' ' + nmBoth(ln.it)); }));
-    out.push('   ' + T.items + ': ' + items.join('; '));
-    out.push('   ' + T.packed + ': ' + ps.done + '/' + ps.n + (ps.n && ps.done === ps.n ? ' - ' + T.ready : ''));
-    out.push('   ' + (due > 0 ? T.collect + ' ' + fmtRp(due) + (c.pay ? ' (' + payTxt(c.pay) + ')' : '') + (comp.fee > 0 ? ' ' + T.incl : '') : T.paid));
-    if (c.notes) out.push('   ' + T.note + ': ' + c.notes);
-    if (c.hn) out.push('   Info: ' + c.hn);
-  });
-  out.push('', T.foot);
-  return out.join('\n');
+/* Delivery run: pick a day, give each stop a driver, send each driver one clear WhatsApp message. Drivers never need the app. */
+let drivers = []; try { drivers = JSON.parse(localStorage.getItem('mumu-drivers') || '[]') || []; } catch (e) { drivers = []; }
+function saveDrivers() { try { localStorage.setItem('mumu-drivers', JSON.stringify(drivers)); } catch (e) {} if (db) custChain = custChain.then(() => db.doc('settings/drivers').set({ list: drivers })).catch(() => toast('Could not save that change.')); renderCustomers(); }
+const runToday = () => isoOf(new Date());
+const runDayOf = () => ui.runDay || runToday();
+function runStops(day) {
+  const t = runToday(), d = day || runDayOf(); const zi = z => { const ix = dlNow().zones.findIndex(x => x.n === z); return ix < 0 ? 999 : ix; };
+  return cust.filter(c => c.status !== 'delivered' && (c.need === d || (d === t && (!c.need || c.need < t))))
+    .sort((a, b) => zi(a.zone) - zi(b.zone) || String(a.slot || '').localeCompare(String(b.slot || '')) || orderNo(a) - orderNo(b));
 }
+function stopsList() { return runStops(); }
+const drvOf = c => drivers.length === 1 ? drivers[0].id : (drivers.some(d => d.id === c.drv) ? c.drv : '');
+const KEYCAP = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+const addrOnly = a => String(a || '').split('\n').filter(l => !/^Map: https?:\/\//.test(l.trim())).join(', ').trim();
+function driverMsg(stops, drv, day) {
+  const id = (ui.dlang || 'id') === 'id';
+  const T = id ? { title: 'Rute Vurata Market', stops: n => n + ' titik', collect: 'Tagih', total: 'Total tagih', paid: 'Sudah lunas', items: 'barang', ready: 'siap', packed: 'dikemas', note: 'Catatan', done: 'Setelah diantar, balas:', doneW: 'selesai', foot: 'Berat masih perkiraan sampai ditimbang.', cash: 'tunai', qris: 'QRIS' }
+    : { title: 'Vurata Market delivery run', stops: n => n + ' stop' + (n === 1 ? '' : 's'), collect: 'Collect', total: 'Total to collect', paid: 'Already paid', items: 'items', ready: 'ready', packed: 'packed', note: 'Note', done: 'After each drop-off, reply:', doneW: 'done', foot: 'Weights are estimates until weighed.', cash: 'cash', qris: 'QRIS' };
+  const dayTxt = id ? new Date(day + 'T12:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) : new Date(day + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const payW = p => /cash/i.test(p || '') ? T.cash : /qris/i.test(p || '') ? T.qris : '';
+  let sum = 0; const rows = stops.map((c, i) => { const due = dueOf(c); sum += due; const comp = compute(custState(c), 'sell'); const ps = packState(c, comp); const a = addrOnly(c.addr);
+    const L = ['*' + (KEYCAP[i] || (i + 1) + '.') + '  #' + orderNo(c) + ' · ' + (c.name || 'Customer') + '*'];
+    if (c.zone) L.push('📍 ' + zoneLabel(c.zone)); if (a) L.push('🏠 ' + a); if (c.pin || c.addr) L.push('🗺️ ' + mapUrl(c));
+    if (c.phone) L.push('📞 ' + c.phone); if (c.slot) L.push('🕗 ' + (id ? (ID_SLOT[c.slot] || c.slot) : c.slot));
+    L.push('📦 ' + ps.n + ' ' + T.items + ' · ' + (ps.n && ps.done === ps.n ? '✅ ' + T.ready : '⏳ ' + ps.done + '/' + ps.n + ' ' + T.packed));
+    L.push(due > 0 ? '💵 *' + T.collect + ' ' + fmtRp(due) + '*' + (payW(c.pay) ? ' · ' + payW(c.pay) : '') : '✅ ' + T.paid);
+    if (c.notes) L.push('📝 ' + T.note + ': ' + c.notes); if (c.hn) L.push('ℹ️ ' + c.hn);
+    return L.join('\n'); });
+  const head = ['🛵 *' + T.title + '*', (drv ? '👤 ' + drv.n + ' · ' : '') + '📅 ' + dayTxt, '📦 ' + T.stops(stops.length) + (sum > 0 ? ' · 💵 ' + T.total + ' *' + fmtRp(sum) + '*' : '')].join('\n');
+  const line = '━━━━━━━━━━━━';
+  return [head, line, rows.join('\n' + line + '\n'), line, '✅ ' + T.done + ' *' + T.doneW + ' #' + (stops[0] ? orderNo(stops[0]) : '') + '*', '_' + T.foot + '_'].join('\n');
+}
+function driverText() { return driverMsg(runStops(), null, runDayOf()); }
 function driverHtml() {
-  const stops = stopsList(); if (!stops.length) return ''; const t = driverText(); ui.stopOpen = ui.stopOpen || {};
-  const rows = stops.map((c, i) => {
-    const comp = compute(custState(c), 'sell'); const ps = packState(c, comp); const due = dueOf(c); const open = !!ui.stopOpen[c.id]; const ready = ps.n > 0 && ps.done === ps.n; const dis = canWrite ? '' : ' disabled';
+  if (!cust.some(c => c.status !== 'delivered')) return ''; ui.stopOpen = ui.stopOpen || {};
+  const t0 = runToday(), tm = isoOf(new Date(Date.now() + 864e5)), day = runDayOf(); const dis = canWrite ? '' : ' disabled';
+  const cnt = d => runStops(d).length; const chip = (d, lb) => '<button type="button" class="runchip" data-act="runday" data-d="' + d + '" aria-pressed="' + (day === d) + '">' + lb + ' <b>' + cnt(d) + '</b></button>';
+  const other = day !== t0 && day !== tm;
+  const days = '<div class="runday">' + chip(t0, 'Today') + chip(tm, 'Tomorrow') + '<label class="runchip rundate' + (other ? '" aria-pressed="true' : '') + '">' + (other ? esc(fmtDate(day)) + ' <b>' + cnt(day) + '</b>' : 'Other day') + '<input type="date" id="runDate" value="' + day + '"></label></div>';
+  const drvMgr = '<div class="drvmgr"><span class="lgl">Drivers</span><div class="drvlist">' + drivers.map(d => '<span class="drvtag">🛵 ' + esc(d.n) + ' <small>+' + esc(d.wa) + '</small><button type="button" class="x" data-act="drvdel" data-id="' + esc(d.id) + '" aria-label="Remove ' + esc(d.n) + '"' + dis + '>&times;</button></span>').join('') +
+    (ui.drvAdd ? '<span class="drvform"><input id="drvName" placeholder="Name, e.g. Wayan" autocomplete="off"><input id="drvWa" inputmode="tel" placeholder="WhatsApp, e.g. 0812 3456 7890" autocomplete="off"><button type="button" class="btn sm" data-act="drvsave">Save</button><button type="button" class="btn ghost sm" data-act="drvadd">Cancel</button></span>' : '<button type="button" class="btn ghost sm" data-act="drvadd"' + dis + '>+ Add driver</button>') + '</div></div>';
+  const stops = runStops(day);
+  const pick = c => drivers.length > 1 ? '<div class="drvpick" role="group" aria-label="Driver for #' + orderNo(c) + '">' + drivers.map(d => '<button type="button" data-act="drvset" data-c="' + esc(c.id) + '" data-d="' + esc(d.id) + '" aria-pressed="' + (drvOf(c) === d.id) + '"' + dis + '>🛵 ' + esc(d.n) + '</button>').join('') + '</div>' : '';
+  const rows = stops.map(c => {
+    const comp = compute(custState(c), 'sell'); const ps = packState(c, comp); const due = dueOf(c); const open = !!ui.stopOpen[c.id]; const ready = ps.n > 0 && ps.done === ps.n;
     const body = open ? '<div class="stopbody">' + ((c.pin || c.addr) ? '<a class="maplink" target="_blank" rel="noopener" href="' + mapUrl(c) + '">Open map</a>' : '') + comp.groups.map(g => g.lines.filter(ln => ln.st !== 'x').map(ln => {
       const wt = ln.o.est || ln.o.u === 'kg'; const aq = (c.lines[ln.key] || {}).aq; const un = esc(UNIT_EN[ln.o.u] || ln.o.u);
       return '<div class="prow"><label class="check"><input type="checkbox" data-cpk="' + esc(c.id) + '|' + esc(ln.key) + '"' + (c.pk && c.pk[ln.key] ? ' checked' : '') + dis + '><span>' + esc(nmBoth(ln.it)) + ' <small>' + fmtQty(ln.q0) + ' ' + un + ' ordered</small></span></label>' +
         (wt ? '<span class="lpr">Weighed <input data-caq="' + esc(c.id) + '|' + esc(ln.key) + '" inputmode="decimal" value="' + (aq ? fmtQty(aq) : '') + '" placeholder="' + fmtQty(ln.q0) + '"' + dis + '> ' + un + '</span>' : '') + '</div>';
     }).join('')).join('') + '<div class="actions full"><button type="button" class="btn ghost sm" data-act="packall" data-id="' + esc(c.id) + '"' + dis + '>Mark all packed</button></div></div>' : '';
-    return '<div class="stop' + (ready ? ' ready' : '') + '"><button type="button" class="stophead" data-act="stopopen" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"><span class="sh1"><b><span class="ono sm">#' + orderNo(c) + '</span> ' + esc(c.name || 'Customer') + '</b><span>' + esc([c.zone ? zoneLabel(c.zone) : '', c.slot || ''].filter(Boolean).join(' - ') || 'No area') + '</span></span><span class="sh2"><em class="packpill' + (ready ? ' ok' : '') + '">' + (ready ? 'Packed' : ps.done + '/' + ps.n + ' packed') + '</em><span class="num">' + (due > 0 ? 'Collect ' + fmtRp(due) : 'Paid') + '</span></span></button>' + body + '</div>';
+    return '<div class="stop' + (ready ? ' ready' : '') + '"><button type="button" class="stophead" data-act="stopopen" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"><span class="sh1"><b><span class="ono sm">#' + orderNo(c) + '</span> ' + esc(c.name || 'Customer') + '</b><span>' + esc([c.zone ? zoneLabel(c.zone) : '', c.slot || ''].filter(Boolean).join(' - ') || 'No area') + (c.need && c.need < t0 ? ' · overdue' : '') + '</span></span><span class="sh2"><em class="packpill' + (ready ? ' ok' : '') + '">' + (ready ? 'Packed' : ps.done + '/' + ps.n + ' packed') + '</em><span class="num">' + (due > 0 ? 'Collect ' + fmtRp(due) : 'Paid') + '</span></span></button>' + pick(c) + body + '</div>';
   }).join('');
-  return '<div class="card" id="driverCard"><h3>Delivery run</h3><p class="hint" style="margin-bottom:10px">Tap a stop to pack it. Tick each item as it goes in the box, and type the weighed amount for fresh items. The bill and the amount to collect follow the weights you type.</p>' + rows +
-    '<div class="msg-head" style="margin-top:16px"><span class="lgl" style="margin:0">Driver list</span><span class="seg" role="group" aria-label="Driver list language"><button type="button" data-act="dlang" data-l="id" aria-pressed="' + ((ui.dlang || 'id') === 'id') + '">Bahasa Indonesia</button><button type="button" data-act="dlang" data-l="en" aria-pressed="' + (ui.dlang === 'en') + '">English</button></span></div><textarea class="pre sm" id="driverTxt" readonly style="min-height:140px">' + esc(t) + '</textarea><div class="actions duo"><button type="button" class="btn" data-act="copy" data-id="driverTxt">Copy list</button><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(t) + '">Send on WhatsApp</a></div></div>';
+  const lang = '<span class="seg" role="group" aria-label="Driver message language"><button type="button" data-act="dlang" data-l="id" aria-pressed="' + ((ui.dlang || 'id') === 'id') + '">Bahasa</button><button type="button" data-act="dlang" data-l="en" aria-pressed="' + (ui.dlang === 'en') + '">English</button></span>';
+  const msgCard = (key, drv, list) => { const t = driverMsg(list, drv, day); const sum = list.reduce((s, c) => s + dueOf(c), 0); const tid = 'drvTxt-' + key; const wa = drv && drv.wa ? 'https://wa.me/' + drv.wa + '?text=' + encodeURIComponent(t) : 'https://wa.me/?text=' + encodeURIComponent(t);
+    return '<div class="drvmsg' + (drv ? '' : ' none') + '"><div class="drvmsg-h"><b>' + (drv ? '🛵 ' + esc(drv.n) : drivers.length ? '⚠️ No driver yet' : 'Driver message') + '</b><span>' + list.length + ' stop' + (list.length === 1 ? '' : 's') + (sum > 0 ? ' · collect ' + fmtRp(sum) : '') + '</span></div>' +
+      '<details><summary>Preview message</summary><textarea class="pre sm" id="' + tid + '" readonly>' + esc(t) + '</textarea></details>' +
+      '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="' + wa + '">' + (drv && drv.wa ? 'Send to ' + esc(drv.n) : 'Send on WhatsApp') + '</a><button type="button" class="btn ghost" data-act="copy" data-id="' + tid + '">Copy</button></div></div>'; };
+  let msgs = '';
+  if (stops.length) {
+    if (!drivers.length) msgs = msgCard('all', null, stops) + '<p class="hint">Add your driver above to send it straight to their WhatsApp.</p>';
+    else { const groups = drivers.map(d => [d, stops.filter(c => drvOf(c) === d.id)]).filter(g => g[1].length); const un = stops.filter(c => !drvOf(c));
+      msgs = groups.map(g => msgCard(g[0].id, g[0], g[1])).join('') + (un.length ? msgCard('un', null, un) + '<p class="hint">Choose a driver on ' + (un.length === 1 ? 'this stop' : 'these ' + un.length + ' stops') + ' above, and their message updates.</p>' : ''); }
+  }
+  return '<div class="card" id="driverCard"><h3>Delivery run</h3>' + days + drvMgr +
+    (stops.length ? '<p class="hint" style="margin:12px 0 10px">Tap a stop to pack it. Tick each item as it goes in the box, and type the weighed amount for fresh items.' + (drivers.length > 1 ? ' Pick a driver on each stop.' : '') + '</p>' + rows +
+      '<div class="msg-head" style="margin-top:16px"><span class="lgl" style="margin:0">Driver messages</span>' + lang + '</div><div class="drvmsgs">' + msgs + '</div>'
+      : '<p class="hint" style="margin-top:12px">No deliveries for this day.</p>') + '</div>';
 }
 function orderNo(c) { if (c.no) return c.no; const un = cust.filter(x => !x.no).sort((a, b) => (a.at || 0) - (b.at || 0)); return un.findIndex(x => x.id === c.id) + 1; }
 const cardDefault = id => id === 'inviteCard' ? (!cust.length || !myWA) : id === 'dlCard' ? !dlNow().zones.length : false;
@@ -2897,7 +2940,7 @@ const LB_CHEV = '<svg class="lbchev" viewBox="0 0 24 24" width="18" height="18" 
 const lbOpen = (id, title, sum) => { const open = cardOpen(id); return '<section class="lblock' + (open ? ' open' : '') + '" id="' + id + '"><button type="button" class="lbhead" data-act="cardtog" data-id="' + id + '" aria-expanded="' + open + '"><span class="lbt"><b>' + title + '</b><span>' + sum + '</span></span>' + LB_CHEV + '</button>' + (open ? '<div class="lbbody">' : ''); };
 const lbClose = id => (cardOpen(id) ? '</div>' : '') + '</section>';
 const cardHead = (id, title, open) => '<div class="msg-head"><h3>' + title + '</h3><button type="button" class="linkbtn" data-act="cardtog" data-id="' + id + '" aria-expanded="' + open + '">' + (open ? 'Hide' : 'Show') + '</button></div>';
-const mapUrl = c => c.pin ? 'https://maps.google.com/?q=' + c.pin : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((c.addr || '') + ' Bali');
+const mapUrl = c => c.pin ? 'https://maps.google.com/?q=' + c.pin : (mapLinkOf(c) || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addrOnly(c.addr) + ' Bali'));
 function ccardHead(c, comp, date) {
   const rows = [
     ['Phone', c.phone ? '<a href="https://wa.me/' + digitsOf(c.phone) + '" target="_blank" rel="noopener">' + esc(c.phone) + '</a>' : '<em>no number</em>'],
@@ -3529,6 +3572,11 @@ document.addEventListener('click', e => {
   else if (act === 'dzdel') { const dl = dlNow(); dl.zones.splice(+b.dataset.i, 1); dlSave({ zones: dl.zones }); renderLedger(); }
   else if (act === 'dzstarter') { const dl = dlNow(); const have = dl.zones.map(z => z.n); const add = DL_STARTER.filter(x => !have.includes(x[0])).map(x => ({ n: x[0], fee: x[1] })); dlSave({ zones: dl.zones.concat(add) }); renderLedger(); toast(add.length + ' area' + (add.length > 1 ? 's' : '') + ' added. Set the fees to yours.'); }
   else if (act === 'dlang') { ui.dlang = b.dataset.l; renderCustomers(); }
+  else if (act === 'drvset') { const c = cust.find(x => x.id === b.dataset.c); if (c) updCust(c.id, { drv: c.drv === b.dataset.d ? '' : b.dataset.d }); }
+  else if (act === 'runday') { ui.runDay = b.dataset.d; renderCustomers(); }
+  else if (act === 'drvadd') { ui.drvAdd = !ui.drvAdd; renderCustomers(); if (ui.drvAdd) { const n = document.getElementById('drvName'); if (n) n.focus(); } }
+  else if (act === 'drvsave') { const n = (document.getElementById('drvName') || {}).value || '', w = digitsOf((document.getElementById('drvWa') || {}).value || ''); if (!n.trim()) { toast('Give the driver a name first.'); return; } if (w.length < 9) { toast('Type the driver\'s WhatsApp number.'); return; } drivers.push({ id: 'd' + Date.now().toString(36), n: n.trim().slice(0, 30), wa: w }); ui.drvAdd = false; saveDrivers(); toast('Driver saved.'); }
+  else if (act === 'drvdel') { const d = drivers.find(x => x.id === b.dataset.id); drivers = drivers.filter(x => x.id !== b.dataset.id); saveDrivers(); if (d) toast('Removed ' + d.n + '.'); }
   else if (act === 'suptog') { ui.suppOpen = ui.suppOpen || {}; ui.suppOpen[b.dataset.s] = !ui.suppOpen[b.dataset.s]; renderCustomers(); }
   else if (act === 'addq') { setQty(b.dataset.key, +b.dataset.q, ui.view === 'order'); toast('Added.'); }
   else if (act === 'reopen') { updCust(b.dataset.id, { status: 'ordered', dat: 0 }); toast('Order reopened.'); }
@@ -3619,6 +3667,8 @@ document.addEventListener('change', e => {
   else if (t.matches('input[data-ld]')) { const k = t.dataset.ld.split('|'); const val = t.value.trim(); if ((k[1] === 'n' || k[1] === 'c') && !val) { toast('That field cannot be empty.'); renderLedgerList(); return; } saveLedger({ ov: { [k[0]]: { [k[1]]: val } } }); }
   else if (t.id === 'importFile') { importFiles(t.files); t.value = ''; }
   else if (t.id === 'unpaidOnly') { ui.cunpaid = t.checked; renderCustomers(); }
+  else if (t.id === 'runDate') { if (t.value) { ui.runDay = t.value; renderCustomers(); } }
+  else if (t.matches && t.matches('select[data-drvfor]')) { updCust(t.dataset.drvfor, { drv: t.value }); }
   else if (t.id === 'bankTxt') { bankTxt = t.value.slice(0, 400); LS.set('mumu-bank', bankTxt); if (db) { custChain = custChain.then(() => db.doc('settings/host').set({ wa: myWA, bank: bankTxt })).catch(() => {}); } toast('Payment details saved.'); renderCustomers(); }
   else if (t.matches('input[data-cfee]')) { const raw = String(t.value).replace(/\D/g, ''); updCust(t.dataset.cfee, { fee: raw === '' ? null : parseInt(raw, 10) }); }
   else if (t.matches('input[data-limport]')) { const fl = t.files && t.files[0]; t.value = ''; if (fl) importBundle(fl); }
@@ -3880,6 +3930,7 @@ async function boot() {
   }
   if (db) {
     try { db.collection('customers').orderBy('at', 'desc').limit(100).onSnapshot(sn => { const oldIds = new Set(cust.map(c => c.id)); cust = sn.docs.map(d => Object.assign({ id: d.id }, d.data())); if (ui.custLoaded) { const nu = cust.filter(c => !oldIds.has(c.id) && !c.demo); if (nu.length) toast(nu.length === 1 ? 'New order #' + orderNo(nu[0]) + ' from ' + (nu[0].name || 'a customer') : nu.length + ' new orders', { label: 'View', fn: () => showView('cust') }); } ui.custLoaded = true; updateCBadge(); const a = document.activeElement; if (ui.view === 'cust' && !(a && a.closest && a.closest('#v-cust') && /^(INPUT|TEXTAREA)$/.test(a.tagName))) renderCustomers(); }, () => {}); } catch (e) {}
+    try { db.doc('settings/drivers').onSnapshot(sn => { if (sn.exists && Array.isArray((sn.data() || {}).list)) { drivers = sn.data().list; try { localStorage.setItem('mumu-drivers', JSON.stringify(drivers)); } catch (e) {} if (ui.view === 'cust' && !(document.activeElement && /^(drvName|drvWa)$/.test(document.activeElement.id))) renderCustomers(); } }, () => {}); } catch (e) {}
     try { db.doc('settings/host').onSnapshot(sn => { if (sn.exists) { const d = sn.data(); if (d.wa) { myWA = String(d.wa); LS.set('mumu-mywa', myWA); schedulePublish(); } if (typeof d.bank === 'string') { bankTxt = d.bank; LS.set('mumu-bank', bankTxt); } if (ui.view === 'cust' && !(document.activeElement && /^(mywa|bankTxt)$/.test(document.activeElement.id))) renderCustomers(); } }, () => {}); } catch (e) {}
     try { db.collection('orders').orderBy('at', 'desc').limit(40).onSnapshot(sn => { hist = sn.docs.filter(d => d.id.indexOf('h_') === 0).map(d => Object.assign({ id: d.id }, d.data())).slice(0, 30); if (ui.view === 'share') renderShare(compute(S)); renderFilters(); if (ui.saved && ui.view === 'pick') renderPick(); }, () => {}); } catch (e) {}
     if (myId) { try { favRef = db.doc('data/users/' + myId + '/prefs'); const sn = await favRef.get(); if (sn.exists && sn.data().fav) { favs = Object.assign({}, favs, sn.data().fav); LS.set('mumu-fav', JSON.stringify(favs)); } } catch (e) { favRef = null; } renderFilters(); renderPick(); }
