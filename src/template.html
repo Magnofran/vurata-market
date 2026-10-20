@@ -1337,6 +1337,9 @@ body { margin: 0; padding-inline: 8px; }
 .detsum2 > div:first-child { border-top: 0; padding-top: 2px; }
 .detsum2 dt { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .detsum2 dd { margin: 0; font-size: 14.5px; color: var(--ink); overflow-wrap: anywhere; }
+.dlbreak { margin: 8px 0 0; display: grid; border: 1px solid var(--line); }
+.dlbreak > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--line); font-size: 13.5px; } .dlbreak > div:first-child { border-top: 0; }
+.dlbreak dt { color: var(--muted); } .dlbreak dd { margin: 0; color: var(--ink); font-weight: 600; text-align: right; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -1709,6 +1712,14 @@ function needHint() {
 const zoneLabel = z => z === '__other' ? 'Another area' : (z || '');
 const hasDel = c => !!(c.zone || c.fee > 0);
 const delLine = c => c.feeKnown ? (c.free || c.fee === 0 ? 'Free' : fmtRp(c.fee)) : 'To be confirmed';
+/* Under the area field: the fee and the free-delivery amount for that area, laid out as two neat rows. */
+function dlBreak(c) {
+  if (!c.zone || c.zone === '__other' || !c.feeKnown) return '<p class="hint dlnote">' + esc(dlNote(c)) + '</p>';
+  const fa = freeAt(c.zone); const base = (dlNow().zones.find(z => z.n === c.zone) || {}).fee;
+  const rows = [['Delivery to your area', c.free || base === 0 ? 'Free' : fmtRp(base)]];
+  if (base > 0 && fa > 0) rows.push(['Free delivery', c.free ? 'Yes, your order is over ' + fmtRp(fa) : 'On orders over ' + fmtRp(fa)]);
+  return '<dl class="dlbreak">' + rows.map(r => '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>').join('') + '</dl>' + (base > 0 && fa > 0 && !c.free && c.toFree > 0 ? '<p class="hint dlnote">Add ' + fmtRp(c.toFree) + ' more and delivery is free.</p>' : '');
+}
 function dlNote(c) {
   const dl = dlNow(); if (!c.zone) return 'Choose your area to see the delivery fee.';
   if (c.zone === '__other' || !c.feeKnown) return 'We will confirm the delivery fee for your area by message.';
@@ -2121,7 +2132,7 @@ window.addEventListener('resize', () => document.querySelectorAll('.brow').forEa
 function chipsFade() { const c = document.getElementById('supChips'); if (c) c.classList.toggle('at-end', c.scrollLeft + c.clientWidth >= c.scrollWidth - 2); }
 function dlParts() {
   const dl = dlNow(); const fees = dl.zones.map(z => z.fee).filter(x => x != null); const parts = [];
-  if (cmode && dl.zones.length) { if (fees.length) parts.push('Delivery ' + (Math.min(...fees) === Math.max(...fees) ? fmtRp(fees[0]) : 'starting from ' + fmtRp(Math.min(...fees))) + (fees.length > 1 ? ', depending on your area.' : '.')); if (freeCopy()) parts.push('<b>' + freeCopy() + '</b>'); if (dl.min) parts.push('Minimum order ' + fmtRp(dl.min) + '.'); }
+  if (cmode && dl.zones.length) { if (fees.length) parts.push('Delivery ' + (Math.min(...fees) === Math.max(...fees) ? fmtRp(fees[0]) : 'starting from ' + fmtRp(Math.min(...fees))) + (fees.length > 1 ? ', depending on your area.' : '.'));  if (dl.min) parts.push('Minimum order ' + fmtRp(dl.min) + '.'); }
   return parts;
 }
 function setListMode(m) {
@@ -2189,7 +2200,7 @@ function renderOrder(comp) {
     '<div class="field' + (cmode && !m.pay ? ' miss' : '') + '"><label for="m-pay">Payment' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><select id="m-pay" data-meta="pay"' + ro + '>' + PAYMENTS.filter(p => !(cmode && /cafe/.test(p))).map(p => '<option' + (p === m.pay ? ' selected' : '') + ' value="' + esc(p) + '">' + (p || 'Choose how it will be paid') + '</option>').join('') + '</select></div>' +
     (cmode ? '<div class="field span-all' + (!reqOk('phone', m) ? ' miss' : '') + '"><label for="m-phone-n">Your WhatsApp, so your host can reach you <i class="req" aria-hidden="true">*</i></label>' + phoneField('m-phone', m.phone, ro) + '</div>' : '') +
     (() => { const dlc = dlNow(); if (!cmode) return ''; const cp = compute(S);
-      return (dlc.zones.length ? '<div class="field span-all' + (!reqOk('zone', m) ? ' miss' : '') + '"><label for="m-zone">Delivery area <i class="req" aria-hidden="true">*</i></label><select id="m-zone" data-meta="zone"' + ro + '><option value="">Choose your area</option>' + dlc.zones.map(z => '<option value="' + esc(z.n) + '"' + (z.n === m.zone ? ' selected' : '') + '>' + esc(z.n) + ' (' + (z.fee == null ? 'fee by message' : (z.fee === 0 || (dlc.free > 0 && cp.total >= dlc.free)) ? 'free' : fmtRp(z.fee)) + ')</option>').join('') + '<option value="__other"' + (m.zone === '__other' ? ' selected' : '') + '>Another area in Bali</option></select><p class="hint dlnote' + (cp.zone && cp.feeKnown ? ' ok' : '') + '">' + esc(dlNote(cp)) + '</p></div>' : '') +
+      return (dlc.zones.length ? '<div class="field span-all' + (!reqOk('zone', m) ? ' miss' : '') + '"><label for="m-zone">Delivery area <i class="req" aria-hidden="true">*</i></label><select id="m-zone" data-meta="zone"' + ro + '><option value="">Choose your area</option>' + dlc.zones.map(z => '<option value="' + esc(z.n) + '"' + (z.n === m.zone ? ' selected' : '') + '>' + esc(z.n) + ' (' + (z.fee == null ? 'fee by message' : (z.fee === 0 || (freeAt(z.n) > 0 && cp.total >= freeAt(z.n))) ? 'free' : fmtRp(z.fee)) + ')</option>').join('') + '<option value="__other"' + (m.zone === '__other' ? ' selected' : '') + '>Another area in Bali</option></select>' + dlBreak(cp) + '</div>' : '') +
         '<div class="field span-all"><label for="m-slot">Delivery time</label><select id="m-slot" data-meta="slot"' + ro + '>' + ['', 'Morning (8 to 12)', 'Afternoon (12 to 4)', 'Evening (4 to 7)'].map(o => '<option value="' + o + '"' + (o === (m.slot || '') ? ' selected' : '') + '>' + (o || 'Any time on the day') + '</option>').join('') + '</select></div>'; })() +
     '<div class="field span-all' + (cmode && !reqOk('addr', m) ? ' miss' : '') + '"><label for="m-addr">Deliver to' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><textarea id="m-addr" data-meta="addr" rows="2" placeholder="Delivery address"' + ro + '>' + esc(m.addr) + '</textarea>' + (cmode ? '<div class="pinrow">' + (m.pin ? '<span class="pinok">&#10003; Pin added</span><button type="button" class="linkbtn" data-act="clrpin">Remove</button>' : '<button type="button" class="btn ghost sm" data-act="getpin">Add my pin location</button><span class="hint">' + (ui.pinFail ? 'We cannot read your location here. After you send your order, share it in the same WhatsApp chat: tap <b>+</b>, then <b>Location</b>.' : 'Optional. Helps the driver find you.') + '</span>') + '</div>' : '') + '</div>' +
     '<div class="field span-all"><label for="m-notes">' + (cmode ? 'Notes for your host' : 'Internal note for the order manager') + '</label><textarea id="m-notes" data-meta="notes" placeholder="' + (cmode ? 'Anything we should know before delivery' : 'For us only, never sent to suppliers. E.g. check stock on the salmon first') + '"' + ro + '>' + esc(m.notes) + '</textarea></div></div>' : '') + '</div>';
@@ -3412,7 +3423,7 @@ document.addEventListener('change', e => {
     if (t.dataset.meta === 'need' && t.value && t.value < minNeed()) { t.value = minNeed(); toast('Orders need 24 hours notice, so your date moved to the earliest available day.'); }
     if (cmode && t.dataset.meta === 'need' && t.value && isClosed(t.value)) { const cd = dlNow().closed.find(x => x.d === t.value); const nx = nextOpen(t.value); toast('No delivery on ' + fmtDate(t.value) + (cd && cd.n ? ' (' + cd.n + ')' : '') + '. Moved to ' + fmtDate(nx) + '.'); t.value = nx; }
     patch({ meta: { [t.dataset.meta]: t.value } });
-    if (t.dataset.meta === 'zone') renderOrder(compute(S));
+    if (t.dataset.meta === 'zone') { const cz = compute(S); renderOrder(cz); chrome(cz); }
     if (cmode && REQ_FIELDS[t.dataset.meta]) { const fd = t.closest('.field'); if (fd) fd.classList.toggle('miss', !reqOk(t.dataset.meta, { [t.dataset.meta]: t.value })); }
   }
 });
