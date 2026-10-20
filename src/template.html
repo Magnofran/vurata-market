@@ -985,6 +985,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .brand.stk { row-gap: 6px; } .brand.stk .wm { flex-basis: 100%; } .brand.stk .mk { border-left: 0; padding-left: 0; gap: 8px; white-space: nowrap; }
 /* header, logo and tabs share the page content's left and right edges; tabs sit centred on desktop */
 @media (min-width: 700px) { .tabs:not(.c5) { justify-content: center !important; } }
+@media (min-width: 1000px) { .tabs:not(.c5) { padding-right: calc(340px + var(--colgap, 24px)) !important; } }
 .bar-in, .tabs { max-width: calc(1180px - 2 * var(--g, 16px)) !important; }
 /* first-visit trust strip */
 .trust { list-style: none; margin: 12px 0 0; padding: 12px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); }
