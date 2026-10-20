@@ -966,6 +966,10 @@ body.gated .bar, body.gated .wrap, body.gated .bottombar, body.gated .helpfoot, 
 *, *::before, *::after { border-radius: 3px !important; }
 .sync i, .chip .dot, .dot2, .sendseg .no { border-radius: 50% !important; }
 body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; }
+/* add-to-basket pulse */
+@keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.07); color: var(--gold-text); } 100% { transform: scale(1); } }
+#bbTotal { display: inline-block; transform-origin: left center; } #bbTotal.bump, #nBadge.bump { animation: bump .42s cubic-bezier(.3,.7,.4,1); }
+@media (prefers-reduced-motion: reduce) { #bbTotal.bump, #nBadge.bump { animation: none; } }
 /* share-the-app invite */
 .warm, #howCard { position: relative; overflow: hidden; background: color-mix(in srgb, var(--gold) 9%, var(--surface)) !important; border-top: 2px solid var(--gold) !important; }
 .warm > :not(.inv-art), #howCard > :not(.inv-art) { position: relative; }
@@ -2582,7 +2586,10 @@ function setQty(key, q, fromOrder) {
   patch({ lines: { [key]: q === 0 ? { q: 0, s: '', p: 0 } : { q: q } } });
   if (!fromOrder) document.querySelectorAll('.opt[data-key="' + CSS.escape(key) + '"]').forEach(el => { el.classList.toggle('on', q > 0); const inp = el.querySelector('input'); if (inp !== document.activeElement) inp.value = fmtStep(q, o); const art = el.closest('.item'); if (art) { art.classList.toggle('on', itemPicked(it)); const lt = art.querySelector('.lt[data-lt="' + CSS.escape(key) + '"]'); if (lt) lt.textContent = ltText(o, q, key); } });
   const comp = compute(S); chrome(comp); if (ui.view === 'order') renderOrderKeepFocus(comp);
+  if (!fromOrder && q > (cur.q || 0)) bumpBar();
 }
+/* Quiet confirmation when something is added: the running total and order badge pulse gold; Android gives a tiny tick. */
+function bumpBar() { ['bbTotal', 'nBadge'].forEach(id => { const el = document.getElementById(id); if (!el) return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }); try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {} }
 const parseQty = s => { const n = parseFloat(String(s).replace(',', '.')); return isNaN(n) ? 0 : n; };
 
 function saveFavs() {
