@@ -2251,6 +2251,10 @@ function askHost() {
   const q = ui.q.trim(); if (!cmode || !q) return ''; const hw = hostWA || LS.get('mumu-hostwa') || '';
   return '<a class="btn ghost" style="margin-top:12px" target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent('Hi! Do you have "' + q + '"? I could not find it in the app.') + '">Ask about "' + esc(q.slice(0, 40)) + '" on WhatsApp</a>';
 }
+function fcardHtml(i, ix) { const o = i.o[ix]; const k = keyOf(i.id, ix); const q = (S.lines[k] && S.lines[k].q) || 0; return '<div class="fcard' + (q ? ' in' : '') + '"><span class="fth' + thumbCls(i) + '">' + thumbIn(i) + '</span><b>' + esc(nm(i).m) + '</b>' + (nm(i).s ? '<small>' + esc(nm(i).s) + '</small>' : '') + '<span class="fpr num">' + fmtRp(cmode ? o.sp : o.pr) + ' <em>' + esc(optLabel(o)) + '</em></span>' + (q ? '<div class="fstep"><button type="button" data-act="featdec" data-key="' + esc(k) + '" aria-label="Less ' + esc(i.n) + '">&minus;</button><span>' + fmtQty(q) + ' ' + esc(UNIT_EN[o.u] || o.u) + '</span><button type="button" data-act="featadd" data-key="' + esc(k) + '" aria-label="More ' + esc(i.n) + '">+</button></div>' : '<button type="button" class="fadd" data-act="featadd" data-key="' + esc(k) + '" aria-label="Add ' + esc(i.n) + '">+ Add</button>') + '</div>'; }
+/* Buy again: what this phone has ordered before, most often first. */
+function buyAgain() { const tally = {}; hist.forEach((h, n) => Object.keys(h.lines || {}).forEach(k => { if (!(h.lines[k] && h.lines[k].q > 0)) return; const t = tally[k] || (tally[k] = { k, c: 0, r: 1e9 }); t.c++; t.r = Math.min(t.r, n); }));
+  return Object.values(tally).filter(t => { const p = t.k.split('|'); const it = BY_ID[p[0]]; const o = it && it.o[+p[1]]; return o && !it.hidden && !it.so && o.sp; }).sort((a, b) => b.c - a.c || a.r - b.r).slice(0, 12); }
 function renderPick() {
   const box = document.getElementById('pickList'); { const qi = document.getElementById('q'), qc = document.querySelector('.sclear'); if (qi && qc) qc.hidden = !qi.value; }
   if (ui.loading) { box.innerHTML = '<div class="skel" aria-busy="true"><p class="hint">Loading today\'s prices...</p>' + '<div class="skrow"><i></i><span></span></div>'.repeat(6) + '</div>'; return; }
@@ -2268,8 +2272,9 @@ function renderPick() {
   const html = [];
   if (cmode && hist.length && !Object.keys(S.lines).some(k => S.lines[k] && S.lines[k].q > 0)) { const h = hist[0]; html.push('<div class="again"><div><b>' + (S.meta.who ? 'Welcome back, ' + esc(String(S.meta.who).split(' ')[0]) + '. Order again?' : 'Order again?') + '</b><span>' + esc(h.title || 'Last order') + ' - ' + h.count + ' item' + (h.count > 1 ? 's' : '') + ' - ' + new Date(h.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + '</span></div><button type="button" class="btn sm" data-act="again" data-id="' + esc(h.id) + '">Add all</button></div>'); }
   const feat = CATALOG.filter(i => i.ft && !i.hidden && !(cmode && i.so) && i.o[0] && (cmode ? i.o[0].sp : i.o[0].pr)).slice(0, 10);
+  if (cmode && ui.sup === 'all' && hist.length) { const ba = buyAgain(); if (ba.length) html.push('<div class="feat"><h3 class="feath">Buy again</h3><div class="featrow">' + ba.map(t => { const p = t.k.split('|'); return fcardHtml(BY_ID[p[0]], +p[1]); }).join('') + '</div></div>'); }
   if (cmode && ui.sup === 'all') { const bh = basketsHtml(); if (bh) html.push(bh); }
-  if (feat.length && ui.sup === 'all') html.push('<div class="feat"><h3 class="feath">Today\'s picks</h3><div class="featrow">' + feat.map(i => { const o = i.o[0]; const k = keyOf(i.id, 0); const q = (S.lines[k] && S.lines[k].q) || 0; return '<div class="fcard' + (q ? ' in' : '') + '"><span class="fth' + thumbCls(i) + '">' + thumbIn(i) + '</span><b>' + esc(nm(i).m) + '</b>' + (nm(i).s ? '<small>' + esc(nm(i).s) + '</small>' : '') + '<span class="fpr num">' + fmtRp(cmode ? o.sp : o.pr) + ' <em>' + esc(optLabel(o)) + '</em></span>' + (q ? '<div class="fstep"><button type="button" data-act="featdec" data-key="' + esc(k) + '" aria-label="Less ' + esc(i.n) + '">&minus;</button><span>' + fmtQty(q) + ' ' + esc(UNIT_EN[o.u] || o.u) + '</span><button type="button" data-act="featadd" data-key="' + esc(k) + '" aria-label="More ' + esc(i.n) + '">+</button></div>' : '<button type="button" class="fadd" data-act="featadd" data-key="' + esc(k) + '" aria-label="Add ' + esc(i.n) + '">+ Add</button>') + '</div>'; }).join('') + '</div></div>');
+  if (feat.length && ui.sup === 'all') html.push('<div class="feat"><h3 class="feath">Today\'s picks</h3><div class="featrow">' + feat.map(i => fcardHtml(i, 0)).join('') + '</div></div>');
   supVisible().filter(s => ui.sup === 'all' || ui.sup === s).forEach(s => {
     const items = CATALOG.filter(i => gs(i) === s && !i.hidden); const cats = []; const seen = {};
     items.forEach(i => { if (!seen[i.c]) { seen[i.c] = []; cats.push(i.c); } seen[i.c].push(i); });
@@ -3494,7 +3499,7 @@ document.addEventListener('click', e => {
   else if (act === 'advance') { const c = cust.find(x => x.id === b.dataset.id); if (c) { const st = c.status === 'new' ? 'ordered' : 'delivered'; updCust(c.id, { status: st, dat: st === 'delivered' ? Date.now() : 0 }); offerStatusMsg(c.id, st); } }
   else if (act === 'backup') { exportBackup(); }
   else if (act === 'lft') { saveLedger({ ov: { [b.dataset.id]: { ft: b.dataset.s === '1' } } }); }
-  else if (act === 'featadd') { const k = b.dataset.key; const o = BY_ID[k.split('|')[0]].o[0]; const cur = (S.lines[k] && S.lines[k].q) || 0; setQty(k, cur ? cur + (o.st || 1) : (o.mn || o.st || 1), false); renderPick(); }
+  else if (act === 'featadd') { const k = b.dataset.key; const o = BY_ID[k.split('|')[0]].o[+(k.split('|')[1] || 0)]; const cur = (S.lines[k] && S.lines[k].q) || 0; setQty(k, cur ? cur + (o.st || 1) : (o.mn || o.st || 1), false); renderPick(); }
   else if (act === 'goled') { showView('ledger'); }
   else if (act === 'copyapp') { const hw = hostWA || LS.get('mumu-hostwa') || ''; const url = ARTIFACT_URL + (hw ? '#f-' + hw : '#f'); const done = () => { const t = b.querySelector('b'); if (t) { t.textContent = 'Copied'; setTimeout(() => { t.textContent = 'Copy link'; }, 1800); } };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => toast(url)); else toast(url); }
@@ -3512,7 +3517,7 @@ document.addEventListener('click', e => {
     if (v) { ui.pinPaste = false; ui.pinFail = false; patch({ meta: { pin: v, pinacc: '' } }); renderOrder(compute(S)); toast('Pin set from your link.'); return; }
     if (/^https?:\/\/\S+$/.test(raw)) { ui.pinPaste = false; const a = String(S.meta.addr || ''); if (!a.includes(raw)) patch({ meta: { addr: (a ? a + '\n' : '') + 'Map: ' + raw } }); renderOrder(compute(S)); toast('Maps link saved. Your host opens it to find you.'); return; }
     toast('That does not look like a Maps link.'); }
-  else if (act === 'featdec') { const k = b.dataset.key; const o = BY_ID[k.split('|')[0]].o[0]; const cur = (S.lines[k] && S.lines[k].q) || 0; let q = cur - (o.st || 1); if (q < 0.001 || (o.mn && q < o.mn)) q = 0; setQty(k, q, false); renderPick(); }
+  else if (act === 'featdec') { const k = b.dataset.key; const o = BY_ID[k.split('|')[0]].o[+(k.split('|')[1] || 0)]; const cur = (S.lines[k] && S.lines[k].q) || 0; let q = cur - (o.st || 1); if (q < 0.001 || (o.mn && q < o.mn)) q = 0; setQty(k, q, false); renderPick(); }
   else if (act === 'dzall') { ui.dzAll = !ui.dzAll; renderLedger(); }
   else if (act === 'cardtog') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen[b.dataset.id] = !cardOpen(b.dataset.id); if (b.dataset.id === 'dlCard' || /^lb-/.test(b.dataset.id)) renderLedger(); else renderCustomers(); }
   else if (act === 'opensaved') { ui.saved = true; ui.fav = false; ui.picked = false; ui.q = ''; showView('pick'); renderFilters(); renderPick(); }
