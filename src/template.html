@@ -1325,7 +1325,7 @@ body { margin: 0; padding-inline: 8px; }
 /* filter chips fill their row on desktop */
 @media (min-width: 521px) { .chipgrp { flex: 1 1 100%; } .chipgrp .chip { flex: 1 1 auto; justify-content: center; } }
 /* the four browse chips stay on one row; compact until the row has room for the full size */
-@media (min-width: 521px) and (max-width: 670px) { .chipgrp:first-child { flex-wrap: nowrap; gap: 6px; } .chipgrp:first-child .chip { min-width: 0; padding-inline: 8px; gap: 6px; font-size: 13px; } .chipgrp:first-child .chip .dot { display: none; } }
+@media (min-width: 521px) and (max-width: 670px) { .chipgrp:first-child:not(.many) { flex-wrap: nowrap; gap: 6px; } .chipgrp:first-child .chip { min-width: 0; padding-inline: 8px; gap: 6px; font-size: 13px; } .chipgrp:first-child .chip .dot { display: none; } }
 .dym { margin: 6px 0 0; } .dymbtn { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 3px; }
 .pastebtn { width: 100%; min-height: 48px; margin: 12px 0 4px; }
 @media (hover: hover) { .pastebtn:not([disabled]):hover { background: var(--gold); border-color: var(--gold); color: #0F172A; } }
@@ -1473,9 +1473,23 @@ const SUPS = {
     "what": "Frozen food, dairy, groceries & sauces",
     "tag": "Frozen & grocery",
     "list": ""
+  },
+  "ot": {
+    "id": "ot",
+    "name": "Other suppliers",
+    "short": "Other",
+    "rgb": [140, 112, 44],
+    "phone": "",
+    "wa": "",
+    "addr": "",
+    "what": "Eggs & more",
+    "tag": "Eggs & more",
+    "list": ""
   }
 };
-const SUP_ORDER = ['fv', 'mt', 'gr'];
+const SUP_ORDER = ['fv', 'mt', 'gr', 'ot'];
+/* "ot" holds products from suppliers that are not one of the three main ones. Customers only see it once it has a product. */
+const supVisible = () => SUP_ORDER.filter(x => x !== 'ot' || CATALOG.some(i => i.s === 'ot' && !i.hidden));
 const STATUS = { new: 'Not ordered yet', ordered: 'Ordered', received: 'Delivered' };
 const PAYMENTS = ['', 'Cash on delivery', 'QRIS (QR code)', 'Add to the cafe order, I pay my share'];
 const QRIS_URL = 'https://market.vurata.com/assets/qris.jpg';
@@ -1700,8 +1714,8 @@ function supCss(X, hue) {
   return (vars + body).replace(/X/g, X);
 }
 function applySups() {
-  SUP_ORDER.length = 3; Object.keys(SUPS).forEach(k => { if (k !== 'fv' && k !== 'mt' && k !== 'gr') delete SUPS[k]; });
-  const ss = ledger.sups || {}; let css = '';
+  SUP_ORDER.length = 4; Object.keys(SUPS).forEach(k => { if (k !== 'fv' && k !== 'mt' && k !== 'gr' && k !== 'ot') delete SUPS[k]; });
+  const ss = ledger.sups || {}; let css = supCss('ot', 44);
   Object.keys(ss).forEach((id, ix) => {
     const s = ss[id]; if (!s || !s.name) return; const hue = SUP_HUES[(s.h != null ? s.h : ix) % SUP_HUES.length];
     SUPS[id] = { id, name: s.name, short: s.short || String(s.name).split(' ')[0], rgb: hsl2rgb(hue, 52, 36), phone: s.phone || '', wa: digitsOf(s.phone || ''), addr: s.addr || '', what: s.what || s.name, tag: s.what || s.name, list: 'the supplier list' };
@@ -1823,7 +1837,7 @@ function applyLedger() {
     
     if (it.n) it.n = it.n.charAt(0).toUpperCase() + it.n.slice(1);
     const c = cfgNow(); const sps = o && Array.isArray(o.sp) ? o.sp : [];
-    it.o.forEach((op, i) => { const ex = sps[i]; op.spx = ex > 0; const step = op.pr && op.pr < 5000 ? Math.min(c.round, 100) : c.round; op.sp = ex > 0 ? ex : (op.pr ? Math.ceil(op.pr * (1 + c.pct / 100) / step) * step : null); });
+    it.o.forEach((op, i) => { const ex = sps[i]; op.spx = ex > 0; const step = op.pr && op.pr < 5000 ? Math.min(c.round, 100) : c.round; const d0 = +op.sp0 > 0 ? +op.sp0 : 0; op.spx = ex > 0 || d0 > 0; op.sp = ex > 0 ? ex : (d0 || (op.pr ? Math.ceil(op.pr * (1 + c.pct / 100) / step) * step : null)); });
     return it;
   };
   const list = BASE.map(mk); Object.keys(ledger.add || {}).forEach(id => { list.push(mk(Object.assign({ id }, ledger.add[id]))); });
@@ -2026,10 +2040,10 @@ function renderPick() {
   const feat = CATALOG.filter(i => i.ft && !i.hidden && !(cmode && i.so) && i.o[0] && (cmode ? i.o[0].sp : i.o[0].pr)).slice(0, 10);
   if (cmode && ui.sup === 'all') { const bh = basketsHtml(); if (bh) html.push(bh); }
   if (feat.length && ui.sup === 'all') html.push('<div class="feat"><h3 class="feath">Today\'s picks</h3><div class="featrow">' + feat.map(i => { const o = i.o[0]; const k = keyOf(i.id, 0); const q = (S.lines[k] && S.lines[k].q) || 0; return '<div class="fcard' + (q ? ' in' : '') + '"><span class="fth' + thumbCls(i) + '">' + thumbIn(i) + '</span><b>' + esc(nm(i).m) + '</b>' + (nm(i).s ? '<small>' + esc(nm(i).s) + '</small>' : '') + '<span class="fpr num">' + fmtRp(cmode ? o.sp : o.pr) + ' <em>' + esc(optLabel(o)) + '</em></span>' + (q ? '<div class="fstep"><button type="button" data-act="featdec" data-key="' + esc(k) + '" aria-label="Less ' + esc(i.n) + '">&minus;</button><span>' + fmtQty(q) + ' ' + esc(UNIT_EN[o.u] || o.u) + '</span><button type="button" data-act="featadd" data-key="' + esc(k) + '" aria-label="More ' + esc(i.n) + '">+</button></div>' : '<button type="button" class="fadd" data-act="featadd" data-key="' + esc(k) + '" aria-label="Add ' + esc(i.n) + '">+ Add</button>') + '</div>'; }).join('') + '</div></div>');
-  SUP_ORDER.filter(s => ui.sup === 'all' || ui.sup === s).forEach(s => {
+  supVisible().filter(s => ui.sup === 'all' || ui.sup === s).forEach(s => {
     const items = CATALOG.filter(i => i.s === s && !i.hidden); const cats = []; const seen = {};
     items.forEach(i => { if (!seen[i.c]) { seen[i.c] = []; cats.push(i.c); } seen[i.c].push(i); });
-    html.push('<h3 class="supband sup-' + s + '"><i class="dotc"></i><span class="nm">' + SUPS[s].name + '</span><span class="ct">' + items.length + ' items</span><small>' + esc(SUPS[s].what) + '</small></h3><div class="cats">');
+    html.push('<h3 class="supband sup-' + s + '"><i class="dotc"></i><span class="nm">' + SUPS[s].name + '</span><span class="ct">' + items.length + (items.length === 1 ? ' item' : ' items') + '</span><small>' + esc(SUPS[s].what) + '</small></h3><div class="cats">');
     cats.forEach(c => {
       const id = s + '|' + c; const open = !!ui.open[id]; const n = pc[id] || 0;
       html.push('<section class="cat"><button class="cat-h" data-act="cat" data-id="' + esc(id) + '" aria-expanded="' + open + '"><span class="chev" aria-hidden="true">&#9656;</span><span class="name">' + esc(c) + '</span><span class="picked">' + (n ? n + ' picked' : '') + '</span><span class="count">' + seen[c].length + '</span></button>' +
@@ -2069,16 +2083,16 @@ function renderFilters() {
     if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span>Pick what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().join(' ') + '</p>' : '');
   }
   const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
-  const counts = { all: CATALOG.filter(i => !i.hidden).length }; SUP_ORDER.forEach(s => { counts[s] = CATALOG.filter(i => i.s === s && !i.hidden).length; });
+  const counts = { all: CATALOG.filter(i => !i.hidden).length }; supVisible().forEach(s => { counts[s] = CATALOG.filter(i => i.s === s && !i.hidden).length; });
   const chipHost = document.getElementById('supChips'); if (!chipHost.dataset.bound) { chipHost.dataset.bound = '1'; chipHost.addEventListener('scroll', chipsFade, { passive: true }); window.addEventListener('resize', chipsFade); }
-  document.getElementById('supChips').innerHTML = '<div class="chipgrp">' + ['all'].concat(SUP_ORDER).map(s =>
+  document.getElementById('supChips').innerHTML = '<div class="chipgrp' + (supVisible().length > 3 ? ' many' : '') + '">' + ['all'].concat(supVisible()).map(s =>
     '<button class="chip" data-act="sup" data-s="' + s + '" aria-pressed="' + (ui.sup === s && !ui.fav && !ui.picked && !ui.saved) + '">' + (s === 'all' ? '' : '<span class="dot"></span>') + (s === 'all' ? 'All' : (cmode ? SUPS[s].tag : SUPS[s].name)) + ' <small>' + counts[s] + '</small></button>').join('') + '</div><div class="chipgrp lists">' +
     '<button class="chip fav-chip" data-act="favf" aria-pressed="' + ui.fav + '">&#9733; Favorites <small>' + Object.keys(favs).length + '</small></button>' +
     '<button class="chip saved-chip" data-act="savedf" aria-pressed="' + !!ui.saved + '">Saved orders <small>' + hist.length + '</small></button>' +
     '<button class="chip picked-chip" data-act="picked" aria-pressed="' + ui.picked + '">Picked <small>' + Object.keys(S.lines).filter(k => S.lines[k] && S.lines[k].q > 0).length + '</small></button></div>';
   setTimeout(chipsFade, 0);
   const sel = document.getElementById('catSel'); const cur = ui.cat; const parts = ['<option value="all">All categories</option>'];
-  SUP_ORDER.filter(s => ui.sup === 'all' || ui.sup === s).forEach(s => {
+  supVisible().filter(s => ui.sup === 'all' || ui.sup === s).forEach(s => {
     const cats = []; CATALOG.forEach(i => { if (i.s === s && !i.hidden && !cats.includes(i.c)) cats.push(i.c); });
     parts.push('<optgroup label="' + SUPS[s].name + '">' + cats.map(c => '<option value="' + esc(s + '|' + c) + '">' + esc(c) + '</option>').join('') + '</optgroup>');
   });
