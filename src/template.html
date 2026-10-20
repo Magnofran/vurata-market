@@ -1011,7 +1011,11 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .cmd[aria-expanded="true"] { background: var(--ink); color: var(--bg); } .cmd[aria-expanded="true"] svg { stroke: var(--gold); } .cmd[aria-expanded="true"] .chev { transform: rotate(-135deg) translate(-2px, -2px); }
 @media (hover: hover) { .cmd:not([aria-expanded="true"]):hover { background: var(--surface-2); } }
 .cmsgmenu { display: grid; margin-top: 6px; border: 1px solid var(--line-dark); background: var(--surface); }
-.cmsgopt { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 14px; color: var(--ink); text-decoration: none; font-size: 14px; font-weight: 600; } .cmsgopt + .cmsgopt { border-top: 1px solid var(--line); } .cmsgopt span { width: 22px; text-align: center; }
+.cmsgstep { padding: 10px 14px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-top: 1px solid var(--line); } .cmsgstep:first-child { border-top: 0; }
+.cmsgopt { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 8px 14px; color: var(--ink); text-decoration: none; font-size: 14px; }
+.cmsgopt .ce { width: 22px; text-align: center; flex: none; } .cmsgopt .ct { flex: 1; display: grid; gap: 1px; min-width: 0; } .cmsgopt .ct b { font-weight: 600; } .cmsgopt .ct small { font-size: 12px; color: var(--muted); }
+.cmsgopt em { flex: none; font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; background: var(--gold); color: #fff; }
+.cmsgopt.next { background: color-mix(in srgb, var(--gold) 12%, var(--surface)); box-shadow: inset 3px 0 0 var(--gold); }
 @media (hover: hover) { .cmsgopt:hover { background: var(--surface-2); } }
 .additem { width: 100%; min-height: 44px; margin: 10px 0 4px; border: 1px dashed var(--line-dark); background: none; color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 @media (hover: hover) { .additem:hover { border-style: solid; background: var(--surface-2); } }
@@ -1029,7 +1033,14 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .backbtn { flex: none; min-height: 30px; padding: 0 10px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--surface)); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-.edbtn[aria-expanded="true"] { background: color-mix(in srgb, var(--gold) 14%, var(--surface)); border-color: var(--gold); }
+.edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
+@media (hover: hover) {
+  .edbtn:not([aria-expanded="true"]):hover, .additem:hover, .backbtn:hover { background: color-mix(in srgb, var(--gold) 16%, var(--surface)); border-color: var(--gold); border-style: solid; }
+  .edbtn[aria-expanded="true"]:hover, .cmd[aria-expanded="true"]:hover { filter: brightness(1.25); }
+  .cmd:not([aria-expanded="true"]):hover { background: color-mix(in srgb, var(--gold) 14%, var(--surface)) !important; border-color: var(--gold); }
+  .cmsgopt:hover { background: color-mix(in srgb, var(--gold) 18%, var(--surface)) !important; }
+  .edbtn, .cmd, .additem, .backbtn, .cmsgopt { transition: background-color .12s, border-color .12s, filter .12s; }
+}
 .edpill { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border: 1px solid var(--gold); color: var(--gold-text); }
 .cedit { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding: 12px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 6%, var(--surface)); }
 .cefld { display: grid; gap: 4px; min-width: 0; } .cefld.wide, .cedit .wide { grid-column: 1 / -1; } .cefld span { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -3100,16 +3111,26 @@ function renderShareC(comp) {
 }
 function updateCBadge() { const n = cust.filter(c => c.status === 'new').length; const b = document.getElementById('cBadge'); if (b) { b.textContent = n; b.dataset.n = n; } }
 function custState(c) { return { meta: { title: c.title, who: c.name, phone: c.phone, addr: c.addr, pay: c.pay, need: c.need, notes: c.notes, zone: c.zone || '', slot: c.slot || '', pin: c.pin || '', fee: c.fee, dcode: c.dcode || '' }, lines: c.lines || {}, sup: {} }; }
+/* The confirmed bill IS the confirmation message: one message, sent once stock is checked. Customers see sections, never supplier names. */
+function payLines(c, comp) { const p = c.pay || '';
+  if (/qris/i.test(p)) return ['💳 Payment: QRIS. Scan or save our QR code, then enter the total above:', QRIS_URL];
+  if (/deposit/i.test(p)) return ['💳 Payment: bank transfer.'].concat(bankTxt ? [bankTxt] : []);
+  if (/cash/i.test(p)) return ['💵 Payment: cash on delivery. Please have ' + fmtRp(comp.grand) + ' ready for the driver.'];
+  return p ? ['💳 Payment: ' + p] : []; }
 function billText(c, comp) {
-  const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const out = ['Hi ' + (c.name || 'there') + ', here is your ' + (fin ? 'final bill' : 'order') + ' #' + orderNo(c) + (c.title ? ' (' + c.title + ')' : '') + ':'];
-  comp.groups.forEach(g => { out.push('', '*' + SUPS[g.sid].name + '*'); g.lines.forEach(ln => out.push('- ' + lineText(ln, true))); out.push('Subtotal: ' + fmtRp(g.subtotal)); });
-  if (hasDel(comp)) out.push('', 'Delivery' + (c.zone && c.zone !== '__other' ? ' (' + c.zone + ')' : '') + ': ' + delLine(comp) + (c.dcode ? ' (code ' + c.dcode + ')' : ''));
-  out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''), fin ? 'Items sold by weight use the packed weights shown above.' : 'Items sold by weight are confirmed after weighing at delivery.');
-  if (c.need) out.push('Needed by: ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : '')); if (c.addr) out.push('Deliver to: ' + c.addr);
-  if (/qris/i.test(c.pay || '')) { out.push('Payment: QRIS (QR code). Please scan or save the QR here and enter the total above: ' + QRIS_URL); }
-  else if (/deposit/i.test(c.pay || '')) { out.push('Payment: deposit by bank transfer.'); if (bankTxt) out.push(bankTxt); } else if (c.pay) { out.push('Payment: ' + c.pay); }
+  const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const f = (c.name || 'there').split(' ')[0];
+  const out = ['Hi ' + f + ', thank you for your order #' + orderNo(c) + '! ✅', fin ? 'Here is your final bill, with the packed weights.' : 'We have checked stock. Here is your confirmed bill.'];
+  const secs = {}; comp.groups.forEach(g => g.lines.forEach(ln => { const d = ln.it.d || ln.it.s; (secs[d] = secs[d] || []).push(ln); }));
+  Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + ((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true))); });
+  out.push('');
+  if (hasDel(comp)) out.push('🚚 Delivery' + (c.zone && c.zone !== '__other' ? ' (' + zoneLabel(c.zone) + ')' : '') + ': ' + delLine(comp) + (c.dcode ? ' (code ' + c.dcode + ')' : ''));
+  out.push('*💰 TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''));
   if (+c.dep > 0) out.push('Received so far: ' + fmtRp(c.dep) + '. Balance: ' + fmtRp(Math.max(0, comp.grand - c.dep)) + '.');
-  out.push('', 'Thank you!'); return out.join('\n');
+  out.push('_' + (fin ? 'Items sold by weight use the packed weights above.' : 'Items sold by weight are confirmed after weighing.') + '_', '');
+  if (c.need) out.push('📅 Delivery: ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : ''));
+  if (addrOnly(c.addr)) out.push('📍 Deliver to: ' + addrOnly(c.addr));
+  const pl = payLines(c, comp); if (pl.length) out.push.apply(out, pl);
+  out.push('', 'We will message you when your order is on its way. Thank you! 🙏'); return out.join('\n');
 }
 function combinedData() {
   const lines = {}, who = {}, notes = {};
@@ -3157,7 +3178,7 @@ function renderCustomers() {
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
         '<div class="grand"><span>Total</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (() => { const p = profitOf(custState(c)); return '<p class="hint" style="margin-top:6px">Your cost ' + fmtRp(p.cost) + ' - profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b></p>'; })() +
         '<textarea class="pre sm" id="bill-' + esc(c.id) + '" readonly>' + esc(billText(c, comp)) + '</textarea>' +
-        '<div class="actions duo"><button type="button" class="btn" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy bill</button><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + digitsOf(c.phone) + '?text=' + encodeURIComponent(billText(c, comp)) + '">WhatsApp ' + esc((c.name || 'customer').split(' ')[0]) + '</a></div>' +
+        '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + digitsOf(c.phone) + '?text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and send bill</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">Same as Step 2 in Message ' + esc((c.name || 'customer').split(' ')[0]) + '. Send it once stock is checked.</p>' +
         '<div class="hdel">' + (ui.custDel[c.id] ? '<span>Remove this order? You can restore it later.</span><button type="button" class="btn danger sm" data-act="cdelyes" data-id="' + esc(c.id) + '">Remove</button><button type="button" class="btn ghost sm" data-act="cdelno" data-id="' + esc(c.id) + '">Keep</button>' : '<button type="button" class="linkbtn" data-act="cdelask" data-id="' + esc(c.id) + '">Remove order</button>') + '</div></div>';
     }
     return ccardHead(c, comp, date) +
@@ -3223,10 +3244,23 @@ function offerStatusMsg(id, st) {
     : 'Hi ' + first + ', your order #' + orderNo(c) + ' has been delivered. Thank you!' + (due > 0 ? ' The balance of ' + fmtRp(due) + ' is still open.' : '');
   setTimeout(() => toast('Let ' + first + ' know?', { label: 'Message on WhatsApp', fn: () => window.open('https://wa.me/' + digitsOf(c.phone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener') }), 350);
 }
-const CMSG = [['thanks', '✅', 'Order confirmed'], ['oos', '🔄', 'An item is unavailable'], ['pay', '💳', 'Payment details'], ['late', '⏰', 'Running a little late'], ['eta', '🛵', 'On our way']];
-function custMsgTxt(c, kind) { const f = (c.name || 'there').split(' ')[0]; const n = orderNo(c); const tot = fmtRp(compute(custState(c), 'sell').grand);
-  return ({ thanks: 'Hi ' + f + ', thank you for your order #' + n + '! We have confirmed it and will message you before delivery.', oos: 'Hi ' + f + ', a quick update on order #' + n + ': one of your items is not available today. Would you like a replacement, or shall we leave it out?', pay: 'Hi ' + f + ', here are the payment details for order #' + n + ' (total ' + tot + '):\n' + (bankTxt || 'Please let us know how you would like to pay.'), late: 'Hi ' + f + ', a quick note on order #' + n + ': we are running a little late today. Thank you for your patience!', eta: 'Hi ' + f + ', your order #' + n + ' is on its way and should arrive soon.' })[kind] || ''; }
-const ICO_MSG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z"/><path d="M9 10h6M9 13.5h4"/></svg>';
+const CMSG = [
+  { step: 'Step 1 · While checking stock', items: [['oos', '🔄', 'An item is unavailable', 'Ask if they want a replacement']] },
+  { step: 'Step 2 · Confirm the order', items: [['bill', '✅', 'Confirm order and send bill', 'Their full bill, total and how to pay']] },
+  { step: 'Step 3 · Delivery day', items: [['eta', '🛵', 'On our way', ''], ['late', '⏰', 'Running a little late', '']] },
+  { step: 'Step 4 · After delivery', items: [['done', '🙏', 'Thank you', 'Delivered, thanks for ordering']] },
+  { step: 'Anytime', items: [['pay', '💳', 'Payment reminder', 'Total and how to pay']] }];
+const nextMsg = c => c.status === 'delivered' ? (c.paid ? 'done' : 'pay') : c.status === 'ordered' ? 'eta' : 'bill';
+function custMsgTxt(c, kind) { const f = (c.name || 'there').split(' ')[0]; const n = orderNo(c); const comp = compute(custState(c), 'sell'); const tot = fmtRp(comp.grand);
+  const gone = removedLines(c).map(r => nm(r.it).m); const pl = payLines(c, comp);
+  return ({
+    bill: billText(c, comp),
+    oos: 'Hi ' + f + ', a quick update on order #' + n + '.\n' + (gone.length ? 'Not available today: ' + gone.join(', ') + '.' : 'One of your items is not available today.') + '\n\nWould you like a replacement, or shall we leave it out?',
+    eta: 'Hi ' + f + ', good news! 🛵\nYour order #' + n + ' is on its way and should arrive soon.' + (comp.grand && !c.paid && /cash/i.test(c.pay || '') ? '\n\nPlease have ' + tot + ' ready for the driver.' : ''),
+    late: 'Hi ' + f + ', a quick note on order #' + n + '.\nWe are running a little late today.\n\nThank you for your patience!',
+    done: 'Hi ' + f + ', your order #' + n + ' has been delivered. 🙏\nThank you for ordering with Vurata Market.\n\nSee you next time!',
+    pay: 'Hi ' + f + ', a friendly reminder for order #' + n + '.\nTotal: ' + tot + (+c.dep > 0 ? ' (balance ' + fmtRp(Math.max(0, comp.grand - c.dep)) + ')' : '') + (pl.length ? '\n\n' + pl.join('\n') : '') + '\n\nThank you!'
+  })[kind] || ''; }const ICO_MSG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z"/><path d="M9 10h6M9 13.5h4"/></svg>';
 const ICO_BILL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>';
 /* Lines staff took down to zero: still listed (faded, Rp 0) so they can be brought back in one tap */
 function removedLines(c) { return Object.keys(c.lines || {}).filter(k => { const L = c.lines[k]; return L && !(L.q > 0) && +L.oq > 0; }).map(k => { const p = k.split('|'); const it = BY_ID[p[0]]; const o = it && it.o[+p[1]]; if (!o) return null;
@@ -3241,7 +3275,8 @@ function addItemHtml(c) { if (!canWrite) return ''; const on = ui.addFor === c.i
     (q.length < 2 ? '<p class="hint">Type at least 2 letters.</p>' : rows ? '<div class="addhits">' + rows + '</div>' : '<p class="hint">No product matches.</p>') +
     '<button type="button" class="linkbtn" data-act="additem" data-id="' + esc(c.id) + '">Done adding</button></div>'; }
 function cmdBar(c, open) { const f = esc((c.name || 'customer').split(' ')[0]); const mo = !!(ui.cmsgOpen && ui.cmsgOpen[c.id]); const ph = digitsOf(c.phone);
-  const menu = mo ? '<div class="cmsgmenu">' + (ph ? CMSG.map(x => '<a class="cmsgopt" target="_blank" rel="noopener" href="https://wa.me/' + ph + '?text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span>' + x[1] + '</span>' + x[2] + '</a>').join('') : '<p class="hint">This customer has no WhatsApp number.</p>') + '</div>' : '';
+  const nx = nextMsg(c);
+  const menu = mo ? '<div class="cmsgmenu">' + (ph ? CMSG.map(g => '<div class="cmsgstep">' + g.step + '</div>' + g.items.map(x => '<a class="cmsgopt' + (x[0] === nx ? ' next' : '') + '" target="_blank" rel="noopener" href="https://wa.me/' + ph + '?text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span>' + (x[0] === nx ? '<em>Next</em>' : '') + '</a>').join('')).join('') : '<p class="hint">This customer has no WhatsApp number.</p>') + '</div>' : '';
   return '<div class="cmdbar"><button type="button" class="cmd" data-act="cmsgtog" data-id="' + esc(c.id) + '" aria-expanded="' + mo + '">' + ICO_MSG + '<span>Message ' + f + '</span><i class="chev" aria-hidden="true"></i></button>' + menu +
     '<button type="button" class="cmd" data-act="cview" data-id="' + esc(c.id) + '" aria-expanded="' + open + '">' + ICO_BILL + '<span>' + (open ? 'Hide bill' : 'View &amp; edit bill') + '</span><i class="chev" aria-hidden="true"></i></button></div>'; }
 function updCust(id, p) {
