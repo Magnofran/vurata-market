@@ -1036,7 +1036,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 /* staff: status + payment panel */
 .cpanel { margin-top: 10px; border: 1px solid var(--line-dark); background: var(--surface); }
 .cpsec { padding: 12px; display: grid; gap: 8px; } .cpsec + .cpsec { border-top: 1px solid var(--line); }
-.cplab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; } .cplab span { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.cplab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 10px; } .cplab > span { white-space: nowrap; } .cplab span { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .cplab em { font-style: normal; font-size: 12.5px; font-weight: 600; color: var(--muted); } .cplab em.neg { color: var(--warn); } .cplab em.pos { color: var(--fv); }
 .cstps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line-dark); }
 .cstp { position: relative; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 42px; padding: 0 6px; border: 0; background: var(--surface); color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -1044,12 +1044,19 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .cstp i { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50% !important; border: 1.5px solid currentColor; font-style: normal; font-size: 11px; font-weight: 700; flex: none; }
 .cstp.done { color: var(--ink); } .cstp.done i { background: var(--gold); border-color: var(--gold); color: #fff; }
 .cstp.now { background: var(--ink); color: var(--bg); } .cstp.now i { background: var(--bg); color: var(--ink); border-color: var(--bg); }
-.cprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; } .cprow .csel { height: 42px; }
+.cprow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; } .cprow .csel { height: 42px; }
 .paidtog { min-height: 42px; padding: 0 14px; border: 1.5px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .paidtog[aria-pressed="true"] { background: var(--fv); border-color: var(--fv); color: #fff; }
 .cpanel .dep { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); white-space: nowrap; } .cpanel .dep input { width: 120px; text-align: right; } .cpanel .cadv { margin-top: 2px; }
 .cinc { padding: 10px 12px; border-top: 1px solid var(--line); font-size: 13px; }
 @media (hover: hover) { .cstp:not(.now):hover { background: color-mix(in srgb, var(--gold) 14%, var(--surface)); color: var(--ink); } .paidtog[aria-pressed="false"]:hover { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, var(--surface)); } }
+.stepmsgs { display: grid; gap: 6px; margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--line-dark); }
+.stepmsg { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); text-decoration: none; font-size: 14px; }
+.stepmsg .ce { width: 22px; text-align: center; flex: none; } .stepmsg .ct { flex: 1; display: grid; gap: 1px; min-width: 0; } .stepmsg .ct b { font-weight: 700; } .stepmsg .ct small { font-size: 12px; color: var(--muted); }
+.stepmsg .go svg { width: 18px; height: 18px; fill: none; stroke: var(--gold-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.stepmsg.main { background: var(--ink); border-color: var(--ink); color: var(--bg); } .stepmsg.main .ct small { color: color-mix(in srgb, var(--bg) 70%, transparent); } .stepmsg.main .go svg { stroke: var(--gold); }
+.othermsg { justify-self: start; font-size: 13px; margin-top: 2px; } .cmdbar { grid-template-columns: 1fr !important; }
+@media (hover: hover) { .stepmsg:not(.main):hover { background: color-mix(in srgb, var(--gold) 14%, var(--surface)); border-color: var(--gold); } .stepmsg.main:hover { filter: brightness(1.25); } }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2889,11 +2896,21 @@ function paySelect(c) {
   return '<select class="csel" data-cpay="' + esc(c.id) + '" aria-label="Payment method"' + ro + '><option value="">Payment not chosen</option>' + PAYMENTS.filter(p => p && !/cafe/.test(p)).concat(c.pay && !PAYMENTS.includes(c.pay) ? [c.pay] : []).map(p => '<option value="' + esc(p) + '"' + (p === c.pay ? ' selected' : '') + '>' + esc(p.replace('(bank transfer)', '(transfer)').replace(' (QR code)', '')) + '</option>').join('') + '</select>';
 }
 /* One labelled panel: where the order is (status steps) and how it is paid. Built so a new staff member reads it at a glance. */
+/* The messages for the current step sit right under the steps; everything else is one tap away under Other messages. */
+const STEP_MSGS = { new: ['bill', 'oos'], ordered: ['eta', 'late', 'pay'], delivered: ['done', 'pay'] };
+const STEP_SEND = { new: 'Check stock, then send', ordered: 'On delivery day, send', delivered: 'After delivery, send' };
+function msgDef(k) { for (const g of CMSG) for (const x of g.items) if (x[0] === k) return x; return null; }
+function stepMsgs(c, st) { const ph = digitsOf(c.phone); const unpaid = !c.paid && dueOf(c) > 0;
+  const keys = STEP_MSGS[st].filter(k => k !== 'pay' || unpaid); const mo = !!(ui.cmsgOpen && ui.cmsgOpen[c.id]);
+  if (!ph) return '<p class="hint stepmsg-none">Add a WhatsApp number in Edit details to message ' + esc((c.name || 'the customer').split(' ')[0]) + '.</p>';
+  const row = (k, i) => { const x = msgDef(k); return '<a class="stepmsg' + (i === 0 ? ' main' : '') + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span><i class="go" aria-hidden="true">' + ICO_MSG + '</i></a>'; };
+  return '<div class="stepmsgs"><span class="cplab"><span>' + STEP_SEND[st] + '</span></span>' + keys.map(row).join('') +
+    '<button type="button" class="linkbtn othermsg" data-act="cmsgtog" data-id="' + esc(c.id) + '" aria-expanded="' + mo + '">' + (mo ? 'Hide other messages' : 'Other messages') + '</button>' + (mo ? allMsgsMenu(c) : '') + '</div>'; }
 function statusPanel(c) { const ro = canWrite ? '' : ' disabled'; const order = ['new', 'ordered', 'delivered']; const cur = Math.max(0, order.indexOf(c.status || 'new'));
-  const L = { new: 'New', ordered: 'Ordered', delivered: 'Delivered' }; const H = { new: 'Check stock and confirm', ordered: 'Bought, being packed', delivered: 'With the customer' };
+  const L = { new: 'New', ordered: 'Ordered', delivered: 'Delivered' }; const H = { new: 'Waiting for your confirmation', ordered: 'Confirmed, being packed', delivered: 'With the customer' };
   const steps = order.map((st, i) => '<button type="button" class="cstp' + (i < cur ? ' done' : i === cur ? ' now' : '') + '" data-act="cstat" data-id="' + esc(c.id) + '" data-v="' + st + '" aria-pressed="' + (i === cur) + '"' + ro + '><i>' + (i < cur ? '✓' : i + 1) + '</i><span>' + L[st] + '</span></button>').join('');
   const due = dueOf(c);
-  return '<div class="cpanel"><div class="cpsec"><div class="cplab"><span>Order status</span><em>' + H[order[cur]] + '</em></div><div class="cstps" role="group" aria-label="Order status">' + steps + '</div>' + (c.status !== 'delivered' ? '<button type="button" class="btn sm cadv" data-act="advance" data-id="' + esc(c.id) + '"' + (canWrite ? '' : ' disabled') + '>' + (c.status === 'new' ? 'Mark as ordered' : 'Mark as delivered') + '</button>' : '<button type="button" class="btn ghost sm cadv" data-act="reopen" data-id="' + esc(c.id) + '"' + (canWrite ? '' : ' disabled') + '>Delivered &#10003; Reopen order</button>') + '</div>' +
+  return '<div class="cpanel"><div class="cpsec"><div class="cplab"><span>Order status</span><em>' + H[order[cur]] + '</em></div><div class="cstps" role="group" aria-label="Order status">' + steps + '</div>' + stepMsgs(c, order[cur]) + '</div>' +
     '<div class="cpsec"><div class="cplab"><span>Payment</span><em class="' + (c.paid || due <= 0 ? 'pos' : 'neg') + '">' + (c.paid ? 'Paid in full' : 'To collect ' + fmtRp(due)) + '</em></div>' +
       '<div class="cprow">' + paySelect(c) + '<button type="button" class="paidtog" data-act="cpaidtog" data-id="' + esc(c.id) + '" aria-pressed="' + !!c.paid + '"' + ro + '>' + (c.paid ? '✓ Paid' : 'Mark as paid') + '</button></div>' +
       (c.paid ? '' : '<label class="lf dep"><span>Deposit received</span><span class="lpr">Rp <input data-cdep="' + esc(c.id) + '" inputmode="numeric" value="' + (c.dep || '') + '" placeholder="0"' + ro + '></span></label>') + '</div>' +
@@ -3220,7 +3237,7 @@ function renderCustomers() {
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
         '<div class="grand"><span>Total</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (() => { const p = profitOf(custState(c)); return '<p class="hint" style="margin-top:6px">Your cost ' + fmtRp(p.cost) + ' - profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b></p>'; })() +
         '<textarea class="pre sm" id="bill-' + esc(c.id) + '" readonly>' + esc(billText(c, comp)) + '</textarea>' +
-        '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and ask for payment</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">Same as Step 2 in Message ' + esc((c.name || 'customer').split(' ')[0]) + '. Send it once stock is checked.</p>' +
+        '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and ask for payment</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">The same message as under Order status. Send it once stock is checked.</p>' +
         '<div class="hdel">' + (ui.custDel[c.id] ? '<span>Remove this order? You can restore it later.</span><button type="button" class="btn danger sm" data-act="cdelyes" data-id="' + esc(c.id) + '">Remove</button><button type="button" class="btn ghost sm" data-act="cdelno" data-id="' + esc(c.id) + '">Keep</button>' : '<button type="button" class="linkbtn" data-act="cdelask" data-id="' + esc(c.id) + '">Remove order</button>') + '</div></div>';
     }
     return ccardHead(c, comp, date) +
@@ -3278,17 +3295,17 @@ async function importCodes(text) {
   if (ok === 1 && newRec && digitsOf(newRec.phone)) { const first = (newRec.name || 'there').split(' ')[0]; const tot = compute(custState(newRec), 'sell').grand; const ack = 'Hi ' + first + ', thank you! We received your order ' + orderNo(newRec) + ' (' + fmtRp(tot) + '). We will confirm availability and message you shortly.'; toast(impMsg, { label: 'Reply to ' + first, fn: () => window.open('https://api.whatsapp.com/send?phone=' + digitsOf(newRec.phone) + '&text=' + encodeURIComponent(ack), '_blank', 'noopener') }); }
   else toast(impMsg);
 }
-function offerStatusMsg(id, st) {
+function offerStatusMsg(id, st) { return;
   const c = cust.find(x => x.id === id); if (!c || !digitsOf(c.phone) || st === 'new') return; const first = (c.name || 'there').split(' ')[0]; const due = dueOf(c);
   const msg = st === 'ordered' ? 'Hi ' + first + ', your order ' + orderNo(c) + ' is confirmed and is being prepared. We will message you when it is on its way.'
     : 'Hi ' + first + ', your order ' + orderNo(c) + ' has been delivered. Thank you!' + (due > 0 ? ' The balance of ' + fmtRp(due) + ' is still open.' : '');
   setTimeout(() => toast('Let ' + first + ' know?', { label: 'Message on WhatsApp', fn: () => window.open('https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(msg), '_blank', 'noopener') }), 350);
 }
 const CMSG = [
-  { step: 'Step 1 · While checking stock', items: [['oos', '🔄', 'An item is unavailable', 'Ask if they want a replacement']] },
-  { step: 'Step 2 · Confirm the order', items: [['bill', '✅', 'Confirm order and ask for payment', 'Opens with how and what to pay, then the bill']] },
-  { step: 'Step 3 · Delivery day', items: [['eta', '🛵', 'On our way', ''], ['late', '⏰', 'Running a little late', '']] },
-  { step: 'Step 4 · After delivery', items: [['done', '🙏', 'Thank you', 'Delivered, thanks for ordering']] },
+  { step: '① New · while checking stock', items: [['oos', '🔄', 'An item is unavailable', 'Ask if they want a replacement']] },
+  { step: '① New · to confirm', items: [['bill', '✅', 'Confirm order and ask for payment', 'Opens with how and what to pay, then the bill']] },
+  { step: '② Ordered · delivery day', items: [['eta', '🛵', 'On our way', ''], ['late', '⏰', 'Running a little late', '']] },
+  { step: '③ Delivered', items: [['done', '🙏', 'Thank you', 'Delivered, thanks for ordering']] },
   { step: 'Anytime', items: [['pay', '💳', 'Payment reminder', 'Total and how to pay']] }];
 const nextMsg = c => c.status === 'delivered' ? (c.paid ? 'done' : 'pay') : c.status === 'ordered' ? 'eta' : 'bill';
 function custMsgTxt(c, kind) { const f = (c.name || 'there').split(' ')[0]; const n = orderNo(c); const comp = compute(custState(c), 'sell'); const tot = fmtRp(comp.grand);
@@ -3314,11 +3331,10 @@ function addItemHtml(c) { if (!canWrite) return ''; const on = ui.addFor === c.i
   return '<div class="addbox"><div class="search"><input id="addq" type="search" data-addfor="' + esc(c.id) + '" placeholder="Search to add, e.g. mango" value="' + esc(ui.addQ || '') + '" autocomplete="off" aria-label="Search a product to add"></div>' +
     (q.length < 2 ? '<p class="hint">Type at least 2 letters.</p>' : rows ? '<div class="addhits">' + rows + '</div>' : '<p class="hint">No product matches.</p>') +
     '<button type="button" class="linkbtn" data-act="additem" data-id="' + esc(c.id) + '">Done adding</button></div>'; }
-function cmdBar(c, open) { const f = esc((c.name || 'customer').split(' ')[0]); const mo = !!(ui.cmsgOpen && ui.cmsgOpen[c.id]); const ph = digitsOf(c.phone);
-  const nx = nextMsg(c);
-  const menu = mo ? '<div class="cmsgmenu">' + (ph ? CMSG.map(g => '<div class="cmsgstep">' + g.step + '</div>' + g.items.map(x => '<a class="cmsgopt' + (x[0] === nx ? ' next' : '') + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span>' + (x[0] === nx ? '<em>Next</em>' : '') + '</a>').join('')).join('') : '<p class="hint">This customer has no WhatsApp number.</p>') + '</div>' : '';
-  return '<div class="cmdbar"><button type="button" class="cmd" data-act="cmsgtog" data-id="' + esc(c.id) + '" aria-expanded="' + mo + '">' + ICO_MSG + '<span>Message ' + f + '</span><i class="chev" aria-hidden="true"></i></button>' + menu +
-    '<button type="button" class="cmd" data-act="cview" data-id="' + esc(c.id) + '" aria-expanded="' + open + '">' + ICO_BILL + '<span>' + (open ? 'Hide bill' : 'View &amp; edit bill') + '</span><i class="chev" aria-hidden="true"></i></button></div>'; }
+function allMsgsMenu(c) { const ph = digitsOf(c.phone); const nx = nextMsg(c);
+  return '<div class="cmsgmenu">' + CMSG.map(g => '<div class="cmsgstep">' + g.step + '</div>' + g.items.map(x => '<a class="cmsgopt' + (x[0] === nx ? ' next' : '') + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span></a>').join('')).join('') + '</div>'; }
+function cmdBar(c, open) {
+  return '<div class="cmdbar"><button type="button" class="cmd" data-act="cview" data-id="' + esc(c.id) + '" aria-expanded="' + open + '">' + ICO_BILL + '<span>' + (open ? 'Hide bill' : 'View &amp; edit bill') + '</span><i class="chev" aria-hidden="true"></i></button></div>'; }
 function updCust(id, p) {
   const c = cust.find(x => x.id === id); if (!c) return; if (!canWrite) { toast('This copy is view-only.'); return; }
   deepMerge(c, clone(p));
