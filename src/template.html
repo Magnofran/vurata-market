@@ -1672,7 +1672,7 @@ function within(a, b, max) {
   }
   return prev[b.length] <= max;
 }
-CATALOG.forEach(it => { it._w = norm(it.n + ' ' + (it.e || '') + ' ' + it.c + ' ' + (it.k || '')).split(/\s+/).filter(Boolean); it._h = it._w.join(' '); });
+CATALOG.forEach(it => { it._w = norm(it.n + ' ' + (it.e || '') + ' ' + (it.ni || '') + ' ' + it.c + ' ' + (it.k || '')).split(/\s+/).filter(Boolean); it._h = it._w.join(' '); });
 const SYN = (() => { const g = [['ayam', 'chicken'], ['sapi', 'beef'], ['babi', 'pork'], ['ikan', 'fish'], ['udang', 'prawn', 'prawns', 'shrimp'], ['telur', 'telor', 'egg', 'eggs'], ['susu', 'milk'], ['keju', 'cheese'], ['apel', 'apple'], ['jeruk', 'orange'], ['pisang', 'banana'], ['mangga', 'mango'], ['anggur', 'grape', 'grapes'], ['tomat', 'tomato'], ['kentang', 'potato'], ['wortel', 'carrot'], ['bawang', 'onion', 'garlic'], ['cabe', 'cabai', 'chili', 'chilli'], ['beras', 'rice'], ['minyak', 'oil'], ['gula', 'sugar'], ['garam', 'salt'], ['tepung', 'flour'], ['mentega', 'butter'], ['roti', 'bread'], ['sayur', 'sayuran', 'vegetable', 'vegetables', 'veg'], ['buah', 'fruit', 'fruits'], ['daging', 'meat'], ['kelapa', 'coconut'], ['semangka', 'watermelon'], ['nanas', 'pineapple'], ['pepaya', 'papaya'], ['alpukat', 'avocado'], ['jagung', 'corn'], ['timun', 'mentimun', 'cucumber'], ['selada', 'lettuce'], ['bayam', 'spinach'], ['kol', 'kubis', 'cabbage'], ['tahu', 'tofu'], ['kopi', 'coffee'], ['teh', 'tea'], ['sosis', 'sausage'], ['bakso', 'meatball', 'meatballs'], ['kambing', 'lamb', 'mutton'], ['kacang', 'nut', 'nuts', 'bean', 'beans'], ['stroberi', 'strawberry'], ['jahe', 'ginger'], ['kunyit', 'turmeric'], ['mie', 'noodle', 'noodles'], ['saus', 'sauce'], ['coklat', 'cokelat', 'chocolate'], ['bebek', 'duck'], ['kentang goreng', 'fries']]; const m = {}; g.forEach(a => a.forEach(w => { if (!/\s/.test(w)) m[w] = a.filter(x => x !== w && !/\s/.test(x)); })); return m; })();
 function tokScore(it, t) {
   const st = stem(t); let sc = -1;
@@ -2056,7 +2056,7 @@ const DEFAULT_CFG = { pct: 15, round: 500 };
 const cfgNow = () => Object.assign({}, DEFAULT_CFG, ledger.cfg || {});
 function reindex() {
   Object.keys(BY_ID).forEach(k => delete BY_ID[k]); Object.keys(ORDER_IX).forEach(k => delete ORDER_IX[k]);
-  CATALOG.forEach((it, i) => { BY_ID[it.id] = it; ORDER_IX[it.id] = i; it._w = norm(it.n + ' ' + (it.e || '') + ' ' + it.c + ' ' + (it.k || '')).split(/\s+/).filter(Boolean); it._h = it._w.join(' '); });
+  CATALOG.forEach((it, i) => { BY_ID[it.id] = it; ORDER_IX[it.id] = i; it._w = norm(it.n + ' ' + (it.e || '') + ' ' + (it.ni || '') + ' ' + it.c + ' ' + (it.k || '')).split(/\s+/).filter(Boolean); it._h = it._w.join(' '); });
 }
 function applyLedger() {
   applySups();
@@ -2213,7 +2213,11 @@ const imgSrc = id => /^(data:image\/|photos\/)/.test(id) ? id : window.SB.imgUrl
 /* English name first in bold and the Indonesian one in grey, for customers and on staff screens. Messages and PDFs addressed to suppliers keep the supplier's own name. */
 const NM_UNIT = { KG: 'Kg', GR: 'Gr', ML: 'Ml', LTR: 'Ltr', PCS: 'Pcs', SAK: 'Sak' };
 const nmCase = t => t.replace(/\b[A-Za-z]+\b/g, w => NM_UNIT[w] || (w.length >= 4 && w === w.toUpperCase() ? w.charAt(0) + w.slice(1).toLowerCase() : w));
-const nm = it => { const e = (it.e || '').trim(), n = it.n.trim(), same = e.toLowerCase() === n.toLowerCase(); const f = x => nmCase(x).replace(/^[a-z]/, c => c.toUpperCase()); const r = e && !same && !/^unclear/i.test(e) && n.indexOf(' / ') < 0 ? { m: f(e), s: f(n) } : { m: f(n), s: same || !e ? '' : f(e) }; return (typeof LANG !== 'undefined' && LANG === 'id' && cmode && r.s && r.m === f(e)) ? { m: r.s, s: r.m } : r; };
+const nm = it => { const e = (it.e || '').trim(), n = it.n.trim(), same = e.toLowerCase() === n.toLowerCase(), ni = (it.ni || '').trim(); const f = x => nmCase(x).replace(/^[a-z]/, c => c.toUpperCase()); let r;
+  if (e && !same && !/^unclear/i.test(e) && n.indexOf(' / ') < 0) r = { m: f(e), s: f(n), en: 1 };
+  else if (ni) r = { m: f(n), s: f(ni), en: 1 }; /* English-only supplier name: Indonesian display name in grey */
+  else r = { m: f(n), s: same || !e ? '' : f(e) };
+  return (typeof LANG !== 'undefined' && LANG === 'id' && cmode && r.en) ? { m: r.s, s: r.m } : r; };
 const supName = it => (it.via && BY_ID[it.via] ? BY_ID[it.via].n : it.n);
 const nmBoth = it => { const v = nm(it); return v.m + (v.s ? ' (' + v.s + ')' : ''); };
 const thumbIn = it => it.img ? '<img loading="lazy" decoding="async" alt="" data-e="' + esc(it.i || '') + '" data-zoomname="' + esc(it.n) + '" src="' + esc(imgSrc(it.img)) + '">' : (it.i || '');
