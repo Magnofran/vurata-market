@@ -2304,7 +2304,7 @@ function stepperHtml(it, o, i, q) {
 function askLink(it, o) {
   const hw = hostWA || LS.get('mumu-hostwa') || ''; if (!hw) return '<b class="ask">Ask for price</b>';
   const q = 'Hi! What is the price of ' + it.n + (it.e ? ' (' + it.e + ')' : '') + ', ' + optLabel(o) + '?';
-  return '<a class="ask" target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent(q) + '">Request price</a>';
+  return '<a class="ask" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + hw + '&text=' + encodeURIComponent(q) + '">Request price</a>';
 }
 function itemHtml(it, showSup) {
   const flags = it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : '';
@@ -2342,7 +2342,7 @@ function filteredItems() {
 }
 function askHost() {
   const q = ui.q.trim(); if (!cmode || !q) return ''; const hw = hostWA || LS.get('mumu-hostwa') || '';
-  return '<a class="btn ghost" style="margin-top:12px" target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent('Hi! Do you have "' + q + '"? I could not find it in the app.') + '">Ask about "' + esc(q.slice(0, 40)) + '" on WhatsApp</a>';
+  return '<a class="btn ghost" style="margin-top:12px" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + hw + '&text=' + encodeURIComponent('Hi! Do you have "' + q + '"? I could not find it in the app.') + '">Ask about "' + esc(q.slice(0, 40)) + '" on WhatsApp</a>';
 }
 function fcardHtml(i, ix) { const o = i.o[ix]; const k = keyOf(i.id, ix); const q = (S.lines[k] && S.lines[k].q) || 0; return '<div class="fcard' + (q ? ' in' : '') + '"><span class="fth' + thumbCls(i) + '">' + thumbIn(i) + '</span><b>' + esc(nm(i).m) + '</b>' + '<small>' + (nm(i).s ? esc(nm(i).s) : '') + '</small><span class="fpr num">' + fmtRp(cmode ? o.sp : o.pr) + '<em>' + esc(optLabel(o)) + '</em></span>' + (q ? '<div class="fstep"><button type="button" data-act="featdec" data-key="' + esc(k) + '" aria-label="Less ' + esc(i.n) + '">&minus;</button><span>' + fmtQty(q) + ' ' + esc(UNIT_EN[o.u] || o.u) + '</span><button type="button" data-act="featadd" data-key="' + esc(k) + '" aria-label="More ' + esc(i.n) + '">+</button></div>' : '<button type="button" class="fadd" data-act="featadd" data-key="' + esc(k) + '" aria-label="Add ' + esc(i.n) + '">+ Add</button>') + '</div>'; }
 /* Buy again: what this phone has ordered before, most often first. */
@@ -2405,7 +2405,7 @@ function setListMode(m) {
   renderFilters(); renderPick();
 }
 function renderFilters() {
-  const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
+  const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + hw + '&text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
   const tr = document.getElementById('trustRow'); if (tr) { const on = cmode && !hist.length; tr.hidden = !on; if (on && !tr.innerHTML) tr.innerHTML = [
     ['<path d="M12 21c-5-3-8-7-8-11a8 8 0 0 1 16 0c0 4-3 8-8 11z"/><path d="M9 10.5l2 2 4-4"/>', 'Fresh on delivery day'],
     ['<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/>', 'Pay cash or QRIS'],
@@ -2523,7 +2523,7 @@ function renderShare(comp) {
     return '<div class="card tint s-' + g.sid + '"><div class="msg-head"><h3><i style="background:var(--' + g.sid + ')"></i>' + s.name + '</h3><span class="hint num">' + esc(s.phone) + '</span></div>' +
       '<textarea class="pre sm" id="msg-' + g.sid + '" readonly>' + esc(text) + '</textarea>' +
       '<div class="actions duo"><button class="btn" data-act="copy" data-id="msg-' + g.sid + '">Copy message</button>' +
-      '<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + s.wa + '?text=' + encodeURIComponent(text) + '">Open in WhatsApp</a></div></div>';
+      '<a class="btn ghost" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + s.wa + '&text=' + encodeURIComponent(text) + '">Open in WhatsApp</a></div></div>';
   }).join('');
   host.innerHTML =
     '<div class="card"><div class="msg-head"><h3>For the order manager</h3><span class="pill">' + fmtRp(comp.grand) + ' estimated</span></div>' +
@@ -2967,7 +2967,7 @@ function driverHtml() {
     return '<div class="stop' + (ready ? ' ready' : '') + '"><button type="button" class="stophead" data-act="stopopen" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"><span class="sh1"><b><span class="ono sm">' + orderNo(c) + '</span> ' + esc(c.name || 'Customer') + '</b><span>' + esc([c.zone ? zoneLabel(c.zone) : '', c.slot || ''].filter(Boolean).join(' - ') || 'No area') + (c.need && c.need < t0 ? ' · overdue' : '') + '</span></span><span class="sh2"><em class="packpill' + (ready ? ' ok' : '') + '">' + (ready ? 'Packed' : ps.done + '/' + ps.n + ' packed') + '</em><span class="num">' + (due > 0 ? 'Collect ' + fmtRp(due) : 'Paid') + '</span></span></button>' + pick(c) + body + '</div>';
   }).join('');
   const lang = '<span class="seg" role="group" aria-label="Driver message language"><button type="button" data-act="dlang" data-l="id" aria-pressed="' + ((ui.dlang || 'id') === 'id') + '">Bahasa</button><button type="button" data-act="dlang" data-l="en" aria-pressed="' + (ui.dlang === 'en') + '">English</button></span>';
-  const msgCard = (key, drv, list) => { const t = driverMsg(list, drv, day); const sum = list.reduce((s, c) => s + dueOf(c), 0); const tid = 'drvTxt-' + key; const wa = drv && drv.wa ? 'https://wa.me/' + drv.wa + '?text=' + encodeURIComponent(t) : 'https://wa.me/?text=' + encodeURIComponent(t);
+  const msgCard = (key, drv, list) => { const t = driverMsg(list, drv, day); const sum = list.reduce((s, c) => s + dueOf(c), 0); const tid = 'drvTxt-' + key; const wa = drv && drv.wa ? 'https://api.whatsapp.com/send?phone=' + drv.wa + '&text=' + encodeURIComponent(t) : 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t);
     return '<div class="drvmsg' + (drv ? '' : ' none') + '"><div class="drvmsg-h"><b>' + (drv ? '🛵 ' + esc(drv.n) : drivers.length ? '⚠️ No driver yet' : 'Driver message') + '</b><span>' + list.length + ' stop' + (list.length === 1 ? '' : 's') + (sum > 0 ? ' · collect ' + fmtRp(sum) : '') + '</span></div>' +
       '<details><summary>Preview message</summary><textarea class="pre sm" id="' + tid + '" readonly>' + esc(t) + '</textarea></details>' +
       '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="' + wa + '">' + (drv && drv.wa ? 'Send to ' + esc(drv.n) : 'Send on WhatsApp') + '</a><button type="button" class="btn ghost" data-act="copy" data-id="' + tid + '">Copy</button></div></div>'; };
@@ -3084,7 +3084,7 @@ function renderShareC(comp) {
   const missing = missingReq(S.meta); const joined = missing.length > 1 ? missing.slice(0, -1).map(x => '<b>' + x + '</b>').join(', ') + ' and <b>' + missing[missing.length - 1] + '</b>' : '<b>' + missing[0] + '</b>';
   if (missing.length) { host.innerHTML = '<div class="card"><div class="msg-head"><h3>Send your order</h3><span class="pill">' + fmtRp(comp.grand) + '</span></div><div class="gate"><b>Almost there.</b> Please fill in ' + joined + ' <i class="req">*</i> before you send.</div><div class="actions full"><button class="btn" data-act="fix">Fill in my details</button></div></div>' + histHtml(); return; }
   if (minGap(comp) > 0) { host.innerHTML = '<div class="card"><div class="msg-head"><h3>Send your order</h3><span class="pill">' + fmtRp(comp.grand) + '</span></div><div class="gate"><b>Almost there.</b> The minimum order is <b>' + fmtRp(dlNow().min) + '</b>. Add <b>' + fmtRp(minGap(comp)) + '</b> more to send it.</div><div class="actions full"><button class="btn" data-view="pick">Add items</button></div></div>' + histHtml(); return; }
-  const msg = customerMessage(S, comp); const wa = 'https://wa.me/' + hw; const link = wa + '?text=' + encodeURIComponent(msg);
+  const msg = customerMessage(S, comp); const wa = 'https://api.whatsapp.com/send?phone=' + hw; const link = wa + '&text=' + encodeURIComponent(msg);
   const opt = (cmode && ui.sendOpt === 'qr') ? 'wa' : (ui.sendOpt || 'wa'); const q = opt === 'qr' ? qrSvg(makeCode(S)) : '';
   const SICON = { wa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z"/><path d="M9 10h6M9 13.5h4"/></svg>', pdf: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>' };
   const pick = [['wa', '1', 'WhatsApp'], ['pdf', '2', 'PDF receipt']].map(x => '<button type="button" data-act="sendopt" data-k="' + x[0] + '" aria-pressed="' + (opt === x[0]) + '"><span class="dopt">' + SICON[x[0]] + 'Option ' + x[1] + '</span><span class="dlab">' + x[2] + '</span></button>').join('');
@@ -3152,7 +3152,7 @@ function renderCustomers() {
     '<div class="field"><label for="mywa-n">Your WhatsApp number</label>' + phoneField('mywa', myWA ? '+' + myWA : '', canWrite ? '' : ' disabled') + '</div>' +
     (myWA ? '' : '<p class="hint" style="color:var(--warn);margin-top:6px">Add your number first so orders come back to you.</p>') +
     '<textarea class="pre sm" id="inviteTxt" readonly style="margin-top:12px;min-height:120px">' + esc(invMsg) + '</textarea>' +
-    '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(invMsg) + '">Send on WhatsApp</a><button class="btn ghost" data-act="copy" data-id="inviteTxt">Copy message</button></div>' +
+    '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?text=' + encodeURIComponent(invMsg) + '">Send on WhatsApp</a><button class="btn ghost" data-act="copy" data-id="inviteTxt">Copy message</button></div>' +
     '<div class="actions full" style="margin-top:10px"><a class="btn ghost" target="_blank" rel="noopener" href="' + esc(link) + '">Preview as customer</a></div><p class="hint" style="margin-top:6px">Opens the customer view in a new tab, exactly as they see it. Your own order and settings are not touched.</p>' +
     '<div class="qrbox"><span class="lgl">Or let them scan</span>' + qrSvg(link) + '<p class="hint">Show this on your phone or print it for the stall.</p></div>' +
     '<div class="field" style="margin-top:12px"><label for="friendLink">Customer link</label><input id="friendLink" readonly value="' + esc(link) + '"></div></div>' +
@@ -3180,7 +3180,7 @@ function renderCustomers() {
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
         '<div class="grand"><span>Total</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (() => { const p = profitOf(custState(c)); return '<p class="hint" style="margin-top:6px">Your cost ' + fmtRp(p.cost) + ' - profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b></p>'; })() +
         '<textarea class="pre sm" id="bill-' + esc(c.id) + '" readonly>' + esc(billText(c, comp)) + '</textarea>' +
-        '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/' + digitsOf(c.phone) + '?text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and send bill</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">Same as Step 2 in Message ' + esc((c.name || 'customer').split(' ')[0]) + '. Send it once stock is checked.</p>' +
+        '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and send bill</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">Same as Step 2 in Message ' + esc((c.name || 'customer').split(' ')[0]) + '. Send it once stock is checked.</p>' +
         '<div class="hdel">' + (ui.custDel[c.id] ? '<span>Remove this order? You can restore it later.</span><button type="button" class="btn danger sm" data-act="cdelyes" data-id="' + esc(c.id) + '">Remove</button><button type="button" class="btn ghost sm" data-act="cdelno" data-id="' + esc(c.id) + '">Keep</button>' : '<button type="button" class="linkbtn" data-act="cdelask" data-id="' + esc(c.id) + '">Remove order</button>') + '</div></div>';
     }
     return ccardHead(c, comp, date) +
@@ -3200,7 +3200,7 @@ function renderCustomers() {
         '<button type="button" class="suptog" data-act="suptog" data-s="' + g.sid + '" aria-expanded="' + so + '"><span>' + (so ? 'Hide' : 'Show') + ' ' + g.lines.length + ' item' + (g.lines.length > 1 ? 's' : '') + '</span><i aria-hidden="true">' + (so ? '&#9652;' : '&#9662;') + '</i></button>' + (so ? '<div class="suplist">' : '') +
         (so ? g.lines : []).map(ln => '<div class="cline"><span><b>' + esc(ln.it.n) + '</b> <em>' + esc((cb.who[ln.key] || []).map(w => w.name + ' ' + fmtQty(w.q)).join(' - ')) + '</em></span><span class="num">' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + '</span></div>').join('') + (so ? '</div>' : '') +
         '<textarea class="pre sm" id="cmsg-' + g.sid + '" readonly style="margin-top:10px">' + esc(text) + '</textarea>' +
-        '<div class="actions duo"><button type="button" class="btn" data-act="copy" data-id="cmsg-' + g.sid + '">Copy message</button><a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + s.wa + '?text=' + encodeURIComponent(text) + '">Open in WhatsApp</a></div></div>';
+        '<div class="actions duo"><button type="button" class="btn" data-act="copy" data-id="cmsg-' + g.sid + '">Copy message</button><a class="btn ghost" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + s.wa + '&text=' + encodeURIComponent(text) + '">Open in WhatsApp</a></div></div>';
     }).join('');
     comb = '<div class="card" id="combCard"><div class="msg-head"><h3>Combined order</h3><span class="seg" role="group" aria-label="Message language"><button data-act="lang" data-l="id" aria-pressed="' + (ui.lang === 'id') + '">Bahasa Indonesia</button><button data-act="lang" data-l="en" aria-pressed="' + (ui.lang === 'en') + '">English</button></span></div>' +
       '<p class="hint" style="margin-bottom:10px">Everything from the customers marked "In combined order" (not yet delivered), added up by supplier. Send each supplier one message.</p>' +
@@ -3237,14 +3237,14 @@ async function importCodes(text) {
   renderCustomers(); updateCBadge();
   if (ok) { const el = document.querySelector('.ccard[data-cid="' + newId + '"]'); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => { el.classList.remove('flash'); ui.flash = ''; }, 2600); } }
   const impMsg = (ok ? 'Imported ' + ok + ' order' + (ok > 1 ? 's' : '') : 'Nothing imported') + (dup ? ', ' + dup + ' already there' : '') + (bad ? ', ' + bad + ' not readable' : '') + '.';
-  if (ok === 1 && newRec && digitsOf(newRec.phone)) { const first = (newRec.name || 'there').split(' ')[0]; const tot = compute(custState(newRec), 'sell').grand; const ack = 'Hi ' + first + ', thank you! We received your order ' + orderNo(newRec) + ' (' + fmtRp(tot) + '). We will confirm availability and message you shortly.'; toast(impMsg, { label: 'Reply to ' + first, fn: () => window.open('https://wa.me/' + digitsOf(newRec.phone) + '?text=' + encodeURIComponent(ack), '_blank', 'noopener') }); }
+  if (ok === 1 && newRec && digitsOf(newRec.phone)) { const first = (newRec.name || 'there').split(' ')[0]; const tot = compute(custState(newRec), 'sell').grand; const ack = 'Hi ' + first + ', thank you! We received your order ' + orderNo(newRec) + ' (' + fmtRp(tot) + '). We will confirm availability and message you shortly.'; toast(impMsg, { label: 'Reply to ' + first, fn: () => window.open('https://api.whatsapp.com/send?phone=' + digitsOf(newRec.phone) + '&text=' + encodeURIComponent(ack), '_blank', 'noopener') }); }
   else toast(impMsg);
 }
 function offerStatusMsg(id, st) {
   const c = cust.find(x => x.id === id); if (!c || !digitsOf(c.phone) || st === 'new') return; const first = (c.name || 'there').split(' ')[0]; const due = dueOf(c);
   const msg = st === 'ordered' ? 'Hi ' + first + ', your order ' + orderNo(c) + ' is confirmed and is being prepared. We will message you when it is on its way.'
     : 'Hi ' + first + ', your order ' + orderNo(c) + ' has been delivered. Thank you!' + (due > 0 ? ' The balance of ' + fmtRp(due) + ' is still open.' : '');
-  setTimeout(() => toast('Let ' + first + ' know?', { label: 'Message on WhatsApp', fn: () => window.open('https://wa.me/' + digitsOf(c.phone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener') }), 350);
+  setTimeout(() => toast('Let ' + first + ' know?', { label: 'Message on WhatsApp', fn: () => window.open('https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(msg), '_blank', 'noopener') }), 350);
 }
 const CMSG = [
   { step: 'Step 1 · While checking stock', items: [['oos', '🔄', 'An item is unavailable', 'Ask if they want a replacement']] },
@@ -3278,7 +3278,7 @@ function addItemHtml(c) { if (!canWrite) return ''; const on = ui.addFor === c.i
     '<button type="button" class="linkbtn" data-act="additem" data-id="' + esc(c.id) + '">Done adding</button></div>'; }
 function cmdBar(c, open) { const f = esc((c.name || 'customer').split(' ')[0]); const mo = !!(ui.cmsgOpen && ui.cmsgOpen[c.id]); const ph = digitsOf(c.phone);
   const nx = nextMsg(c);
-  const menu = mo ? '<div class="cmsgmenu">' + (ph ? CMSG.map(g => '<div class="cmsgstep">' + g.step + '</div>' + g.items.map(x => '<a class="cmsgopt' + (x[0] === nx ? ' next' : '') + '" target="_blank" rel="noopener" href="https://wa.me/' + ph + '?text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span>' + (x[0] === nx ? '<em>Next</em>' : '') + '</a>').join('')).join('') : '<p class="hint">This customer has no WhatsApp number.</p>') + '</div>' : '';
+  const menu = mo ? '<div class="cmsgmenu">' + (ph ? CMSG.map(g => '<div class="cmsgstep">' + g.step + '</div>' + g.items.map(x => '<a class="cmsgopt' + (x[0] === nx ? ' next' : '') + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span>' + (x[0] === nx ? '<em>Next</em>' : '') + '</a>').join('')).join('') : '<p class="hint">This customer has no WhatsApp number.</p>') + '</div>' : '';
   return '<div class="cmdbar"><button type="button" class="cmd" data-act="cmsgtog" data-id="' + esc(c.id) + '" aria-expanded="' + mo + '">' + ICO_MSG + '<span>Message ' + f + '</span><i class="chev" aria-hidden="true"></i></button>' + menu +
     '<button type="button" class="cmd" data-act="cview" data-id="' + esc(c.id) + '" aria-expanded="' + open + '">' + ICO_BILL + '<span>' + (open ? 'Hide bill' : 'View &amp; edit bill') + '</span><i class="chev" aria-hidden="true"></i></button></div>'; }
 function updCust(id, p) {
@@ -3731,7 +3731,7 @@ document.addEventListener('click', e => {
   else if (act === 'goled') { showView('ledger'); }
   else if (act === 'copyapp') { const hw = hostWA || LS.get('mumu-hostwa') || ''; const url = ARTIFACT_URL + (hw ? '#f-' + hw : '#f'); const done = () => { const t = b.querySelector('b'); if (t) { t.textContent = 'Copied'; setTimeout(() => { t.textContent = 'Copy link'; }, 1800); } };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => toast(url)); else toast(url); }
-  else if (act === 'shareapp') { const hw = hostWA || LS.get('mumu-hostwa') || ''; const url = ARTIFACT_URL + (hw ? '#f-' + hw : '#f'); const text = 'Fresh fruit, vegetables, meat and groceries delivered in Bali. Order here:'; if (navigator.share) { navigator.share({ title: 'Vurata Market', text, url }).catch(() => {}); } else { window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener'); } }
+  else if (act === 'shareapp') { const hw = hostWA || LS.get('mumu-hostwa') || ''; const url = ARTIFACT_URL + (hw ? '#f-' + hw : '#f'); const text = 'Fresh fruit, vegetables, meat and groceries delivered in Bali. Order here:'; if (navigator.share) { navigator.share({ title: 'Vurata Market', text, url }).catch(() => {}); } else { window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener'); } }
   else if (act === 'totop') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
   else if (act === 'getpin') { ui.pinMode = 'gps'; ui.pinPaste = false; const fail = () => { ui.pinFail = true; renderOrder(compute(S)); }; if (!navigator.geolocation) { fail(); } else { toast('Finding your location...');
     let best = null, wid = null, tm = null; const use = p => { ui.pinFail = false; patch({ meta: { pin: p.coords.latitude.toFixed(6) + ',' + p.coords.longitude.toFixed(6), pinacc: String(Math.round(p.coords.accuracy || 0)) } }); renderOrder(compute(S)); };
@@ -3830,7 +3830,7 @@ document.addEventListener('change', e => {
   else if (t.matches('select[data-cmsg]')) {
     const c = cust.find(x => x.id === t.dataset.cmsg); const kind = t.value; t.value = ''; if (!c || !kind) return;
     if (!digitsOf(c.phone)) { toast('This customer has no WhatsApp number.'); return; }
-    window.open('https://wa.me/' + digitsOf(c.phone) + '?text=' + encodeURIComponent(custMsgTxt(c, kind)), '_blank', 'noopener');
+    window.open('https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(custMsgTxt(c, kind)), '_blank', 'noopener');
   }
   else if (t.matches('input[data-hren]')) { renameHist(t.dataset.hren, t.value); }
   else if (t.matches('input[data-chn]')) { updCust(t.dataset.chn, { hn: t.value.trim().slice(0, 200) }); }
