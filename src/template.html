@@ -966,12 +966,19 @@ body.gated .bar, body.gated .wrap, body.gated .bottombar, body.gated .helpfoot, 
 *, *::before, *::after { border-radius: 3px !important; }
 .sync i, .chip .dot, .dot2, .sendseg .no { border-radius: 50% !important; }
 body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; }
+/* product cards in a row: every line sits on the same baseline across cards, controls pinned to the bottom */
+.fcard { display: flex; flex-direction: column; gap: 4px; }
+.fcard b, .fcard small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.fcard b { min-height: calc(2em * 1.25); margin-top: 6px; } .fcard small { min-height: calc(2em * 1.2); }
+.fcard .fpr { display: grid; gap: 1px; margin-bottom: 10px; } .fcard .fpr em { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fcard .fstep, .fcard .fadd { margin-top: auto; }
 /* add-to-basket pulse */
 @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.07); color: var(--gold-text); } 100% { transform: scale(1); } }
 #bbTotal { display: inline-block; transform-origin: left center; } #bbTotal.bump, #nBadge.bump { animation: bump .42s cubic-bezier(.3,.7,.4,1); }
 @media (prefers-reduced-motion: reduce) { #bbTotal.bump, #nBadge.bump { animation: none; } }
 html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'atau'; width: auto; min-width: 24px; padding: 0 7px; border-radius: 12px; }
 .langbtn { font-size: 12px; font-weight: 700; letter-spacing: .06em; } .langbtn[hidden] { display: none; }
+.brand.stk { row-gap: 6px; } .brand.stk .wm { flex-basis: 100%; } .brand.stk .mk { border-left: 0; padding-left: 0; gap: 8px; white-space: nowrap; }
 /* first-visit trust strip */
 .trust { list-style: none; margin: 12px 0 0; padding: 12px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); }
 .trust[hidden] { display: none; }
@@ -2260,7 +2267,7 @@ function askHost() {
   const q = ui.q.trim(); if (!cmode || !q) return ''; const hw = hostWA || LS.get('mumu-hostwa') || '';
   return '<a class="btn ghost" style="margin-top:12px" target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent('Hi! Do you have "' + q + '"? I could not find it in the app.') + '">Ask about "' + esc(q.slice(0, 40)) + '" on WhatsApp</a>';
 }
-function fcardHtml(i, ix) { const o = i.o[ix]; const k = keyOf(i.id, ix); const q = (S.lines[k] && S.lines[k].q) || 0; return '<div class="fcard' + (q ? ' in' : '') + '"><span class="fth' + thumbCls(i) + '">' + thumbIn(i) + '</span><b>' + esc(nm(i).m) + '</b>' + (nm(i).s ? '<small>' + esc(nm(i).s) + '</small>' : '') + '<span class="fpr num">' + fmtRp(cmode ? o.sp : o.pr) + ' <em>' + esc(optLabel(o)) + '</em></span>' + (q ? '<div class="fstep"><button type="button" data-act="featdec" data-key="' + esc(k) + '" aria-label="Less ' + esc(i.n) + '">&minus;</button><span>' + fmtQty(q) + ' ' + esc(UNIT_EN[o.u] || o.u) + '</span><button type="button" data-act="featadd" data-key="' + esc(k) + '" aria-label="More ' + esc(i.n) + '">+</button></div>' : '<button type="button" class="fadd" data-act="featadd" data-key="' + esc(k) + '" aria-label="Add ' + esc(i.n) + '">+ Add</button>') + '</div>'; }
+function fcardHtml(i, ix) { const o = i.o[ix]; const k = keyOf(i.id, ix); const q = (S.lines[k] && S.lines[k].q) || 0; return '<div class="fcard' + (q ? ' in' : '') + '"><span class="fth' + thumbCls(i) + '">' + thumbIn(i) + '</span><b>' + esc(nm(i).m) + '</b>' + '<small>' + (nm(i).s ? esc(nm(i).s) : '') + '</small><span class="fpr num">' + fmtRp(cmode ? o.sp : o.pr) + '<em>' + esc(optLabel(o)) + '</em></span>' + (q ? '<div class="fstep"><button type="button" data-act="featdec" data-key="' + esc(k) + '" aria-label="Less ' + esc(i.n) + '">&minus;</button><span>' + fmtQty(q) + ' ' + esc(UNIT_EN[o.u] || o.u) + '</span><button type="button" data-act="featadd" data-key="' + esc(k) + '" aria-label="More ' + esc(i.n) + '">+</button></div>' : '<button type="button" class="fadd" data-act="featadd" data-key="' + esc(k) + '" aria-label="Add ' + esc(i.n) + '">+ Add</button>') + '</div>'; }
 /* Buy again: what this phone has ordered before, most often first. */
 function buyAgain() { const tally = {}; hist.forEach((h, n) => Object.keys(h.lines || {}).forEach(k => { if (!(h.lines[k] && h.lines[k].q > 0)) return; const t = tally[k] || (tally[k] = { k, c: 0, r: 1e9 }); t.c++; t.r = Math.min(t.r, n); }));
   return Object.values(tally).filter(t => { const p = t.k.split('|'); const it = BY_ID[p[0]]; const o = it && it.o[+p[1]]; return o && !it.hidden && !it.so && o.sp; }).sort((a, b) => b.c - a.c || a.r - b.r).slice(0, 12); }
@@ -4053,8 +4060,16 @@ function i18nStart() {
   if (LANG !== 'id' || !cmode) return; document.documentElement.lang = 'id'; i18nNode(document.body);
   new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(i18nNode))).observe(document.body, { childList: true, subtree: true });
 }
+/* When the header is too narrow and MARKET drops under the wordmark, lose the divider and spread basket + MARKET to exactly VURATA's width. */
+function fitBrand() { document.querySelectorAll('.bar .brand').forEach(b => { const wm = b.querySelector('.wm'), mk = b.querySelector('.mk'); if (!wm || !mk) return; const tn = [...mk.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim());
+  mk.style.letterSpacing = ''; mk.style.marginRight = ''; mk.style.width = ''; b.classList.remove('stk');
+  if (!tn || mk.getBoundingClientRect().top < wm.getBoundingClientRect().bottom - 2) return;
+  b.classList.add('stk'); const im = [...wm.querySelectorAll('img')].find(x => x.offsetWidth) || wm; const W = im.getBoundingClientRect().width, svg = mk.querySelector('svg'), iw = svg ? svg.getBoundingClientRect().width + 8 : 0;
+  const r = document.createRange(); r.selectNodeContents(tn); const cur = parseFloat(getComputedStyle(mk).letterSpacing) || 0, n = tn.nodeValue.trim().length; const nat = r.getBoundingClientRect().width - n * cur;
+  const ls = Math.max(0, (W - iw - nat) / (n - 1)); mk.style.width = W + 'px'; mk.style.letterSpacing = ls + 'px'; mk.style.marginRight = -ls + 'px'; }); }
+window.addEventListener('resize', fitBrand); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitBrand); window.addEventListener('load', fitBrand);
 i18nStart();
-boot();
+boot(); fitBrand();
 })();
 </script>
 </body>
