@@ -1057,6 +1057,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .stepmsg.main { background: var(--ink); border-color: var(--ink); color: var(--bg); } .stepmsg.main .ct small { color: color-mix(in srgb, var(--bg) 70%, transparent); } .stepmsg.main .go svg { stroke: var(--gold); }
 .othermsg { justify-self: start; font-size: 13px; margin-top: 2px; } .cmdbar { grid-template-columns: 1fr !important; }
 @media (hover: hover) { .stepmsg:not(.main):hover { background: color-mix(in srgb, var(--gold) 14%, var(--surface)); border-color: var(--gold); } .stepmsg.main:hover { filter: brightness(1.25); } }
+.langtag { font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border: 1px solid var(--gold); color: var(--gold-text); }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2102,6 +2103,7 @@ function lineText(ln, cust, lang) {
   if (ln.st === 'x') money = ' (not counted)';
   else if (ln.price) money = ' x ' + fmtRp(ln.price) + ' = ' + fmtRp(ln.total) + (ln.o.est && ln.q0 === ln.q && !(cmode || cust) ? ' (est.)' : '') + (ln.listPrice && ln.price !== ln.listPrice ? ' (list price ' + fmtRp(ln.listPrice) + ')' : (!ln.listPrice ? ' (price set by hand)' : ''));
   else money = ' = PRICE NEEDED';
+  if (lang === 'id') { const u = unitId(unit); const q = fmtQty(ln.q) + ' ' + u + (ln.q0 != null && ln.q0 !== ln.q ? ' (dipesan ' + fmtQty(ln.q0) + ')' : ''); return tag + nameIn(ln.it, lang) + lbl + ': ' + q + money; }
   if (lang) return tag + nameIn(ln.it, lang) + lbl + ': ' + qtyTxt + money;
   const nv = cmode || cust ? nm(ln.it) : null;
   return tag + (nv ? nv.m + (nv.s ? ' (' + nv.s + ')' : '') : supName(ln.it)) + lbl + ': ' + qtyTxt + money;
@@ -2904,12 +2906,13 @@ function paySelect(c) {
 /* The messages for the current step sit right under the steps; everything else is one tap away under Other messages. */
 const STEP_MSGS = { new: ['bill', 'oos'], ordered: ['eta', 'late', 'pay'], delivered: ['done', 'pay'] };
 const STEP_SEND = { new: 'Check stock, then send', ordered: 'On delivery day, send', delivered: 'After delivery, send' };
+const langTag = c => c.lang === 'id' ? '<em class="langtag">Bahasa</em>' : '';
 function msgDef(k) { for (const g of CMSG) for (const x of g.items) if (x[0] === k) return x; return null; }
 function stepMsgs(c, st) { const ph = digitsOf(c.phone); const unpaid = !c.paid && dueOf(c) > 0;
   const keys = STEP_MSGS[st].filter(k => k !== 'pay' || unpaid); const mo = !!(ui.cmsgOpen && ui.cmsgOpen[c.id]);
   if (!ph) return '<p class="hint stepmsg-none">Add a WhatsApp number in Edit details to message ' + esc((c.name || 'the customer').split(' ')[0]) + '.</p>';
   const row = (k, i) => { const x = msgDef(k); return '<a class="stepmsg' + (i === 0 ? ' main' : '') + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span><i class="go" aria-hidden="true">' + ICO_MSG + '</i></a>'; };
-  return '<div class="stepmsgs"><span class="cplab"><span>' + STEP_SEND[st] + '</span></span>' + keys.map(row).join('') +
+  return '<div class="stepmsgs"><span class="cplab"><span>' + STEP_SEND[st] + '</span>' + langTag(c) + '</span>' + keys.map(row).join('') +
     '<button type="button" class="linkbtn othermsg" data-act="cmsgtog" data-id="' + esc(c.id) + '" aria-expanded="' + mo + '">' + (mo ? 'Hide other messages' : 'Other messages') + '</button>' + (mo ? allMsgsMenu(c) : '') + '</div>'; }
 function statusPanel(c) { const ro = canWrite ? '' : ' disabled'; const order = ['new', 'ordered', 'delivered']; const cur = Math.max(0, order.indexOf(c.status || 'new'));
   const L = { new: 'New', ordered: 'Ordered', delivered: 'Delivered' }; const H = { new: 'Waiting for your confirmation', ordered: 'Confirmed, being packed', delivered: 'With the customer' };
@@ -3171,31 +3174,35 @@ function payLines(c, comp) { const p = c.pay || '';
   if (/deposit/i.test(p)) return ['💳 Payment: bank transfer.'].concat(bankTxt ? [bankTxt] : []);
   if (/cash/i.test(p)) return ['💵 Payment: cash on delivery. Please have ' + fmtRp(comp.grand) + ' ready for the driver.'];
   return p ? ['💳 Payment: ' + p] : []; }
-function payAsk(c, due) { const p = c.pay || ''; const amt = fmtRp(due);
-  if (c.paid || due <= 0) return ['*Paid in full. Nothing more to pay.* Thank you!'];
-  if (/qris/i.test(p)) return ['*Please pay ' + amt + ' by QRIS:*', '1. Open our QR code: ' + QRIS_URL, '2. Scan it in any banking or e-wallet app and enter ' + amt, '3. Send us a screenshot here when it is done', '_Pay before or when your order arrives. We hand it over once it\'s paid._'];
-  if (/deposit|transfer/i.test(p)) return ['*Please transfer ' + amt + ' now:*', bankTxt || 'Reply here and we will send our bank details.', 'Then send us a screenshot here when it is done.'];
-  if (/cash/i.test(p)) return ['*Total to pay: ' + amt + '*', '💵 Pay in cash when it arrives. Please have the exact amount ready for the driver.'];
-  if (/cafe/i.test(p)) return ['*Total: ' + amt + '*', 'This is added to the cafe order.'];
-  return ['*Total to pay: ' + amt + '*', p ? 'Payment: ' + p : 'Reply here to tell us how you would like to pay.']; }
+function payAsk(c, due) { const p = c.pay || ''; const amt = fmtRp(due); const id = c.lang === 'id';
+  if (c.paid || due <= 0) return [id ? '*Sudah lunas. Tidak ada lagi yang perlu dibayar.* Terima kasih!' : '*Paid in full. Nothing more to pay.* Thank you!'];
+  if (/qris/i.test(p)) return id ? ['*Mohon bayar ' + amt + ' lewat QRIS:*', '1. Buka kode QR kami: ' + QRIS_URL, '2. Scan di aplikasi bank atau e-wallet apa pun dan masukkan ' + amt, '3. Kirim screenshot ke sini setelah selesai', '_Bayar sebelum atau saat pesanan sampai. Pesanan kami serahkan setelah dibayar._']
+    : ['*Please pay ' + amt + ' by QRIS:*', '1. Open our QR code: ' + QRIS_URL, '2. Scan it in any banking or e-wallet app and enter ' + amt, '3. Send us a screenshot here when it is done', '_Pay before or when your order arrives. We hand it over once it\'s paid._'];
+  if (/deposit|transfer/i.test(p)) return id ? ['*Mohon transfer ' + amt + ' sekarang:*', bankTxt || 'Balas di sini, kami kirimkan detail rekening kami.', 'Lalu kirim screenshot ke sini setelah selesai.']
+    : ['*Please transfer ' + amt + ' now:*', bankTxt || 'Reply here and we will send our bank details.', 'Then send us a screenshot here when it is done.'];
+  if (/cash/i.test(p)) return id ? ['*Total yang dibayar: ' + amt + '*', '💵 Bayar tunai saat pesanan sampai. Mohon siapkan uang pas untuk driver.'] : ['*Total to pay: ' + amt + '*', '💵 Pay in cash when it arrives. Please have the exact amount ready for the driver.'];
+  if (/cafe/i.test(p)) return id ? ['*Total: ' + amt + '*', 'Ditambahkan ke pesanan kafe.'] : ['*Total: ' + amt + '*', 'This is added to the cafe order.'];
+  return id ? ['*Total yang dibayar: ' + amt + '*', p ? 'Pembayaran: ' + p : 'Balas di sini untuk memberi tahu cara bayar yang Anda pilih.'] : ['*Total to pay: ' + amt + '*', p ? 'Payment: ' + p : 'Reply here to tell us how you would like to pay.']; }
 function billText(c, comp) {
-  const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const f = (c.name || 'there').split(' ')[0]; const p = c.pay || '';
+  const id = c.lang === 'id'; const tr = t => (id && ID_TEXT[t]) || t;
+  const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const f = (c.name || 'there').split(' ')[0];
   const due = c.paid ? 0 : Math.max(0, comp.grand - (+c.dep || 0)); const amt = fmtRp(due);
   /* 1. What to do, first */
-  const out = ['Hi ' + f + ', your order ' + orderNo(c) + ' is confirmed ✅'].concat(payAsk(c, due));
+  const out = [(id ? 'Halo ' + f + ', pesanan ' + orderNo(c) + ' Anda sudah dikonfirmasi ✅' : 'Hi ' + f + ', your order ' + orderNo(c) + ' is confirmed ✅')].concat(payAsk(c, due));
   /* 2. When and where */
-  const when = [c.need ? '📅 ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : '') : '', addrOnly(c.addr) ? '📍 ' + addrOnly(c.addr) : ''].filter(Boolean);
+  const slot = c.slot ? (id ? (ID_SLOT[c.slot] || c.slot) : c.slot) : '';
+  const when = [c.need ? '📅 ' + (id ? fmtDate(c.need, 'id') : fmtDate(c.need)) + (slot ? ', ' + slot : '') : '', addrOnly(c.addr) ? '📍 ' + addrOnly(c.addr) : ''].filter(Boolean);
   if (when.length) out.push('', when.join('\n'));
   /* 3. The bill, as proof */
-  out.push('', '🧾 *Your bill*');
+  out.push('', id ? '🧾 *Rincian pesanan*' : '🧾 *Your bill*');
   const secs = {}; comp.groups.forEach(g => g.lines.forEach(ln => { const d = ln.it.d || ln.it.s; (secs[d] = secs[d] || []).push(ln); }));
-  Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + ((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true, c.lang === 'id' ? 'id' : 'en'))); });
+  Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + tr((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true, id ? 'id' : 'en'))); });
   out.push('');
-  if (hasDel(comp)) out.push('🚚 Delivery' + (c.zone && c.zone !== '__other' ? ' (' + zoneLabel(c.zone) + ')' : '') + ': ' + delLine(comp) + (c.dcode ? ' (code ' + c.dcode + ')' : ''));
-  out.push('*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''));
-  if (+c.dep > 0 && due > 0) out.push('Received so far: ' + fmtRp(c.dep) + '. Left to pay: ' + amt + '.');
-  if (fin) out.push('_Fresh items use the packed weights above._');
-  out.push('', 'We will message you when your order is on its way. Thank you! 🙏'); return out.join('\n');
+  if (hasDel(comp)) out.push('🚚 ' + (id ? 'Ongkir' : 'Delivery') + (c.zone && c.zone !== '__other' ? ' (' + zoneLabel(c.zone) + ')' : '') + ': ' + tr(delLine(comp)) + (c.dcode ? ' (' + (id ? 'kode ' : 'code ') + c.dcode + ')' : ''));
+  out.push('*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? (id ? ' + ongkir' : ' + delivery') : '') + (comp.unpriced ? (id ? ' (+ ' + comp.unpriced + ' barang belum ada harga)' : ' (+ ' + comp.unpriced + ' item(s) still to be priced)') : ''));
+  if (+c.dep > 0 && due > 0) out.push(id ? 'Sudah diterima: ' + fmtRp(c.dep) + '. Sisa: ' + amt + '.' : 'Received so far: ' + fmtRp(c.dep) + '. Left to pay: ' + amt + '.');
+  if (fin) out.push(id ? '_Barang segar memakai berat saat dikemas di atas._' : '_Fresh items use the packed weights above._');
+  out.push('', id ? 'Kami akan kabari saat pesanan Anda dalam perjalanan. Terima kasih! 🙏' : 'We will message you when your order is on its way. Thank you! 🙏'); return out.join('\n');
 }
 function combinedData() {
   const lines = {}, who = {}, notes = {};
@@ -3236,8 +3243,8 @@ function renderCustomers() {
     if (open) {
       const gone = removedLines(c); const shown = new Set();
       const goneHtml = list => list.map(r => { shown.add(r.key); return '<div class="cline2 gone"><div class="cl-top"><span class="cl-name">' + esc(nmBoth(r.it)) + '</span><span class="num cl-t">' + fmtRp(0) + '</span></div><div class="cl-sub"><span class="cl-meta">Removed · was ' + fmtQty(r.oq) + ' ' + esc(UNIT_EN[r.o.u] || r.o.u) + '</span><button type="button" class="backbtn" data-act="cqback" data-id="' + esc(c.id) + '" data-key="' + esc(r.key) + '"' + (canWrite ? '' : ' disabled') + '>↺ Bring back</button></div></div>'; }).join('');
-      det = '<div class="cdet">' + comp.groups.map(g => '<div class="hsup sup-' + g.sid + '">' + SUPS[g.sid].name + '</div>' + g.lines.map(ln =>
-        '<div class="cline2"><div class="cl-top"><span class="cl-name">' + esc(nmBoth(ln.it)) + '</span><span class="num cl-t">' + (ln.total != null ? fmtRp(ln.total) : 'ask') + '</span></div><div class="cl-sub"><span class="cl-meta">' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + (ln.price ? ' &times; ' + fmtRp(ln.price) : '') + (ln.q0 != null && ln.q0 !== ln.q ? ' (ordered ' + fmtQty(ln.q0) + ')' : '') + (ln.note ? '<em>' + esc(ln.note) + '</em>' : '') + '</span><div class="qmini"><button type="button" data-act="cq" data-d="-1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="Less">&minus;</button><span class="cq">' + fmtQty(ln.q0 != null ? ln.q0 : ln.q) + '</span><button type="button" data-act="cq" data-d="1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="More">+</button></div></div></div>').join('') + goneHtml(gone.filter(r => r.sid === g.sid))).join('') +
+      det = '<div class="cdet">' + comp.groups.map(g => '<div class="hsup sup-' + g.sid + '">' + SUPS[g.sid].name + '</div>' + g.lines.map(ln => ({ k: ln.key, h:
+        '<div class="cline2"><div class="cl-top"><span class="cl-name">' + esc(nmBoth(ln.it)) + '</span><span class="num cl-t">' + (ln.total != null ? fmtRp(ln.total) : 'ask') + '</span></div><div class="cl-sub"><span class="cl-meta">' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + (ln.price ? ' &times; ' + fmtRp(ln.price) : '') + (ln.q0 != null && ln.q0 !== ln.q ? ' (ordered ' + fmtQty(ln.q0) + ')' : '') + (ln.note ? '<em>' + esc(ln.note) + '</em>' : '') + '</span><div class="qmini"><button type="button" data-act="cq" data-d="-1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="Less">&minus;</button><span class="cq">' + fmtQty(ln.q0 != null ? ln.q0 : ln.q) + '</span><button type="button" data-act="cq" data-d="1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="More">+</button></div></div></div>' })).concat(gone.filter(r => r.sid === g.sid).map(r => ({ k: r.key, h: goneHtml([r]) }))).sort((a, b) => (ORDER_IX[a.k.split('|')[0]] - ORDER_IX[b.k.split('|')[0]]) || a.k.localeCompare(b.k)).map(x => x.h).join('')).join('') +
         (gone.some(r => !shown.has(r.key)) ? '<div class="hsup">Removed items</div>' + goneHtml(gone.filter(r => !shown.has(r.key))) : '') +
         addItemHtml(c) +
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
@@ -3314,15 +3321,23 @@ const CMSG = [
   { step: '③ Delivered', items: [['done', '🙏', 'Thank you', 'Delivered, thanks for ordering']] },
   { step: 'Anytime', items: [['pay', '💳', 'Payment reminder', 'Total and how to pay']] }];
 const nextMsg = c => c.status === 'delivered' ? (c.paid ? 'done' : 'pay') : c.status === 'ordered' ? 'eta' : 'bill';
-function custMsgTxt(c, kind) { const f = (c.name || 'there').split(' ')[0]; const n = orderNo(c); const comp = compute(custState(c), 'sell'); const tot = fmtRp(comp.grand);
-  const gone = removedLines(c).map(r => nm(r.it).m); const pl = payLines(c, comp);
+function custMsgTxt(c, kind) { const f = (c.name || 'there').split(' ')[0]; const n = orderNo(c); const comp = compute(custState(c), 'sell'); const tot = fmtRp(comp.grand); const id = c.lang === 'id';
+  const gone = removedLines(c).map(r => nameIn(r.it, id ? 'id' : 'en')); const due = c.paid ? 0 : Math.max(0, comp.grand - (+c.dep || 0)); const cash = !c.paid && comp.grand && /cash/i.test(c.pay || '');
+  if (id) return ({
+    bill: billText(c, comp),
+    oos: 'Halo ' + f + ', ada pertanyaan soal pesanan ' + n + ':\n*' + (gone.length ? gone.join(', ') + ' sedang tidak tersedia hari ini.' : 'Salah satu barang Anda sedang tidak tersedia hari ini.') + '*\n\nMau diganti dengan yang lain, atau tidak usah? Cukup balas di sini.',
+    eta: 'Halo ' + f + ', kabar baik! 🛵\nPesanan ' + n + ' Anda sedang dalam perjalanan dan segera sampai.' + (cash ? '\n\nMohon siapkan ' + tot + ' untuk driver.' : ''),
+    late: 'Halo ' + f + ', pesanan ' + n + ' Anda akan sampai *sedikit terlambat* hari ini.\nMohon maaf, dan terima kasih atas kesabarannya!',
+    done: 'Halo ' + f + ', pesanan ' + n + ' Anda sudah diantar. 🙏\nTerima kasih sudah berbelanja di Vurata Market.\n\nSampai jumpa lagi!',
+    pay: due <= 0 ? 'Halo ' + f + ', pesanan ' + n + ' sudah lunas. Terima kasih! 🙏' : 'Halo ' + f + ', *' + fmtRp(due) + ' masih belum dibayar* untuk pesanan ' + n + '.\n\n' + payAsk(c, due).join('\n') + '\n\nTerima kasih!'
+  })[kind] || '';
   return ({
     bill: billText(c, comp),
     oos: 'Hi ' + f + ', quick question on order ' + n + ':\n*' + (gone.length ? gone.join(', ') + (gone.length > 1 ? ' are' : ' is') + ' not available today.' : 'One of your items is not available today.') + '*\n\nWould you like a replacement, or shall we leave it out? Just reply here.',
-    eta: 'Hi ' + f + ', good news! 🛵\nYour order ' + n + ' is on its way and should arrive soon.' + (comp.grand && !c.paid && /cash/i.test(c.pay || '') ? '\n\nPlease have ' + tot + ' ready for the driver.' : ''),
+    eta: 'Hi ' + f + ', good news! 🛵\nYour order ' + n + ' is on its way and should arrive soon.' + (cash ? '\n\nPlease have ' + tot + ' ready for the driver.' : ''),
     late: 'Hi ' + f + ', your order ' + n + ' will arrive *a little later than planned* today.\nSorry, and thank you for your patience!',
     done: 'Hi ' + f + ', your order ' + n + ' has been delivered. 🙏\nThank you for ordering with Vurata Market.\n\nSee you next time!',
-    pay: (() => { const due = c.paid ? 0 : Math.max(0, comp.grand - (+c.dep || 0)); return due <= 0 ? 'Hi ' + f + ', order ' + n + ' is paid in full. Thank you! 🙏' : 'Hi ' + f + ', *' + fmtRp(due) + ' is still open* for order ' + n + '.\n\n' + payAsk(c, due).join('\n') + '\n\nThank you!'; })()
+    pay: due <= 0 ? 'Hi ' + f + ', order ' + n + ' is paid in full. Thank you! 🙏' : 'Hi ' + f + ', *' + fmtRp(due) + ' is still open* for order ' + n + '.\n\n' + payAsk(c, due).join('\n') + '\n\nThank you!'
   })[kind] || ''; }const ICO_MSG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z"/><path d="M9 10h6M9 13.5h4"/></svg>';
 const ICO_BILL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>';
 /* Lines staff took down to zero: still listed (faded, Rp 0) so they can be brought back in one tap */
@@ -4313,6 +4328,7 @@ const ID_TEXT = {
   'Pay before or when your order arrives. We hand it over once it\'s paid.': 'Bayar sebelum atau saat pesanan sampai. Pesanan kami serahkan setelah dibayar.',
   'Scan our QR code in any banking or e-wallet app. Pay before or when your order arrives. We hand it over once it\'s paid.': 'Scan kode QR kami di aplikasi bank atau e-wallet apa pun. Bayar sebelum atau saat pesanan sampai. Pesanan kami serahkan setelah dibayar.',
   'On your phone, press and hold the code to save it, then choose it from your gallery in your banking app.': 'Di HP, tekan lama kode untuk menyimpannya, lalu pilih dari galeri di aplikasi bank Anda.', 'Save the QR code': 'Simpan kode QR',
+  'To be confirmed': 'Dikonfirmasi nanti', 'Items': 'Barang',
   'Search items': 'Cari barang', 'Category': 'Kategori', 'Sections': 'Bagian', 'Country': 'Negara', 'Zoom in': 'Perbesar', 'Zoom out': 'Perkecil'
 };
 const UNIT_IDC = { pcs: 'pcs', pack: 'pak', box: 'kotak', carton: 'karton', can: 'kaleng', bottle: 'botol', jar: 'toples', sachet: 'sachet', hand: 'sisir', sack: 'karung', pax: 'pax' };
