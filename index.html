@@ -1442,7 +1442,9 @@ body { margin: 0; padding-inline: 8px; }
 .dbtn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 46px; padding: 11px 18px 12px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
 .dbtn + .dbtn { border-left: 1px solid var(--line); } .dbtn svg { width: 17px; height: 17px; fill: none; stroke: var(--gold-text); stroke-width: 1.8; stroke-linecap: round; }
 .dopt { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); } .dopt svg { width: 14px !important; height: 14px !important; } .dlab { white-space: nowrap; } @media (max-width: 350px) { .dbtn { padding-inline: 12px; } .dlab { font-size: 12.5px; } }
-.dbtn[aria-pressed="true"], .dbtn:hover { background: var(--surface-2); }
+.dbtn:not([aria-pressed="true"]):hover { background: var(--surface-2); }
+.dbtn[aria-pressed="true"] { background: color-mix(in srgb, var(--gold) 12%, var(--surface)); box-shadow: inset 0 -2px 0 var(--gold); }
+.dmapbar:has([aria-pressed="true"]) .dbtn:not([aria-pressed="true"]) .dlab { color: var(--muted); }
 .dpaste { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); } .dpaste input { min-height: 40px; } .dtip { grid-column: 1 / -1; margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
 .dpinstat { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); line-height: 1.45; }
 .dpinstat.ok { color: var(--ink); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); } .dpinstat.ok b { font-weight: 600; } .dpinstat.rough { background: color-mix(in srgb, var(--gold) 16%, var(--surface)); }
@@ -1880,11 +1882,13 @@ const parsePin = v => { const m = String(v || '').match(/^(-?\d{1,2}\.\d+),\s*(-
 const pinFromLink = t => { const s = String(t || '').trim(); const pats = [/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/, /!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)/, /[?&](?:q|query|ll|destination|center)=(-?\d{1,2}\.\d+)(?:,|%2C)\s*(-?\d{1,3}\.\d+)/i, /^(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)$/];
   for (const re of pats) { const m = s.match(re); if (m) { const la = +m[1], ln = +m[2]; if (la < -7.9 && la > -9.1 && ln > 114.3 && ln < 115.8) return la.toFixed(6) + ',' + ln.toFixed(6); return 'far'; } } return ''; };
 const addrHtml = a => String(a || '').split('\n').filter(l => l.trim()).map(l => { const x = /^Map: (https?:\/\/\S+)$/.exec(l.trim()); return x ? '<a class="maplnk" href="' + esc(x[1]) + '" target="_blank" rel="noopener">Google Maps link</a>' : esc(l); }).join('<br>');
+/* Which of the two pin options is in use, so the chosen one stays highlighted */
+const pinMode = m => ui.pinPaste ? 'link' : ui.pinMode !== undefined ? ui.pinMode : (m.pinacc ? 'gps' : (!m.pin && mapLinkOf(m) ? 'link' : ''));
 const mapLinkOf = m => { const x = /(?:^|\n)Map: (https?:\/\/\S+)/.exec(String(m.addr || '')); return x ? x[1] : ''; };
 function delBoxHtml(m, ro) {
   const pin = parsePin(m.pin); const gm = pin ? 'https://maps.google.com/?q=' + m.pin : '';
   return '<div class="delbox"><div class="dmapslot" id="dmapSlot"></div>' +
-    (ro ? '' : '<div class="dmapbar"><button type="button" class="dbtn" data-act="getpin"><span class="dopt"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>Option 1</span><span class="dlab">Use my location</span></button><button type="button" class="dbtn" data-act="pastepin"' + (ui.pinPaste ? ' aria-pressed="true"' : '') + '><span class="dopt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Option 2</span><span class="dlab">Paste a Maps link</span></button></div>') +
+    (ro ? '' : '<div class="dmapbar"><button type="button" class="dbtn" data-act="getpin" aria-pressed="' + (pinMode(m) === 'gps') + '"><span class="dopt"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>Option 1</span><span class="dlab">Use my location</span></button><button type="button" class="dbtn" data-act="pastepin" aria-pressed="' + (pinMode(m) === 'link') + '"><span class="dopt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Option 2</span><span class="dlab">Paste a Maps link</span></button></div>') +
     (ui.pinPaste && !ro ? '<div class="dpaste"><input id="m-pinlink" inputmode="url" placeholder="Paste the Google Maps link here" autocomplete="off"><button type="button" class="btn sm" data-act="pinlinkok">Use it</button><p class="dtip">Any Google Maps link works. For an exact pin on this map, press and hold your gate in Google Maps, copy the numbers that appear, and paste them here.</p></div>' : '') +
     '<div class="dpinstat' + (pin ? (pinRough(m) ? ' ok rough' : ' ok') : mapLinkOf(m) ? ' ok' : '') + '">' + (pin ? (pinRough(m) ? '<span><b>Approximate pin, about &plusmn;' + pinRough(m) + ' m.</b> Drag it to your gate so the driver finds you.</span>' : '<span><b>&#10003; Pin set.</b> This is exactly where we deliver.</span>') + '<span class="dpinact"><a href="' + gm + '" target="_blank" rel="noopener">Check in Google Maps</a>' + (ro ? '' : '<button type="button" class="linkbtn" data-act="clrpin">Remove</button>') + '</span>' : (mapLinkOf(m) ? '<span><b>&#10003; Maps link saved.</b> Your host opens it to find you. To see the pin here too, tap your gate on the map.</span><span class="dpinact"><a href="' + esc(mapLinkOf(m)) + '" target="_blank" rel="noopener">Open link</a></span>' : ui.pinFail ? 'We could not read your location. Tap the map at your gate instead, or paste a Maps link.' : 'Tap the map or drag the pin to your gate, so the driver comes straight to you.')) + '</div>' +
     '<textarea id="m-addr" data-meta="addr" rows="2" placeholder="Villa name, street and gate, e.g. Villa Asri, Jl. Batu Bolong 12, green gate"' + ro + '>' + esc(m.addr) + '</textarea></div>';
@@ -2157,17 +2161,18 @@ function updateOrderProg() {
   const el = document.getElementById('oProg'); if (!el || !cmode) return; const p = orderProg();
   el.classList.toggle('done', p.done === p.total); el.setAttribute('aria-valuenow', p.done); el.querySelector('u').style.width = Math.round(p.done / p.total * 100) + '%'; el.querySelector('span').textContent = p.done === p.total ? 'All set' : p.done + ' of ' + p.total + ' details';
 }
+const localTxt = () => cmode ? 'Saved on this phone' : 'Saved on this device only (not shared)';
 function patch(p) {
   if (!canWrite) { toast('This copy is view-only. Ask for Editor access to change the order.'); return; }
   deepMerge(S, clone(p)); S.by = myId || S.by; S.at = Date.now();
   deepMerge(pending, clone(p));
-  setSync(db ? 'saving' : 'local', db ? 'Saving' : 'Saved on this device only');
+  setSync(db ? 'saving' : 'local', db ? 'Saving' : localTxt());
   clearTimeout(flushTimer); flushTimer = setTimeout(flush, 350);
   if (!db) LS.set('mumu-order', JSON.stringify(S));
   if (p.meta) updateOrderProg();
 }
 function flush() {
-  if (!db) { setSync('local', 'Saved on this device only (not shared)'); return; }
+  if (!db) { setSync('local', localTxt()); return; }
   const p = pending; pending = {}; if (!Object.keys(p).length) return;
   p.by = myId || ''; p.at = S.at;
   writeChain = writeChain.then(async () => {
@@ -2613,7 +2618,7 @@ function renderAll(remote) {
   if (ui.view === 'order') { if (typing && remote) { ui.orderDirty = true; } else { renderOrderKeepFocus(comp); } } else { ui.orderDirty = true; }
   if (ui.view === 'share') renderShare(comp); else ui.shareDirty = true;
   if (ui.view === 'cust') renderCustomers();
-  const sy = document.getElementById('sync'); if (!db && sy.dataset.s !== 'local') setSync('local', 'Saved on this device only (not shared)');
+  const sy = document.getElementById('sync'); if (!db && sy.dataset.s !== 'local') setSync('local', localTxt());
 }
 function renderOrderKeepFocus(comp) {
   const a = document.activeElement; const keep = a && a.closest && a.closest('#v-order') ? { key: a.closest('[data-key]') && a.closest('[data-key]').dataset.key, act: a.dataset.act, id: a.id } : null;
@@ -3589,17 +3594,17 @@ document.addEventListener('click', e => {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => toast(url)); else toast(url); }
   else if (act === 'shareapp') { const hw = hostWA || LS.get('mumu-hostwa') || ''; const url = ARTIFACT_URL + (hw ? '#f-' + hw : '#f'); const text = 'Fresh fruit, vegetables, meat and groceries delivered in Bali. Order here:'; if (navigator.share) { navigator.share({ title: 'Vurata Market', text, url }).catch(() => {}); } else { window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener'); } }
   else if (act === 'totop') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-  else if (act === 'getpin') { const fail = () => { ui.pinFail = true; renderOrder(compute(S)); }; if (!navigator.geolocation) { fail(); } else { toast('Finding your location...');
+  else if (act === 'getpin') { ui.pinMode = 'gps'; ui.pinPaste = false; const fail = () => { ui.pinFail = true; renderOrder(compute(S)); }; if (!navigator.geolocation) { fail(); } else { toast('Finding your location...');
     let best = null, wid = null, tm = null; const use = p => { ui.pinFail = false; patch({ meta: { pin: p.coords.latitude.toFixed(6) + ',' + p.coords.longitude.toFixed(6), pinacc: String(Math.round(p.coords.accuracy || 0)) } }); renderOrder(compute(S)); };
     const done = () => { if (wid !== null) navigator.geolocation.clearWatch(wid); wid = null; clearTimeout(tm); if (!best) { const tt = document.getElementById('toast'); if (tt) tt.hidden = true; fail(); return; } toast(pinRough(S.meta) ? 'Approximate location. Drag the pin to your gate.' : 'Pin set at your location.'); };
     wid = navigator.geolocation.watchPosition(p => { if (!best || p.coords.accuracy < best.coords.accuracy) { best = p; use(p); } if (p.coords.accuracy <= 15) done(); }, () => { if (!best) done(); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
     tm = setTimeout(done, 10000); } }
-  else if (act === 'clrpin') { patch({ meta: { pin: '', pinacc: '' } }); renderOrder(compute(S)); }
-  else if (act === 'pastepin') { ui.pinPaste = !ui.pinPaste; renderOrder(compute(S)); const i = document.getElementById('m-pinlink'); if (i) i.focus(); }
+  else if (act === 'clrpin') { ui.pinMode = ''; patch({ meta: { pin: '', pinacc: '' } }); renderOrder(compute(S)); }
+  else if (act === 'pastepin') { ui.pinPaste = !ui.pinPaste; ui.pinMode = ui.pinPaste ? 'link' : ''; renderOrder(compute(S)); const i = document.getElementById('m-pinlink'); if (i) i.focus(); }
   else if (act === 'pinlinkok') { const i = document.getElementById('m-pinlink'); const raw = i ? i.value.trim() : ''; if (!raw) { toast('Paste the link first.'); return; } const v = pinFromLink(raw);
     if (v === 'far') { toast('That link points outside Bali. Check it and try again.'); return; }
-    if (v) { ui.pinPaste = false; ui.pinFail = false; patch({ meta: { pin: v, pinacc: '' } }); renderOrder(compute(S)); toast('Pin set from your link.'); return; }
-    if (/^https?:\/\/\S+$/.test(raw)) { ui.pinPaste = false; const a = String(S.meta.addr || ''); if (!a.includes(raw)) patch({ meta: { addr: (a ? a + '\n' : '') + 'Map: ' + raw } }); renderOrder(compute(S)); toast('Maps link saved. Your host opens it to find you.'); return; }
+    if (v) { ui.pinPaste = false; ui.pinMode = 'link'; ui.pinFail = false; patch({ meta: { pin: v, pinacc: '' } }); renderOrder(compute(S)); toast('Pin set from your link.'); return; }
+    if (/^https?:\/\/\S+$/.test(raw)) { ui.pinPaste = false; ui.pinMode = 'link'; const a = String(S.meta.addr || ''); if (!a.includes(raw)) patch({ meta: { addr: (a ? a + '\n' : '') + 'Map: ' + raw } }); renderOrder(compute(S)); toast('Maps link saved. Your host opens it to find you.'); return; }
     toast('That does not look like a Maps link.'); }
   else if (act === 'featdec') { const k = b.dataset.key; const o = BY_ID[k.split('|')[0]].o[+(k.split('|')[1] || 0)]; const cur = (S.lines[k] && S.lines[k].q) || 0; let q = cur - (o.st || 1); if (q < 0.001 || (o.mn && q < o.mn)) q = 0; setQty(k, q, false); renderPick(); }
   else if (act === 'dzall') { ui.dzAll = !ui.dzAll; renderLedger(); }
