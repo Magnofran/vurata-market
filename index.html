@@ -1328,6 +1328,9 @@ body { margin: 0; padding-inline: 8px; }
 .duprow { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); } .duprow:first-of-type { border-top: 0; }
 .dside { display: grid; gap: 2px; } .dside span { font-size: 12.5px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
 .lnote { font-size: 12.5px; line-height: 1.5; color: var(--muted); padding: 8px 10px; background: var(--surface-2); } .lnote b { color: var(--ink); font-weight: 600; } .lnote.on { box-shadow: inset 3px 0 0 var(--gold); }
+.dzrow { grid-template-columns: minmax(0, 1fr) 128px 34px; grid-template-areas: "n f x" "fr fr ."; }
+.dzrow > input { grid-area: n; } .dzrow > .lpr:not(.dzfree) { grid-area: f; } .dzrow > .dzfree { grid-area: fr; } .dzrow > .x { grid-area: x; }
+.dzfree small { font-size: 12px; color: var(--muted); margin-right: 4px; white-space: nowrap; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -1602,6 +1605,9 @@ function needsCheck(it) { return !!(it.x && /confirm|not stated|blank|does not m
 
 const DL_STARTER = [['Tabanan town / Kediri', 20000], ['Tanah Lot / Kerambitan / Beraban', 25000], ['Jatiluwih / Penebel / Baturiti', 40000], ['Mengwi / Munggu / Abiansemal', 35000], ['Canggu / Berawa / Pererenan', 40000], ['Dalung', 30000], ['Seminyak / Kerobokan / Umalas', 50000], ['Kuta / Legian', 60000], ['Denpasar / Sanur', 65000], ['Munduk / Pupuan / Belimbing', 70000], ['Jimbaran / Nusa Dua', 80000], ['Bedugul / Candikuning', 80000], ['Ubud', 85000], ['Uluwatu / Bingin', 95000], ['Gianyar / Sukawati / Tegalalang', 95000], ['Medewi / Negara / Jembrana', 100000], ['Klungkung / Semarapura / Padang Bai', 120000], ['Bangli / Kintamani', 130000], ['Singaraja / Lovina / Buleleng', 140000], ['Gilimanuk / Melaya', 150000], ['Candidasa / Amed / Karangasem', 170000], ['Seririt / Pemuteran / Menjangan', 190000]];
 const dlNow = () => { const d = ledger.dl || {}; return { free: +d.free > 0 ? +d.free : 0, min: +d.min > 0 ? +d.min : 0, cutoff: +d.cutoff > 0 && +d.cutoff < 24 ? +d.cutoff : 0, closed: Array.isArray(d.closed) ? d.closed.filter(x => x && /^\d{4}-\d{2}-\d{2}$/.test(x.d)) : [], zones: Array.isArray(d.zones) ? d.zones.filter(z => z && z.n) : [], codes: Array.isArray(d.codes) ? d.codes.filter(x => x && x.c).map(x => ({ c: String(x.c).toUpperCase().replace(/\s+/g, '').slice(0, 24), t: ['free', 'pct', 'off'].includes(x.t) ? x.t : 'free', v: +x.v > 0 ? +x.v : 0, min: +x.min > 0 ? +x.min : 0, until: /^\d{4}-\d{2}-\d{2}$/.test(x.until || '') ? x.until : '', on: x.on !== false })) : [] }; };
+/* Free delivery threshold for an area: its own amount if set (0 = never free there), else the default. */
+const freeAt = zone => { const dl = dlNow(); const z = zone && zone !== '__other' ? dl.zones.find(x => x.n === zone) : null; if (z && z.free !== undefined && z.free !== null && z.free !== '') return +z.free > 0 ? +z.free : 0; return dl.free; };
+const freeCopy = () => { const dl = dlNow(); const ts = dl.zones.filter(z => z.fee > 0).map(z => freeAt(z.n)).filter(x => x > 0); if (!ts.length) return dl.free ? 'Free on orders over ' + fmtRp(dl.free) + '.' : ''; const lo = Math.min(...ts), hi = Math.max(...ts); return lo === hi ? 'Free on orders over ' + fmtRp(lo) + '.' : 'Free on orders over ' + fmtRp(lo) + ' nearby, and over ' + fmtRp(hi) + ' further away.'; };
 const dlSave = p => { const dl = dlNow(); saveLedger({ dl: Object.assign({ free: dl.free, min: dl.min, cutoff: dl.cutoff, closed: dl.closed, zones: dl.zones, codes: dl.codes }, p) }); };
 /* Ready-made baskets: staff save an order as a basket, customers add it in one tap. */
 const BASKET_ICONS = {
@@ -1626,7 +1632,7 @@ function basketInfo(b) {
 }
 function basketsHtml() {
   const list = basketsNow().filter(b => !b.h); if (!list.length) return ''; const dl = dlNow();
-  const cards = list.map(b => { const i = basketInfo(b); if (!i.n) return ''; const free = dl.free > 0 && i.total >= dl.free && dl.zones.some(z => z.fee > 0);
+  const cards = list.map(b => { const i = basketInfo(b); if (!i.n) return ''; const fa = freeAt(S.meta.zone); const free = fa > 0 && i.total >= fa && dl.zones.some(z => z.fee > 0);
     return '<div class="bcard"><div class="bhead"><span class="bic">' + bIcon(b.ic) + '</span><b>' + esc(b.n) + '</b></div><span class="bdesc">' + esc(b.d || '') + '</span><div class="bfoot"><span class="bmeta">' + i.n + ' item' + (i.n === 1 ? '' : 's') + (free ? ' &middot; <em>Free delivery</em>' : '') + '</span><span class="bprice num">' + fmtRp(i.total) + '</span></div><div class="bbtns"><button type="button" class="btn ghost sm" data-act="basketview" data-id="' + esc(b.id) + '">View basket</button><button type="button" class="btn sm" data-act="basketadd" data-id="' + esc(b.id) + '">Add to order</button></div></div>'; }).join('');
   const nCards = (cards.match(/class="bcard"/g) || []).length;
   return cards ? '<div class="baskets"><h3 class="feath">Ready-made baskets</h3><div class="brow">' + cards + '</div>' + (nCards > 1 ? '<div class="bdots">' + Array.from({ length: nCards }, (_, n) => '<button type="button" class="bdot' + (n ? '' : ' on') + '" data-act="bdot" data-bi="' + n + '" aria-label="Basket ' + (n + 1) + ' of ' + nCards + '"></button>').join('') + '</div>' : '') + '</div>' : '';
@@ -1693,7 +1699,7 @@ const delLine = c => c.feeKnown ? (c.free || c.fee === 0 ? 'Free' : fmtRp(c.fee)
 function dlNote(c) {
   const dl = dlNow(); if (!c.zone) return 'Choose your area to see the delivery fee.';
   if (c.zone === '__other' || !c.feeKnown) return 'We will confirm the delivery fee for your area by message.';
-  if (c.free) return 'Free delivery. Your order is over ' + fmtRp(dl.free) + '.';
+  if (c.free) return 'Free delivery. Your order is over ' + fmtRp(freeAt(c.zone)) + '.';
   if (c.fee === 0) return 'Free delivery to your area.';
   return 'Delivery to your area: ' + fmtRp(c.fee) + (c.toFree > 0 ? '. Add ' + fmtRp(c.toFree) + ' more for free delivery.' : '.');
 }
@@ -1708,19 +1714,19 @@ const minGap = c => { const dl = dlNow(); return cmode && dl.min > 0 && c.count 
 function goalOf(c) {
   const dl = dlNow(); if (!cmode || !c.total) return null; const g = minGap(c);
   if (g > 0) return { t: fmtRp(g) + ' to the minimum order', p: c.total / dl.min, k: 'min' };
-  if (dl.free > 0 && dl.zones.some(z => z.fee > 0)) return c.total >= dl.free ? { t: 'Free delivery unlocked', p: 1, k: 'ok' } : (dl.free - c.total <= NEAR_FREE ? { t: 'Only ' + fmtRp(dl.free - c.total) + ' more for free delivery', p: c.total / dl.free, k: 'near' } : { t: fmtRp(dl.free - c.total) + ' to free delivery', p: c.total / dl.free, k: 'free' });
+  const fa = freeAt(c.zone); if (fa > 0 && dl.zones.some(z => z.fee > 0)) return c.total >= fa ? { t: 'Free delivery unlocked', p: 1, k: 'ok' } : (fa - c.total <= NEAR_FREE ? { t: 'Only ' + fmtRp(fa - c.total) + ' more for free delivery', p: c.total / fa, k: 'near' } : { t: fmtRp(fa - c.total) + ' to free delivery', p: c.total / fa, k: 'free' });
   return null;
 }
 const FD_TRUCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6.5h11.5v9.5H2.5z"/><path d="M14 9.5h4l3.5 3.6V16H14"/><circle cx="7" cy="17.5" r="1.9"/><circle cx="17.5" cy="17.5" r="1.9"/></svg>';
 function freeNudge(c) {
   const dl = dlNow(); const mg = minGap(c);
   if (mg > 0) return '<div class="fdel warn"><span>Minimum order is <b>' + fmtRp(dl.min) + '</b>.<br>Add <b>' + fmtRp(mg) + '</b> more to send it.</span><i><u style="width:' + Math.round(c.total / dl.min * 100) + '%"></u></i></div>';
-  if (!cmode || !dl.free || !c.total || !dl.zones.some(z => z.fee > 0)) return '';
+  const fa = freeAt(c.zone); if (!cmode || !fa || !c.total || !dl.zones.some(z => z.fee > 0)) return '';
   if (c.zone && c.feeKnown && c.fee === 0 && !c.free) return '';
-  if (c.total >= dl.free) return '<div class="fdel ok"><span><b>Free delivery unlocked.</b> Your delivery is on us.</span></div>';
-  const gap = dl.free - c.total;
-  if (gap <= NEAR_FREE) { const br = bridgeItems(gap); return '<div class="fdel near"><span class="fdt">' + FD_TRUCK + '<span><b>Only ' + fmtRp(gap) + ' more</b> and delivery is free.</span></span><i><u style="width:' + Math.round(c.total / dl.free * 100) + '%"></u></i>' + (br.length ? '<div class="bridge"><small>Add something you like:</small>' + br.map(x => '<button type="button" data-act="addq" data-key="' + esc(x.k) + '" data-q="' + x.q + '">+ ' + esc(x.it.n) + ' <em>' + fmtRp(x.add) + '</em></button>').join('') + '</div>' : '') + '</div>'; }
-  return '<div class="fdel"><span class="fdt">' + FD_TRUCK + '<span>Add <b>' + fmtRp(gap) + '</b> more for free delivery</span></span><i><u style="width:' + Math.round(c.total / dl.free * 100) + '%"></u></i></div>';
+  if (c.total >= fa) return '<div class="fdel ok"><span><b>Free delivery unlocked.</b> Your delivery is on us.</span></div>';
+  const gap = fa - c.total;
+  if (gap <= NEAR_FREE) { const br = bridgeItems(gap); return '<div class="fdel near"><span class="fdt">' + FD_TRUCK + '<span><b>Only ' + fmtRp(gap) + ' more</b> and delivery is free.</span></span><i><u style="width:' + Math.round(c.total / fa * 100) + '%"></u></i>' + (br.length ? '<div class="bridge"><small>Add something you like:</small>' + br.map(x => '<button type="button" data-act="addq" data-key="' + esc(x.k) + '" data-q="' + x.q + '">+ ' + esc(x.it.n) + ' <em>' + fmtRp(x.add) + '</em></button>').join('') + '</div>' : '') + '</div>'; }
+  return '<div class="fdel"><span class="fdt">' + FD_TRUCK + '<span>Add <b>' + fmtRp(gap) + '</b> more for free delivery</span></span><i><u style="width:' + Math.round(c.total / fa * 100) + '%"></u></i></div>';
 }
 const SUP_HUES = [275, 28, 178, 330, 48, 205, 120, 8];
 function hsl2rgb(h, s, l) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), g = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return [Math.round(255 * g(0)), Math.round(255 * g(8)), Math.round(255 * g(4))]; }
@@ -1777,7 +1783,7 @@ function compute(state, mode) {
   if (mode === 'sell' && (zone || +m.fee > 0)) {
     const dl = dlNow();
     if (m.fee !== undefined) { if (m.fee === null) feeKnown = false; else { fee = +m.fee || 0; if (fee === 0) free = true; } }
-    else { const z = zone === '__other' ? null : dl.zones.find(x => x.n === zone); if (!z || z.fee == null) feeKnown = false; else { fee = z.fee; if (dl.free > 0 && total >= dl.free) { fee = 0; free = true; } else if (dl.free > 0 && fee > 0) toFree = dl.free - total; } }
+    else { const z = zone === '__other' ? null : dl.zones.find(x => x.n === zone); if (!z || z.fee == null) feeKnown = false; else { fee = z.fee; const fa = freeAt(zone); if (fa > 0 && total >= fa) { fee = 0; free = true; } else if (fa > 0 && fee > 0) toFree = fa - total; } }
     if (feeKnown && !free && fee > 0 && m.fee === undefined && m.dcode && !codeWhy(m.dcode, total)) { const cd = codeFind(m.dcode); const nf = codeFee(cd, fee); codeSaved = fee - nf; fee = nf; codeUsed = cd.c; codeText = codeWhat(cd); toFree = 0; if (fee === 0) free = true; }
   }
   return { groups: list, total, unpriced, w, v, noMeasure, kgQty, unitQty, count, warnings, out, fee, feeKnown, free, toFree, zone, codeUsed, codeSaved, codeText, grand: total + fee };
@@ -2102,7 +2108,7 @@ window.addEventListener('resize', () => document.querySelectorAll('.brow').forEa
 function chipsFade() { const c = document.getElementById('supChips'); if (c) c.classList.toggle('at-end', c.scrollLeft + c.clientWidth >= c.scrollWidth - 2); }
 function dlParts() {
   const dl = dlNow(); const fees = dl.zones.map(z => z.fee).filter(x => x != null); const parts = [];
-  if (cmode && dl.zones.length) { if (fees.length) parts.push('Delivery ' + (Math.min(...fees) === Math.max(...fees) ? fmtRp(fees[0]) : 'starting from ' + fmtRp(Math.min(...fees))) + (fees.length > 1 ? ', depending on your area.' : '.')); if (dl.free) parts.push('<b>Free on orders over ' + fmtRp(dl.free) + '.</b>'); if (dl.min) parts.push('Minimum order ' + fmtRp(dl.min) + '.'); }
+  if (cmode && dl.zones.length) { if (fees.length) parts.push('Delivery ' + (Math.min(...fees) === Math.max(...fees) ? fmtRp(fees[0]) : 'starting from ' + fmtRp(Math.min(...fees))) + (fees.length > 1 ? ', depending on your area.' : '.')); if (freeCopy()) parts.push('<b>' + freeCopy() + '</b>'); if (dl.min) parts.push('Minimum order ' + fmtRp(dl.min) + '.'); }
   return parts;
 }
 function setListMode(m) {
@@ -3085,7 +3091,7 @@ function renderLedger() {
     '<div class="field"><label for="la-price">Price (Rp)</label><input id="la-price" inputmode="numeric" placeholder="empty = ask for price"></div></div>' +
     '<div class="actions duo"><button class="btn" data-act="lsave">Add product</button><button class="btn ghost" data-act="ladd">Cancel</button></div></div>' : '';
   const photoCardHtml = photoCard();
-  const dlc = dlNow(); const dayRow = (x, i) => '<div class="dayrow"><input type="date" data-dd="' + i + '|d" value="' + esc(x.d) + '" aria-label="Date"' + (canWrite ? '' : ' disabled') + '><input data-dd="' + i + '|n" value="' + esc(x.n || '') + '" placeholder="Reason, e.g. Nyepi" aria-label="Reason"' + (canWrite ? '' : ' disabled') + '><button type="button" class="x" data-act="ddel" data-i="' + i + '" aria-label="Remove day off"' + (canWrite ? '' : ' disabled') + '>&times;</button></div>'; const dzRow = (z, i) => '<div class="dzrow"><input data-dz="' + i + '|n" value="' + esc(z.n) + '" placeholder="Area" aria-label="Area name"' + (canWrite ? '' : ' disabled') + '><span class="lpr">Rp <input data-dz="' + i + '|f" inputmode="numeric" value="' + (z.fee == null ? '' : z.fee) + '" placeholder="ask" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span><button type="button" class="x" data-act="dzdel" data-i="' + i + '" aria-label="Remove area"' + (canWrite ? '' : ' disabled') + '>&times;</button></div>';
+  const dlc = dlNow(); const dayRow = (x, i) => '<div class="dayrow"><input type="date" data-dd="' + i + '|d" value="' + esc(x.d) + '" aria-label="Date"' + (canWrite ? '' : ' disabled') + '><input data-dd="' + i + '|n" value="' + esc(x.n || '') + '" placeholder="Reason, e.g. Nyepi" aria-label="Reason"' + (canWrite ? '' : ' disabled') + '><button type="button" class="x" data-act="ddel" data-i="' + i + '" aria-label="Remove day off"' + (canWrite ? '' : ' disabled') + '>&times;</button></div>'; const dzRow = (z, i) => '<div class="dzrow"><input data-dz="' + i + '|n" value="' + esc(z.n) + '" placeholder="Area" aria-label="Area name"' + (canWrite ? '' : ' disabled') + '><span class="lpr">Rp <input data-dz="' + i + '|f" inputmode="numeric" value="' + (z.fee == null ? '' : z.fee) + '" placeholder="ask" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span><span class="lpr dzfree"><small>Free over</small> Rp <input data-dz="' + i + '|fr" inputmode="numeric" value="' + (z.free === undefined || z.free === null || z.free === '' ? '' : z.free) + '" placeholder="default" aria-label="Free delivery over, for this area"' + (canWrite ? '' : ' disabled') + '></span><button type="button" class="x" data-act="dzdel" data-i="' + i + '" aria-label="Remove area"' + (canWrite ? '' : ' disabled') + '>&times;</button></div>';
   const cdSum = x => { const todayIso = isoOf(baliNow()); const what = x.t === 'free' ? 'Free delivery' : x.t === 'pct' ? (x.v ? fmtQty(x.v) + '% off the delivery fee' : '% off the delivery fee') : (x.v ? fmtRp(x.v) + ' off the delivery fee' : 'Rp off the delivery fee'); const on = x.min ? 'orders from ' + fmtRp(x.min) : 'any order size'; const end = x.until ? (x.until < todayIso ? 'ended ' + fmtDate(x.until) : 'until ' + fmtDate(x.until)) : 'no end date'; const st = !x.on ? ['Paused', 'off'] : (x.until && x.until < todayIso) ? ['Ended', 'ended'] : ['Active', 'on']; return { line: what + ' - ' + on + ' - ' + end, chip: st }; };
   const cdRow = (x, i) => { const dis = canWrite ? '' : ' disabled'; const s = cdSum(x); const open = (ui.cdNew && i === dlc.codes.length) || !!(ui.cdOpen && ui.cdOpen[i]);
     const bar = '<div class="cdbar"><button type="button" class="cdhead" data-act="cdtog" data-i="' + i + '" aria-expanded="' + open + '"><span class="cdtitle"><span class="cdname">' + (x.c ? esc(x.c) : 'New code') + '</span>' + (x.c ? '<span class="cdchip ' + s.chip[1] + '">' + s.chip[0] + '</span>' : '') + '</span><span class="cdline">' + (x.c ? esc(s.line) : 'Give it a name below') + '</span>' + LB_CHEV + '</button><label class="cdsw" title="Turn this code on or off"><input type="checkbox" class="sr" data-cd="' + i + '|on" aria-label="Code is on"' + (x.on ? ' checked' : '') + dis + '><span class="cdsw-off">Off</span><span class="cdsw-on">On</span></label></div>';
@@ -3099,7 +3105,7 @@ function renderLedger() {
   const dlOpen = cardOpen('dlCard'); const dlSum = dlc.zones.length + ' area' + (dlc.zones.length === 1 ? '' : 's') + (dlc.min ? ' - minimum ' + fmtRp(dlc.min) : '') + (dlc.free ? ' - free over ' + fmtRp(dlc.free) : '') + (dlc.cutoff ? ' - cutoff ' + cutLabel(dlc.cutoff) : '');
   const dlCardOpen = '<div class="card" id="dlCard">' + cardHead('dlCard', 'Delivery', true) + '<p class="hint" style="margin-bottom:12px">Customers pick their area and see the delivery fee straight away, before they send. Leave a fee empty to confirm it by message. With no areas listed, no delivery fee is shown.</p>' +
     '<section class="lsec"><div class="lsec-h"><b>Order limits</b><span>Smallest order and free delivery</span></div>' +
-    '<div class="grid2"><div class="field"><label for="dl-min">Smallest order we accept (Rp)</label><input id="dl-min" inputmode="numeric" value="' + (dlc.min || '') + '" placeholder="e.g. 200.000"' + (canWrite ? '' : ' disabled') + '></div><div class="field"><label for="dl-free">Free delivery on orders over (Rp)</label><input id="dl-free" inputmode="numeric" value="' + (dlc.free || '') + '" placeholder="e.g. 600.000"' + (canWrite ? '' : ' disabled') + '></div></div><p class="hint" style="margin:-2px 0 14px">Leave a box empty to switch it off: no minimum, or delivery is never free.</p></section>' +
+    '<div class="grid2"><div class="field"><label for="dl-min">Smallest order we accept (Rp)</label><input id="dl-min" inputmode="numeric" value="' + (dlc.min || '') + '" placeholder="e.g. 200.000"' + (canWrite ? '' : ' disabled') + '></div><div class="field"><label for="dl-free">Free delivery over (Rp), default for every area</label><input id="dl-free" inputmode="numeric" value="' + (dlc.free || '') + '" placeholder="e.g. 600.000"' + (canWrite ? '' : ' disabled') + '></div></div><p class="hint" style="margin:-2px 0 14px">Leave a box empty to switch it off: no minimum, or delivery is never free.</p></section>' +
     '<section class="lsec"><div class="lsec-h"><b>Order cutoff</b><span>The latest time to order for the next day</span></div>' +
     '<div class="grid2" style="grid-template-columns:minmax(0,1fr)"><div class="field"><label for="dl-cut">Orders accepted until</label><select id="dl-cut"' + (canWrite ? '' : ' disabled') + '><option value="0">No cutoff</option>' + [12, 14, 15, 16, 16.5, 17, 18, 19, 20, 21].map(h => '<option value="' + h + '"' + (dlc.cutoff === h ? ' selected' : '') + '>Before ' + cutLabel(h) + '</option>').join('') + '</select></div></div><p class="hint" style="margin:-2px 0 14px">Orders placed after the cutoff are delivered from the day after tomorrow.</p></section>' +
     '<section class="lsec"><div class="lsec-h"><b>Days off</b><span>Days when we do not deliver</span></div>' + dlc.closed.map(dayRow).join('') + (ui.ddNew ? dayRow({ d: '', n: '' }, dlc.closed.length) : '') + '<div class="actions full" style="margin:2px 0 0"><button type="button" class="btn ghost" data-act="dadd"' + (canWrite ? '' : ' disabled') + '>Add a day off</button></div></section>' +
@@ -3134,7 +3140,7 @@ function renderLedger() {
 }
 function saveDlFromDom() {
   if (!canWrite) return; const num = id => parseInt(String((document.getElementById(id) || {}).value || '').replace(/\D/g, ''), 10) || 0; const old = dlNow(); const rows = {}, closed = [];
-  document.querySelectorAll('.dzrow').forEach(r => { const n = r.querySelector('[data-dz$="|n"]'); const i = parseInt(n.dataset.dz, 10); const fv = r.querySelector('[data-dz$="|f"]').value.replace(/\D/g, ''); rows[i] = { n: n.value.trim().slice(0, 60), fee: fv === '' ? null : parseInt(fv, 10) }; });
+  document.querySelectorAll('.dzrow').forEach(r => { const n = r.querySelector('[data-dz$="|n"]'); const i = parseInt(n.dataset.dz, 10); const fv = r.querySelector('[data-dz$="|f"]').value.replace(/\D/g, ''); const frEl = r.querySelector('[data-dz$="|fr"]'); const frv = frEl ? frEl.value.replace(/\D/g, '') : ''; rows[i] = { n: n.value.trim().slice(0, 60), fee: fv === '' ? null : parseInt(fv, 10) }; if (frv !== '') rows[i].free = parseInt(frv, 10); });
   const total = Math.max(old.zones.length, ...Object.keys(rows).map(k => +k + 1), 0); const zones = [];
   for (let i = 0; i < total; i++) { const z = rows[i] !== undefined ? rows[i] : old.zones[i]; if (z && z.n) zones.push(z); }
   document.querySelectorAll('.dayrow').forEach(r => { const d = r.querySelector('[data-dd$="|d"]').value; const n = r.querySelector('[data-dd$="|n"]').value.trim().slice(0, 40); if (/^\d{4}-\d{2}-\d{2}$/.test(d)) closed.push({ d, n }); });
@@ -3462,7 +3468,7 @@ function sentBox() { let el = document.getElementById('sentWrap'); if (!el) { el
 function termsHtml() {
   const dl = dlNow(), hw = hostWA || LS.get('mumu-hostwa') || '';
   const cutoff = dl.cutoff ? ' Order by ' + cutLabel(dl.cutoff) + ' for delivery the next morning. Orders placed later are delivered the morning after.' : '';
-  const money = (dl.min ? ' The minimum order is ' + fmtRp(dl.min) + '.' : '') + (dl.free ? ' Delivery is free on orders over ' + fmtRp(dl.free) + '.' : '');
+  const money = (dl.min ? ' The minimum order is ' + fmtRp(dl.min) + '.' : '') + (freeCopy() ? ' Delivery is f' + freeCopy().slice(1) : '');
   const sec = (h, b) => '<div class="tsec"><b>' + h + '</b><span>' + b + '</span></div>';
   return '<div class="sentbox termsbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Privacy and order terms</h3><p class="hint">The short version, in plain words.</p><div class="tlist">' +
     sec('Your details', 'Your name, phone and address stay on your phone until you send your order. When you send it, Vurata receives it on WhatsApp and keeps it to prepare and deliver your order.') +
