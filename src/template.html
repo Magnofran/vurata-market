@@ -2860,7 +2860,7 @@ function topSellersHtml() {
 }
 function salesList() { const cut = ui.srep === 'week' ? Date.now() - 7 * 864e5 : ui.srep === 'month' ? Date.now() - 30 * 864e5 : 0; return cust.filter(c => c.status === 'delivered' && (c.dat || c.at) >= cut); }
 function custView() {
-  let l = cust.slice(); const cq = String(ui.cq || '').trim().toLowerCase().replace(/^#/, ''); if (cq) { const dg = cq.replace(/\D/g, ''); l = l.filter(c => String(orderNo(c)) === cq || String(c.name || '').toLowerCase().includes(cq) || (dg.length >= 3 && String(c.phone || '').replace(/\D/g, '').includes(dg))); }
+  let l = cust.slice(); const cq = String(ui.cq || '').trim().toLowerCase().replace(/^#/, ''); if (cq) { const dg = cq.replace(/\D/g, ''); l = l.filter(c => orderNo(c).toLowerCase() === cq || String(1000 + ordNum(c)) === dg || String(ordNum(c)) === cq || String(c.name || '').toLowerCase().includes(cq) || (dg.length >= 3 && String(c.phone || '').replace(/\D/g, '').includes(dg))); }
   if (ui.cfil === 'all' && !ui.showDel && !cq) l = l.filter(c => c.status !== 'delivered');
   if (ui.cfil !== 'all') l = l.filter(c => c.status === ui.cfil); if (ui.cunpaid) l = l.filter(c => dueOf(c) > 0);
   l.sort((a, b) => (a.need || '9999').localeCompare(b.need || '9999') || a.at - b.at); return l;
@@ -2922,7 +2922,7 @@ const runDayOf = () => ui.runDay || runToday();
 function runStops(day) {
   const t = runToday(), d = day || runDayOf(); const zi = z => { const ix = dlNow().zones.findIndex(x => x.n === z); return ix < 0 ? 999 : ix; };
   return cust.filter(c => c.status !== 'delivered' && (c.need === d || (d === t && (!c.need || c.need < t))))
-    .sort((a, b) => zi(a.zone) - zi(b.zone) || String(a.slot || '').localeCompare(String(b.slot || '')) || orderNo(a) - orderNo(b));
+    .sort((a, b) => zi(a.zone) - zi(b.zone) || String(a.slot || '').localeCompare(String(b.slot || '')) || ordNum(a) - ordNum(b));
 }
 function stopsList() { return runStops(); }
 const drvOf = c => drivers.length === 1 ? drivers[0].id : (drivers.some(d => d.id === c.drv) ? c.drv : '');
@@ -2935,7 +2935,7 @@ function driverMsg(stops, drv, day) {
   const dayTxt = id ? new Date(day + 'T12:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) : new Date(day + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   const payW = p => /cash/i.test(p || '') ? T.cash : /qris/i.test(p || '') ? T.qris : '';
   let sum = 0; const rows = stops.map((c, i) => { const due = dueOf(c); sum += due; const comp = compute(custState(c), 'sell'); const ps = packState(c, comp); const a = addrOnly(c.addr);
-    const L = ['*' + (KEYCAP[i] || (i + 1) + '.') + '  #' + orderNo(c) + ' · ' + (c.name || 'Customer') + '*'];
+    const L = ['*' + (KEYCAP[i] || (i + 1) + '.') + '  ' + orderNo(c) + ' · ' + (c.name || 'Customer') + '*'];
     if (c.zone) L.push('📍 ' + zoneLabel(c.zone)); if (a) L.push('🏠 ' + a); if (c.pin || c.addr) L.push('🗺️ ' + mapUrl(c));
     if (c.phone) L.push('📞 ' + c.phone); if (c.slot) L.push('🕗 ' + (id ? (ID_SLOT[c.slot] || c.slot) : c.slot));
     L.push('📦 ' + ps.n + ' ' + T.items + ' · ' + (ps.n && ps.done === ps.n ? '✅ ' + T.ready : '⏳ ' + ps.done + '/' + ps.n + ' ' + T.packed));
@@ -2956,7 +2956,7 @@ function driverHtml() {
   const drvMgr = '<div class="drvmgr"><span class="lgl">Drivers</span><div class="drvlist">' + drivers.map(d => '<span class="drvtag">🛵 ' + esc(d.n) + ' <small>+' + esc(d.wa) + '</small><button type="button" class="x" data-act="drvdel" data-id="' + esc(d.id) + '" aria-label="Remove ' + esc(d.n) + '"' + dis + '>&times;</button></span>').join('') +
     (ui.drvAdd ? '<span class="drvform"><input id="drvName" placeholder="Name, e.g. Wayan" autocomplete="off"><input id="drvWa" inputmode="tel" placeholder="WhatsApp, e.g. 0812 3456 7890" autocomplete="off"><button type="button" class="btn sm" data-act="drvsave">Save</button><button type="button" class="btn ghost sm" data-act="drvadd">Cancel</button></span>' : '<button type="button" class="btn ghost sm" data-act="drvadd"' + dis + '>+ Add driver</button>') + '</div></div>';
   const stops = runStops(day);
-  const pick = c => drivers.length > 1 ? '<div class="drvpick" role="group" aria-label="Driver for #' + orderNo(c) + '">' + drivers.map(d => '<button type="button" data-act="drvset" data-c="' + esc(c.id) + '" data-d="' + esc(d.id) + '" aria-pressed="' + (drvOf(c) === d.id) + '"' + dis + '>🛵 ' + esc(d.n) + '</button>').join('') + '</div>' : '';
+  const pick = c => drivers.length > 1 ? '<div class="drvpick" role="group" aria-label="Driver for ' + orderNo(c) + '">' + drivers.map(d => '<button type="button" data-act="drvset" data-c="' + esc(c.id) + '" data-d="' + esc(d.id) + '" aria-pressed="' + (drvOf(c) === d.id) + '"' + dis + '>🛵 ' + esc(d.n) + '</button>').join('') + '</div>' : '';
   const rows = stops.map(c => {
     const comp = compute(custState(c), 'sell'); const ps = packState(c, comp); const due = dueOf(c); const open = !!ui.stopOpen[c.id]; const ready = ps.n > 0 && ps.done === ps.n;
     const body = open ? '<div class="stopbody">' + ((c.pin || c.addr) ? '<a class="maplink" target="_blank" rel="noopener" href="' + mapUrl(c) + '">Open map</a>' : '') + comp.groups.map(g => g.lines.filter(ln => ln.st !== 'x').map(ln => {
@@ -2964,7 +2964,7 @@ function driverHtml() {
       return '<div class="prow"><label class="check"><input type="checkbox" data-cpk="' + esc(c.id) + '|' + esc(ln.key) + '"' + (c.pk && c.pk[ln.key] ? ' checked' : '') + dis + '><span>' + esc(nmBoth(ln.it)) + ' <small>' + fmtQty(ln.q0) + ' ' + un + ' ordered</small></span></label>' +
         (wt ? '<span class="lpr">Weighed <input data-caq="' + esc(c.id) + '|' + esc(ln.key) + '" inputmode="decimal" value="' + (aq ? fmtQty(aq) : '') + '" placeholder="' + fmtQty(ln.q0) + '"' + dis + '> ' + un + '</span>' : '') + '</div>';
     }).join('')).join('') + '<div class="actions full"><button type="button" class="btn ghost sm" data-act="packall" data-id="' + esc(c.id) + '"' + dis + '>Mark all packed</button></div></div>' : '';
-    return '<div class="stop' + (ready ? ' ready' : '') + '"><button type="button" class="stophead" data-act="stopopen" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"><span class="sh1"><b><span class="ono sm">#' + orderNo(c) + '</span> ' + esc(c.name || 'Customer') + '</b><span>' + esc([c.zone ? zoneLabel(c.zone) : '', c.slot || ''].filter(Boolean).join(' - ') || 'No area') + (c.need && c.need < t0 ? ' · overdue' : '') + '</span></span><span class="sh2"><em class="packpill' + (ready ? ' ok' : '') + '">' + (ready ? 'Packed' : ps.done + '/' + ps.n + ' packed') + '</em><span class="num">' + (due > 0 ? 'Collect ' + fmtRp(due) : 'Paid') + '</span></span></button>' + pick(c) + body + '</div>';
+    return '<div class="stop' + (ready ? ' ready' : '') + '"><button type="button" class="stophead" data-act="stopopen" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"><span class="sh1"><b><span class="ono sm">' + orderNo(c) + '</span> ' + esc(c.name || 'Customer') + '</b><span>' + esc([c.zone ? zoneLabel(c.zone) : '', c.slot || ''].filter(Boolean).join(' - ') || 'No area') + (c.need && c.need < t0 ? ' · overdue' : '') + '</span></span><span class="sh2"><em class="packpill' + (ready ? ' ok' : '') + '">' + (ready ? 'Packed' : ps.done + '/' + ps.n + ' packed') + '</em><span class="num">' + (due > 0 ? 'Collect ' + fmtRp(due) : 'Paid') + '</span></span></button>' + pick(c) + body + '</div>';
   }).join('');
   const lang = '<span class="seg" role="group" aria-label="Driver message language"><button type="button" data-act="dlang" data-l="id" aria-pressed="' + ((ui.dlang || 'id') === 'id') + '">Bahasa</button><button type="button" data-act="dlang" data-l="en" aria-pressed="' + (ui.dlang === 'en') + '">English</button></span>';
   const msgCard = (key, drv, list) => { const t = driverMsg(list, drv, day); const sum = list.reduce((s, c) => s + dueOf(c), 0); const tid = 'drvTxt-' + key; const wa = drv && drv.wa ? 'https://wa.me/' + drv.wa + '?text=' + encodeURIComponent(t) : 'https://wa.me/?text=' + encodeURIComponent(t);
@@ -2982,7 +2982,9 @@ function driverHtml() {
       '<div class="msg-head" style="margin-top:16px"><span class="lgl" style="margin:0">Driver messages</span>' + lang + '</div><div class="drvmsgs">' + msgs + '</div>'
       : '<p class="hint" style="margin-top:12px">No deliveries for this day.</p>') + '</div>';
 }
-function orderNo(c) { if (c.no) return c.no; const un = cust.filter(x => !x.no).sort((a, b) => (a.at || 0) - (b.at || 0)); return un.findIndex(x => x.id === c.id) + 1; }
+function ordNum(c) { if (c.no) return c.no; const un = cust.filter(x => !x.no).sort((a, b) => (a.at || 0) - (b.at || 0)); return un.findIndex(x => x.id === c.id) + 1; }
+/* Shown order number: brand prefix, starting at VM-1001. The stored number stays a plain sequence. */
+const orderNo = c => 'VM-' + (1000 + ordNum(c));
 const cardDefault = id => id === 'inviteCard' ? (!cust.length || !myWA) : id === 'dlCard' ? !dlNow().zones.length : false;
 const cardOpen = id => (ui.cardOpen && ui.cardOpen[id] !== undefined) ? ui.cardOpen[id] : cardDefault(id);
 /* Collapsible Ledger panels: one bordered container per topic, header always shows the title and a live summary. */
@@ -3002,7 +3004,7 @@ function ccardHead(c, comp, date) {
     ['Order', comp.count + ' line' + (comp.count === 1 ? '' : 's') + ' &middot; received ' + esc(date)]
   ].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('');
   const ret = c.phone && cust.filter(x => digitsOf(x.phone) === digitsOf(c.phone)).length > 1;
-  return '<div class="ccard' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(c.status || 'new') + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono" title="Order number">#' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.ed ? '<span class="edpill" title="Details changed after the order arrived">Edited</span>' : '') + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div>' + (ui.cedit && ui.cedit[c.id] ? ceditHtml(c) : '<dl class="cinfo">' + rows + '</dl>') + (canWrite ? '<button type="button" class="edbtn" data-act="cedit" data-id="' + esc(c.id) + '" aria-expanded="' + !!(ui.cedit && ui.cedit[c.id]) + '">' + (ui.cedit && ui.cedit[c.id] ? '✓ Done editing' : '✏️ Edit details') + '</button>' : '') + '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label>';
+  return '<div class="ccard' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(c.status || 'new') + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono" title="Order number">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.ed ? '<span class="edpill" title="Details changed after the order arrived">Edited</span>' : '') + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div>' + (ui.cedit && ui.cedit[c.id] ? ceditHtml(c) : '<dl class="cinfo">' + rows + '</dl>') + (canWrite ? '<button type="button" class="edbtn" data-act="cedit" data-id="' + esc(c.id) + '" aria-expanded="' + !!(ui.cedit && ui.cedit[c.id]) + '">' + (ui.cedit && ui.cedit[c.id] ? '✓ Done editing' : '✏️ Edit details') + '</button>' : '') + '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label>';
 }
 /* Staff can correct anything the customer typed. Order number and received date stay as they arrived. */
 const SLOTS = ['', 'Morning (8 to 12)', 'Afternoon (12 to 4)', 'Evening (4 to 7)'];
@@ -3119,7 +3121,7 @@ function payLines(c, comp) { const p = c.pay || '';
   return p ? ['💳 Payment: ' + p] : []; }
 function billText(c, comp) {
   const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const f = (c.name || 'there').split(' ')[0];
-  const out = ['Hi ' + f + ', thank you for your order #' + orderNo(c) + '! ✅', fin ? 'Here is your final bill, with the packed weights.' : 'We have checked stock. Here is your confirmed bill.'];
+  const out = ['Hi ' + f + ', thank you for your order ' + orderNo(c) + '! ✅', fin ? 'Here is your final bill, with the packed weights.' : 'We have checked stock. Here is your confirmed bill.'];
   const secs = {}; comp.groups.forEach(g => g.lines.forEach(ln => { const d = ln.it.d || ln.it.s; (secs[d] = secs[d] || []).push(ln); }));
   Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + ((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true))); });
   out.push('');
@@ -3186,7 +3188,7 @@ function renderCustomers() {
       paySelect(c) + '</div><div class="cctrl"><label class="check"><input type="checkbox" data-cpaid="' + esc(c.id) + '"' + (c.paid ? ' checked' : '') + '> Paid</label><label class="check"><input type="checkbox" data-cinc="' + esc(c.id) + '"' + (c.inc !== false ? ' checked' : '') + '> In combined order</label></div>' +
       payRow(c) + cmdBar(c, open) + det + '</div>';
   }).join('');
-  const list = '<div class="card" id="custList"><h3>Customers' + (cust.length ? ' (' + cust.length + ')' : '') + '</h3>' + (cust.length ? '<div class="lseg" role="group" aria-label="Filter customers">' + [['all', 'All'], ['new', 'New'], ['ordered', 'Ordered'], ['delivered', 'Delivered']].map(x => '<button type="button" data-act="cfil" data-k="' + x[0] + '" aria-pressed="' + (ui.cfil === x[0]) + '">' + x[1] + ' <small>' + (x[0] === 'all' ? cust.length : cust.filter(c => c.status === x[0]).length) + '</small></button>').join('') + '</div><div class="search" style="margin-top:12px"><input id="cq" type="search" placeholder="Find by name, phone or #3" value="' + esc(ui.cq || '') + '" autocomplete="off" aria-label="Find a customer"></div><label class="check" style="margin:10px 0 12px"><input type="checkbox" id="unpaidOnly"' + (ui.cunpaid ? ' checked' : '') + '> Unpaid only</label>' + (ui.cfil === 'all' && !String(ui.cq || '').trim() && cust.some(c => c.status === 'delivered') ? '<button type="button" class="linkbtn delrow" data-act="deltog" aria-expanded="' + !!ui.showDel + '">' + (ui.showDel ? 'Hide delivered orders' : 'Show ' + cust.filter(c => c.status === 'delivered').length + ' delivered order' + (cust.filter(c => c.status === 'delivered').length === 1 ? '' : 's')) + '</button>' : '') : '') + (cust.some(c => c.demo) ? '<div class="hdel" style="margin-bottom:10px"><button type="button" class="linkbtn" data-act="rmdemo">' + (ui.demoAsk ? 'Tap again to remove all demo orders' : 'Remove demo orders') + '</button></div>' : '') + (rows ? '<div class="hist custgrid">' + rows + '</div>' : (cust.length ? '<p class="hint">No orders match your search or filter.</p>' : '') + '<p class="hint"' + (cust.length ? ' hidden' : '') + '>Imported orders show up here, each with its own bill you can edit and send back.</p>') + binHtml() + '</div>';
+  const list = '<div class="card" id="custList"><h3>Customers' + (cust.length ? ' (' + cust.length + ')' : '') + '</h3>' + (cust.length ? '<div class="lseg" role="group" aria-label="Filter customers">' + [['all', 'All'], ['new', 'New'], ['ordered', 'Ordered'], ['delivered', 'Delivered']].map(x => '<button type="button" data-act="cfil" data-k="' + x[0] + '" aria-pressed="' + (ui.cfil === x[0]) + '">' + x[1] + ' <small>' + (x[0] === 'all' ? cust.length : cust.filter(c => c.status === x[0]).length) + '</small></button>').join('') + '</div><div class="search" style="margin-top:12px"><input id="cq" type="search" placeholder="Find by name, phone or VM-1003" value="' + esc(ui.cq || '') + '" autocomplete="off" aria-label="Find a customer"></div><label class="check" style="margin:10px 0 12px"><input type="checkbox" id="unpaidOnly"' + (ui.cunpaid ? ' checked' : '') + '> Unpaid only</label>' + (ui.cfil === 'all' && !String(ui.cq || '').trim() && cust.some(c => c.status === 'delivered') ? '<button type="button" class="linkbtn delrow" data-act="deltog" aria-expanded="' + !!ui.showDel + '">' + (ui.showDel ? 'Hide delivered orders' : 'Show ' + cust.filter(c => c.status === 'delivered').length + ' delivered order' + (cust.filter(c => c.status === 'delivered').length === 1 ? '' : 's')) + '</button>' : '') : '') + (cust.some(c => c.demo) ? '<div class="hdel" style="margin-bottom:10px"><button type="button" class="linkbtn" data-act="rmdemo">' + (ui.demoAsk ? 'Tap again to remove all demo orders' : 'Remove demo orders') + '</button></div>' : '') + (rows ? '<div class="hist custgrid">' + rows + '</div>' : (cust.length ? '<p class="hint">No orders match your search or filter.</p>' : '') + '<p class="hint"' + (cust.length ? ' hidden' : '') + '>Imported orders show up here, each with its own bill you can edit and send back.</p>') + binHtml() + '</div>';
   let comb = '';
   if (cust.length) {
     const cb = combinedData(); const cc = compute(cb.state, 'cost');
@@ -3235,13 +3237,13 @@ async function importCodes(text) {
   renderCustomers(); updateCBadge();
   if (ok) { const el = document.querySelector('.ccard[data-cid="' + newId + '"]'); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => { el.classList.remove('flash'); ui.flash = ''; }, 2600); } }
   const impMsg = (ok ? 'Imported ' + ok + ' order' + (ok > 1 ? 's' : '') : 'Nothing imported') + (dup ? ', ' + dup + ' already there' : '') + (bad ? ', ' + bad + ' not readable' : '') + '.';
-  if (ok === 1 && newRec && digitsOf(newRec.phone)) { const first = (newRec.name || 'there').split(' ')[0]; const tot = compute(custState(newRec), 'sell').grand; const ack = 'Hi ' + first + ', thank you! We received your order #' + orderNo(newRec) + ' (' + fmtRp(tot) + '). We will confirm availability and message you shortly.'; toast(impMsg, { label: 'Reply to ' + first, fn: () => window.open('https://wa.me/' + digitsOf(newRec.phone) + '?text=' + encodeURIComponent(ack), '_blank', 'noopener') }); }
+  if (ok === 1 && newRec && digitsOf(newRec.phone)) { const first = (newRec.name || 'there').split(' ')[0]; const tot = compute(custState(newRec), 'sell').grand; const ack = 'Hi ' + first + ', thank you! We received your order ' + orderNo(newRec) + ' (' + fmtRp(tot) + '). We will confirm availability and message you shortly.'; toast(impMsg, { label: 'Reply to ' + first, fn: () => window.open('https://wa.me/' + digitsOf(newRec.phone) + '?text=' + encodeURIComponent(ack), '_blank', 'noopener') }); }
   else toast(impMsg);
 }
 function offerStatusMsg(id, st) {
   const c = cust.find(x => x.id === id); if (!c || !digitsOf(c.phone) || st === 'new') return; const first = (c.name || 'there').split(' ')[0]; const due = dueOf(c);
-  const msg = st === 'ordered' ? 'Hi ' + first + ', your order #' + orderNo(c) + ' is confirmed and is being prepared. We will message you when it is on its way.'
-    : 'Hi ' + first + ', your order #' + orderNo(c) + ' has been delivered. Thank you!' + (due > 0 ? ' The balance of ' + fmtRp(due) + ' is still open.' : '');
+  const msg = st === 'ordered' ? 'Hi ' + first + ', your order ' + orderNo(c) + ' is confirmed and is being prepared. We will message you when it is on its way.'
+    : 'Hi ' + first + ', your order ' + orderNo(c) + ' has been delivered. Thank you!' + (due > 0 ? ' The balance of ' + fmtRp(due) + ' is still open.' : '');
   setTimeout(() => toast('Let ' + first + ' know?', { label: 'Message on WhatsApp', fn: () => window.open('https://wa.me/' + digitsOf(c.phone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener') }), 350);
 }
 const CMSG = [
@@ -3255,11 +3257,11 @@ function custMsgTxt(c, kind) { const f = (c.name || 'there').split(' ')[0]; cons
   const gone = removedLines(c).map(r => nm(r.it).m); const pl = payLines(c, comp);
   return ({
     bill: billText(c, comp),
-    oos: 'Hi ' + f + ', a quick update on order #' + n + '.\n' + (gone.length ? 'Not available today: ' + gone.join(', ') + '.' : 'One of your items is not available today.') + '\n\nWould you like a replacement, or shall we leave it out?',
-    eta: 'Hi ' + f + ', good news! 🛵\nYour order #' + n + ' is on its way and should arrive soon.' + (comp.grand && !c.paid && /cash/i.test(c.pay || '') ? '\n\nPlease have ' + tot + ' ready for the driver.' : ''),
-    late: 'Hi ' + f + ', a quick note on order #' + n + '.\nWe are running a little late today.\n\nThank you for your patience!',
-    done: 'Hi ' + f + ', your order #' + n + ' has been delivered. 🙏\nThank you for ordering with Vurata Market.\n\nSee you next time!',
-    pay: 'Hi ' + f + ', a friendly reminder for order #' + n + '.\nTotal: ' + tot + (+c.dep > 0 ? ' (balance ' + fmtRp(Math.max(0, comp.grand - c.dep)) + ')' : '') + (pl.length ? '\n\n' + pl.join('\n') : '') + '\n\nThank you!'
+    oos: 'Hi ' + f + ', a quick update on order ' + n + '.\n' + (gone.length ? 'Not available today: ' + gone.join(', ') + '.' : 'One of your items is not available today.') + '\n\nWould you like a replacement, or shall we leave it out?',
+    eta: 'Hi ' + f + ', good news! 🛵\nYour order ' + n + ' is on its way and should arrive soon.' + (comp.grand && !c.paid && /cash/i.test(c.pay || '') ? '\n\nPlease have ' + tot + ' ready for the driver.' : ''),
+    late: 'Hi ' + f + ', a quick note on order ' + n + '.\nWe are running a little late today.\n\nThank you for your patience!',
+    done: 'Hi ' + f + ', your order ' + n + ' has been delivered. 🙏\nThank you for ordering with Vurata Market.\n\nSee you next time!',
+    pay: 'Hi ' + f + ', a friendly reminder for order ' + n + '.\nTotal: ' + tot + (+c.dep > 0 ? ' (balance ' + fmtRp(Math.max(0, comp.grand - c.dep)) + ')' : '') + (pl.length ? '\n\n' + pl.join('\n') : '') + '\n\nThank you!'
   })[kind] || ''; }const ICO_MSG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z"/><path d="M9 10h6M9 13.5h4"/></svg>';
 const ICO_BILL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>';
 /* Lines staff took down to zero: still listed (faded, Rp 0) so they can be brought back in one tap */
@@ -3780,7 +3782,7 @@ document.addEventListener('click', e => {
   else if (act === 'additem') { ui.addFor = ui.addFor === b.dataset.id ? '' : b.dataset.id; ui.addQ = ''; renderCustomers(); if (ui.addFor) { const i = document.getElementById('addq'); if (i) i.focus(); } }
   else if (act === 'addpick') { const c = cust.find(x => x.id === b.dataset.id); const k = b.dataset.key; const p = k.split('|'); const it = BY_ID[p[0]]; const o = it && it.o[+p[1]]; if (!c || !o) return;
     const cur = (c.lines[k] && c.lines[k].q) || 0; const q = cur > 0 ? Math.round((cur + (o.st || 1)) * 100) / 100 : (o.mn || o.st || 1);
-    updCust(c.id, { lines: { [k]: { q, n: (c.lines[k] && c.lines[k].n) || '' } } }); toast('Added ' + nm(it).m + ' to #' + orderNo(c) + '.'); const i = document.getElementById('addq'); if (i) i.focus(); }
+    updCust(c.id, { lines: { [k]: { q, n: (c.lines[k] && c.lines[k].n) || '' } } }); toast('Added ' + nm(it).m + ' to ' + orderNo(c) + '.'); const i = document.getElementById('addq'); if (i) i.focus(); }
   else if (act === 'cedit') { ui.cedit = ui.cedit || {}; ui.cedit[b.dataset.id] = !ui.cedit[b.dataset.id]; renderCustomers(); }
   else if (act === 'cmsgtog') { ui.cmsgOpen = ui.cmsgOpen || {}; ui.cmsgOpen[b.dataset.id] = !ui.cmsgOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'cview') { ui.custOpen[b.dataset.id] = !ui.custOpen[b.dataset.id]; renderCustomers(); }
@@ -4080,7 +4082,7 @@ async function boot() {
     catch (e) { db = null; }
   }
   if (db) {
-    try { db.collection('customers').orderBy('at', 'desc').limit(100).onSnapshot(sn => { const oldIds = new Set(cust.map(c => c.id)); const all = sn.docs.map(d => Object.assign({ id: d.id }, d.data())); cust = all.filter(c => !c.rm); custBin = all.filter(c => c.rm).sort((a, b) => b.rm - a.rm); if (ui.custLoaded) { const nu = cust.filter(c => !oldIds.has(c.id) && !c.demo); if (nu.length) toast(nu.length === 1 ? 'New order #' + orderNo(nu[0]) + ' from ' + (nu[0].name || 'a customer') : nu.length + ' new orders', { label: 'View', fn: () => showView('cust') }); } ui.custLoaded = true; updateCBadge(); const a = document.activeElement; if (ui.view === 'cust' && !(a && a.closest && a.closest('#v-cust') && /^(INPUT|TEXTAREA)$/.test(a.tagName))) renderCustomers(); }, () => {}); } catch (e) {}
+    try { db.collection('customers').orderBy('at', 'desc').limit(100).onSnapshot(sn => { const oldIds = new Set(cust.map(c => c.id)); const all = sn.docs.map(d => Object.assign({ id: d.id }, d.data())); cust = all.filter(c => !c.rm); custBin = all.filter(c => c.rm).sort((a, b) => b.rm - a.rm); if (ui.custLoaded) { const nu = cust.filter(c => !oldIds.has(c.id) && !c.demo); if (nu.length) toast(nu.length === 1 ? 'New order ' + orderNo(nu[0]) + ' from ' + (nu[0].name || 'a customer') : nu.length + ' new orders', { label: 'View', fn: () => showView('cust') }); } ui.custLoaded = true; updateCBadge(); const a = document.activeElement; if (ui.view === 'cust' && !(a && a.closest && a.closest('#v-cust') && /^(INPUT|TEXTAREA)$/.test(a.tagName))) renderCustomers(); }, () => {}); } catch (e) {}
     try { db.doc('settings/drivers').onSnapshot(sn => { if (sn.exists && Array.isArray((sn.data() || {}).list)) { drivers = sn.data().list; try { localStorage.setItem('mumu-drivers', JSON.stringify(drivers)); } catch (e) {} if (ui.view === 'cust' && !(document.activeElement && /^(drvName|drvWa)$/.test(document.activeElement.id))) renderCustomers(); } }, () => {}); } catch (e) {}
     try { db.doc('settings/host').onSnapshot(sn => { if (sn.exists) { const d = sn.data(); if (d.wa) { myWA = String(d.wa); LS.set('mumu-mywa', myWA); schedulePublish(); } if (typeof d.bank === 'string') { bankTxt = d.bank; LS.set('mumu-bank', bankTxt); } if (ui.view === 'cust' && !(document.activeElement && /^(mywa|bankTxt)$/.test(document.activeElement.id))) renderCustomers(); } }, () => {}); } catch (e) {}
     try { db.collection('orders').orderBy('at', 'desc').limit(40).onSnapshot(sn => { hist = sn.docs.filter(d => d.id.indexOf('h_') === 0).map(d => Object.assign({ id: d.id }, d.data())).slice(0, 30); if (ui.view === 'share') renderShare(compute(S)); renderFilters(); if (ui.saved && ui.view === 'pick') renderPick(); }, () => {}); } catch (e) {}
