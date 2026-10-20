@@ -1319,6 +1319,15 @@ body { margin: 0; padding-inline: 8px; }
 .lhead .lname { align-content: center; }
 .lhead > .thumb.sm { width: 56px; height: auto; min-height: 80px; max-height: 88px; align-self: stretch; flex: none; border-radius: 12px; font-size: 26px; }
 .cutnote { margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); font-size: 13.5px; line-height: 1.5; }
+.suprow { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); } .suprow:first-of-type { border-top: 0; }
+.suptop { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; align-items: center; } .suptop input { font-weight: 600; }
+.sdot { width: 12px; height: 12px; border-radius: 50% !important; background: var(--c, var(--muted)); }
+.supbot { display: grid; gap: 8px; padding-left: 22px; } .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw { width: 28px; height: 28px; border: 2px solid transparent; padding: 0; cursor: pointer; border-radius: 50% !important; } .sw.on { border-color: var(--ink); box-shadow: inset 0 0 0 2px var(--surface); }
+.supadd { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.duprow { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); } .duprow:first-of-type { border-top: 0; }
+.dside { display: grid; gap: 2px; } .dside span { font-size: 12.5px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.lnote { font-size: 12.5px; line-height: 1.5; color: var(--muted); padding: 8px 10px; background: var(--surface-2); } .lnote b { color: var(--ink); font-weight: 600; } .lnote.on { box-shadow: inset 3px 0 0 var(--gold); }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -1723,10 +1732,15 @@ function supCss(X, hue) {
 }
 function applySups() {
   SUP_ORDER.length = 4; Object.keys(SUPS).forEach(k => { if (k !== 'fv' && k !== 'mt' && k !== 'gr' && k !== 'ot') delete SUPS[k]; });
-  const ss = ledger.sups || {}; let css = supCss('ot', 44);
+  const ss = ledger.sups || {}, sx = ledger.supx || {}; let css = supCss('ot', SUP_HUES[sx.ot && sx.ot.h != null ? sx.ot.h : 4]);
+  /* staff can rename the built-in suppliers and change their colour; customers keep the department colours */
+  ['fv', 'mt', 'gr', 'ot'].forEach(id => { const o = sx[id], t = SUPS[id]; if (!o || !t) return;
+    if (o.name) { t.name = o.name; t.short = o.name; if (t._o) { t._o.name = o.name; t._o.short = o.name; } }
+    if (o.phone !== undefined) { t.phone = o.phone; t.wa = digitsOf(o.phone || ''); }
+    if (o.h != null && !cmode && id !== 'ot') css += supCss(id, SUP_HUES[o.h % SUP_HUES.length]); });
   Object.keys(ss).forEach((id, ix) => {
     const s = ss[id]; if (!s || !s.name) return; const hue = SUP_HUES[(s.h != null ? s.h : ix) % SUP_HUES.length];
-    SUPS[id] = { id, name: s.name, short: s.short || String(s.name).split(' ')[0], rgb: hsl2rgb(hue, 52, 36), phone: s.phone || '', wa: digitsOf(s.phone || ''), addr: s.addr || '', what: s.what || s.name, tag: s.what || s.name, list: 'the supplier list' };
+    SUPS[id] = { id, name: s.name, short: s.short || String(s.name), rgb: hsl2rgb(hue, 52, 36), phone: s.phone || '', wa: digitsOf(s.phone || ''), addr: s.addr || '', what: s.what || s.name, tag: s.what || s.name, list: 'the supplier list' };
     SUP_ORDER.push(id); css += supCss(id, hue);
   });
   let el = document.getElementById('supcss'); if (!el) { el = document.createElement('style'); el.id = 'supcss'; document.head.appendChild(el); } el.textContent = css;
@@ -1778,7 +1792,7 @@ function lineText(ln, cust) {
   else if (ln.price) money = ' x ' + fmtRp(ln.price) + ' = ' + fmtRp(ln.total) + (ln.o.est && ln.q0 === ln.q && !(cmode || cust) ? ' (est.)' : '') + (ln.listPrice && ln.price !== ln.listPrice ? ' (list price ' + fmtRp(ln.listPrice) + ')' : (!ln.listPrice ? ' (price set by hand)' : ''));
   else money = ' = PRICE NEEDED';
   const nv = cmode || cust ? nm(ln.it) : null;
-  return tag + (nv ? nv.m + (nv.s ? ' (' + nv.s + ')' : '') : ln.it.n) + lbl + ': ' + qtyTxt + money;
+  return tag + (nv ? nv.m + (nv.s ? ' (' + nv.s + ')' : '') : supName(ln.it)) + lbl + ': ' + qtyTxt + money;
 }
 function buildSummary(state, comp) {
   const m = state.meta; const out = [];
@@ -1814,7 +1828,7 @@ function buildSupplierMsg(state, g, lang) {
   out.push(id ? 'Halo, saya mau pesan ya:' : 'Hello, I would like to order:');
   g.lines.filter(ln => ln.st !== 'x').forEach(ln => {
     const unit = U[ln.o.u] || ln.o.u; const detail = plainLabel(ln.o) ? '' : ' - ' + optLabel(ln.o);
-    out.push('- ' + ln.it.n + detail + ' ' + fmtQty(ln.q) + ' ' + unit + (ln.price ? ' @ ' + fmtRp(ln.price) : '') + (ln.note ? ' - ' + ln.note : ''));
+    out.push('- ' + supName(ln.it) + detail + ' ' + fmtQty(ln.q) + ' ' + unit + (ln.price ? ' @ ' + fmtRp(ln.price) : '') + (ln.note ? ' - ' + ln.note : ''));
   });
   out.push('');
   if (m.need) out.push((id ? 'Dibutuhkan tanggal: ' : 'Needed by: ') + fmtDate(m.need, lang));
@@ -1826,7 +1840,7 @@ function buildSupplierMsg(state, g, lang) {
 }
 
 /* ================= ledger (one editable list of every product) ================= */
-let ledger = { ov: {}, add: {}, cfg: {}, sups: {}, dl: null };
+let ledger = { ov: {}, add: {}, cfg: {}, sups: {}, supx: {}, links: {}, nodup: {}, dl: null };
 const DEFAULT_CFG = { pct: 15, round: 500 };
 const cfgNow = () => Object.assign({}, DEFAULT_CFG, ledger.cfg || {});
 function reindex() {
@@ -1850,6 +1864,17 @@ function applyLedger() {
     return it;
   };
   const list = BASE.map(mk); Object.keys(ledger.add || {}).forEach(id => { list.push(mk(Object.assign({ id }, ledger.add[id]))); });
+  /* Same product from several suppliers: the alternatives are hidden, the main product is ordered from whoever is cheapest,
+     and customers keep the price based on the dearest supplier, so a cheaper supplier means more margin, not a new listing. */
+  const byId = {}; list.forEach(x => { byId[x.id] = x; }); const links = ledger.links || {}; const cfg = cfgNow();
+  Object.keys(links).forEach(alt => { const main = links[alt]; const a = byId[alt], m = byId[main]; if (!main || !a || !m || alt === main || a.alt || m.alt) return; a.alt = main; a.hidden = true; (m.alts = m.alts || []).push(alt); });
+  list.forEach(m => {
+    if (!m.alts) return; m.sOwn = m.s; m.o.forEach(op => { op.pr0 = op.pr; });
+    const cands = [m].concat(m.alts.map(id => byId[id])); const cost = x => (x.o[0] && x.o[0].pr) || Infinity;
+    let best = m; cands.forEach(x => { if (cost(x) < cost(best)) best = x; }); m.via = best === m ? '' : best.id;
+    if (best !== m) { m.s = best.s; m.o.forEach((op, i) => { const bo = best.o[i]; op.pr = bo && bo.u === op.u ? bo.pr : null; }); }
+    m.o.forEach((op, i) => { if (op.spx) return; const ref = Math.max(0, ...cands.map(x => (x.o[i] && x.o[i].pr0 !== undefined ? x.o[i].pr0 : x.o[i] && x.o[i].pr) || 0)); if (ref > 0) { const step = ref < 5000 ? Math.min(cfg.round, 100) : cfg.round; op.sp = Math.ceil(ref * (1 + cfg.pct / 100) / step) * step; } });
+  });
   CATALOG.length = 0; list.forEach(x => CATALOG.push(x)); reindex();
   if (cmode && ledger.cfg && ledger.cfg.wa) hostWA = String(ledger.cfg.wa);
 }
@@ -1977,6 +2002,7 @@ const imgSrc = id => /^(data:image\/|photos\/)/.test(id) ? id : window.SB.imgUrl
 const NM_UNIT = { KG: 'Kg', GR: 'Gr', ML: 'Ml', LTR: 'Ltr', PCS: 'Pcs', SAK: 'Sak' };
 const nmCase = t => t.replace(/\b[A-Za-z]+\b/g, w => NM_UNIT[w] || (w.length >= 4 && w === w.toUpperCase() ? w.charAt(0) + w.slice(1).toLowerCase() : w));
 const nm = it => { const e = (it.e || '').trim(), n = it.n.trim(), same = e.toLowerCase() === n.toLowerCase(); const f = x => nmCase(x).replace(/^[a-z]/, c => c.toUpperCase()); return e && !same && !/^unclear/i.test(e) && n.indexOf(' / ') < 0 ? { m: f(e), s: f(n) } : { m: f(n), s: same || !e ? '' : f(e) }; };
+const supName = it => (it.via && BY_ID[it.via] ? BY_ID[it.via].n : it.n);
 const nmBoth = it => { const v = nm(it); return v.m + (v.s ? ' (' + v.s + ')' : ''); };
 const thumbIn = it => it.img ? '<img loading="lazy" decoding="async" alt="" data-e="' + esc(it.i || '') + '" data-zoomname="' + esc(it.n) + '" src="' + esc(imgSrc(it.img)) + '">' : (it.i || '');
 /* Generated placeholder photos (photos/...) are not tappable. Real photos uploaded by staff still open full size. */
@@ -2250,7 +2276,7 @@ function buildPdf(comp) {
     doc.setTextColor(90, 100, 94); doc.setFontSize(8); txt('Item', M + 1, y); txt('Qty', 106, y); txt('Unit price', 162, y, { align: 'right' }); txt('Total', W - M - 1, y, { align: 'right' });
     doc.setDrawColor(200, 206, 201); doc.line(M, y + 1.6, W - M, y + 1.6); y += 6.6;
     g.lines.forEach(ln => {
-      const unit = UNIT_EN[ln.o.u] || ln.o.u; const nv = cmode ? nm(ln.it) : { m: ln.it.n, s: '' }; const nameLines = doc.splitTextToSize(clean(nv.m + (plainLabel(ln.o) || labelDup(ln.it, ln.o) ? '' : ' [' + optLabel(ln.o) + ']')), 88); const idLines = nv.s ? doc.splitTextToSize(clean(nv.s), 88) : [];
+      const unit = UNIT_EN[ln.o.u] || ln.o.u; const nv = cmode ? nm(ln.it) : { m: supName(ln.it), s: '' }; const nameLines = doc.splitTextToSize(clean(nv.m + (plainLabel(ln.o) || labelDup(ln.it, ln.o) ? '' : ' [' + optLabel(ln.o) + ']')), 88); const idLines = nv.s ? doc.splitTextToSize(clean(nv.s), 88) : [];
       const sub = []; if (ln.note) sub.push('Note: ' + ln.note); if (ln.it.x && needsCheck(ln.it)) sub.push('Check: ' + ln.it.x);
       const subLines = sub.length ? doc.splitTextToSize(clean(sub.join('  ')), 88) : []; const h = nameLines.length * 4.4 + idLines.length * 3.8 + subLines.length * 3.8 + 2.4; need(h);
       doc.setFont('helvetica', cmode ? 'bold' : 'normal'); doc.setFontSize(9.5); doc.setTextColor(22, 32, 26); doc.text(nameLines, M + 1, y);
@@ -2890,7 +2916,7 @@ function publicLedger() {
   const ov = {}, srcOv = ledger.ov || {};
   CATALOG.forEach(it => {
     const s = srcOv[it.id] || {}, o = {}; const sp = it.o.map(op => (op.sp > 0 ? op.sp : null)); if (sp.some(v => v)) o.sp = sp;
-    ['n', 'c', 'e', 'hid', 'so', 'ft', 'img', 'd'].forEach(k => { if (s[k] !== undefined && s[k] !== null && s[k] !== '' && s[k] !== false) o[k] = s[k]; });
+    ['n', 'c', 'e', 'hid', 'so', 'ft', 'img', 'd'].forEach(k => { if (s[k] !== undefined && s[k] !== null && s[k] !== '' && s[k] !== false) o[k] = s[k]; }); if (it.alt) o.hid = true;
     if (Object.keys(o).length) ov[it.id] = o;
   });
   const add = {}; Object.keys(ledger.add || {}).forEach(id => { const a = clone(ledger.add[id]); (a.o || []).forEach(op => { delete op.pr; delete op.sp; }); delete a.x; add[id] = a; });
@@ -2967,6 +2993,40 @@ function setSell(id, i, val) {
 }
 function avgMargin() { let n = 0, t = 0; CATALOG.forEach(it => { if (it.hidden) return; it.o.forEach(o => { if (o.pr && o.sp) { n++; t += (o.sp - o.pr) / o.sp; } }); }); return n ? Math.round(t / n * 100) : 0; }
 function profitOf(state) { const sl = compute(state, 'sell'), co = compute(state, 'cost'); return { rev: sl.total, cost: co.total, profit: sl.total - co.total }; }
+const supHue = id => { const sx = (ledger.supx || {})[id], d = (ledger.sups || {})[id]; return sx && sx.h != null ? sx.h : d && d.h != null ? d.h : id === 'ot' ? 4 : null; };
+const nextHue = () => { const used = SUP_ORDER.map(supHue).filter(h => h != null); return [0, 2, 3, 4, 7, 1, 5, 6].find(h => !used.includes(h)) ?? SUP_ORDER.length % SUP_HUES.length; };
+function supsHtml() {
+  const ro = canWrite ? '' : ' disabled';
+  const rows = SUP_ORDER.map(id => { const sp = SUPS[id]; const n = CATALOG.filter(i => (i.sOwn || i.s) === id).length; const h = supHue(id);
+    return '<div class="suprow"><div class="suptop"><i class="sdot sup-' + id + '"></i><input data-supf="' + id + '|name" value="' + esc(sp._o ? sp._o.name : sp.name) + '" aria-label="Supplier name"' + ro + '><span class="hint num">' + n + ' product' + (n === 1 ? '' : 's') + '</span></div>' +
+      '<div class="supbot"><input data-supf="' + id + '|phone" inputmode="tel" value="' + esc(sp.phone || '') + '" placeholder="WhatsApp, e.g. 0812 3456 7890" aria-label="WhatsApp for ' + esc(sp.name) + '"' + ro + '>' +
+      '<div class="swatches" role="group" aria-label="Colour">' + SUP_HUES.map((hu, i) => '<button type="button" class="sw' + (h === i ? ' on' : '') + '" style="background:hsl(' + hu + ' 52% 42%)" data-act="supcol" data-id="' + id + '" data-h="' + i + '" aria-label="Colour ' + (i + 1) + '"' + ro + '></button>').join('') + '</div></div></div>'; }).join('');
+  return '<section class="lsec"><div class="lsec-h"><b>Your suppliers</b><span>Names, WhatsApp and colours are for you and your team only. Customers never see them.</span></div>' + rows +
+    '<div class="supadd"><div class="field"><label for="ns-name">New supplier</label><input id="ns-name" placeholder="e.g. Bali Egg Farm"' + ro + '></div><div class="field"><label for="ns-wa">Their WhatsApp</label><input id="ns-wa" inputmode="tel" placeholder="optional"' + ro + '></div><button type="button" class="btn ghost" data-act="supadd"' + ro + '>Add supplier</button></div></section>';
+}
+/* Possible duplicates across suppliers: same size and very similar name. Staff confirm before anything links. */
+const dupTok = it => { const norm = x => String(x || '').toLowerCase().replace(/(\d),(\d)/g, '$1.$2'); const SZ = /\d+(?:\.\d+)?\s*(?:kg|gram|gr|g|ml|ltr|lt|l|pcs|pc)\b/g;
+  const sizes = new Set(((norm(it.n) + ' ' + norm(it.e)).match(SZ) || []).map(x => x.replace(/\s+/g, '').replace(/gram$|gr$/, 'g').replace(/ltr$|lt$/, 'l')));
+  const words = x => new Set(norm(x).replace(SZ, ' ').split(/[^a-z]+/).filter(w => w.length >= 3 && !['the', 'and', 'with', 'per', 'pack', 'isi', 'dan'].includes(w)));
+  return { sizes, wn: words(it.n), we: it.e ? words(it.e) : null }; };
+const jac = (A, B) => { if (!A || !B || !A.size || !B.size) return 0; let sh = 0; A.forEach(w => { if (B.has(w)) sh++; }); return sh / (A.size + B.size - sh); };
+let dupCache = null, dupKey = '';
+function dupPairs() {
+  const key = CATALOG.length + '|' + JSON.stringify(ledger.links || {}) + JSON.stringify(ledger.nodup || {}); if (dupCache && dupKey === key) return dupCache;
+  const items = CATALOG.filter(i => !i.alt && !(i.alts && i.alts.length > 4)).map(i => ({ i, t: dupTok(i), s: i.sOwn || i.s })); const nod = ledger.nodup || {}; const out = [];
+  for (let a = 0; a < items.length; a++) for (let b = a + 1; b < items.length; b++) {
+    const x = items[a], y = items[b]; if (x.s === y.s || x.i.o.length !== y.i.o.length || x.i.o.some((o, k) => o.u !== y.i.o[k].u)) continue;
+    if (x.t.sizes.size !== y.t.sizes.size || [...x.t.sizes].some(z => !y.t.sizes.has(z))) continue;
+    const sc = Math.max(jac(x.t.wn, y.t.wn), jac(x.t.we, y.t.we), jac(x.t.wn, y.t.we), jac(x.t.we, y.t.wn)); if (sc < 0.6) continue;
+    const pk = [x.i.id, y.i.id].sort().join('~'); if (nod[pk]) continue; out.push([x.i, y.i, sc]);
+  }
+  out.sort((p, q) => q[2] - p[2]); dupCache = out; dupKey = key; return out;
+}
+function dupsHtml() {
+  const ps = dupPairs().slice(0, 8); const ro = canWrite ? '' : ' disabled'; const side = it => '<div class="dside"><b>' + esc(it.n) + '</b><span><i class="dot2 sup-' + (it.sOwn || it.s) + '"></i>' + esc(SUPS[it.sOwn || it.s].name) + ' - ' + (it.o[0] && (it.o[0].pr0 || it.o[0].pr) ? fmtRp(it.o[0].pr0 || it.o[0].pr) : 'no price') + '</span></div>';
+  return '<section class="lsec"><div class="lsec-h"><b>Is this the same product?</b><span>Confirm and customers see one product. We order from the cheaper supplier, and customers keep the same price.</span></div>' +
+    (ps.length ? ps.map(p => '<div class="duprow">' + side(p[0]) + side(p[1]) + '<div class="actions duo"><button type="button" class="btn ghost" data-act="dupyes" data-a="' + esc(p[0].id) + '" data-b="' + esc(p[1].id) + '"' + ro + '>Same product</button><button type="button" class="btn ghost" data-act="dupno" data-a="' + esc(p[0].id) + '" data-b="' + esc(p[1].id) + '"' + ro + '>Not the same</button></div></div>').join('') : '<p class="hint">No possible duplicates right now. When you add a product from a new supplier that matches one you already sell, it shows up here.</p>') + '</section>';
+}
 function ledgerItems() {
   const toks = ui.lq.trim().split(/\s+/).filter(Boolean); const out = [];
   CATALOG.forEach((it, ix) => {
@@ -2983,19 +3043,24 @@ function ltags(it) {
   const t = []; if (it.so) t.push('<span class="ltag so">Sold out today</span>'); if (it.ft) t.push('<span class="ltag ft">Featured</span>'); if (it.hidden) t.push('<span class="ltag hd">Hidden</span>'); if (/^x-/.test(it.id)) t.push('<span class="ltag add">Added by you</span>'); if (isEdited(it)) t.push('<span class="ltag ed">Price edited</span>');
   return t.length ? '<span class="ltags">' + t.join('') + '</span>' : '';
 }
+function linkNote(it) {
+  if (it.alt && BY_ID[it.alt]) return '<div class="lnote"><b>Same product as ' + esc(BY_ID[it.alt].n) + '.</b> Customers only see that one. We order from whichever supplier is cheaper. <button type="button" class="linkbtn" data-act="unlink" data-id="' + esc(it.id) + '"' + (canWrite ? '' : ' disabled') + '>Not the same</button></div>';
+  if (it.alts) { const w = it.via ? BY_ID[it.via] : it; return '<div class="lnote on"><b>Ordering from ' + esc(SUPS[w.s].name) + '</b> at ' + (w.o[0] && w.o[0].pr ? fmtRp(w.o[0].pr) : 'ask') + ', the cheapest of ' + (it.alts.length + 1) + ' suppliers. Customers keep the same price.</div>'; }
+  return '';
+}
 function ledgerRowHtml(it) {
   const ro = canWrite ? '' : ' disabled'; const ed = !!ui.ledit[it.id];
   const opts = it.o.map((o, i) => {
     const prof = o.pr && o.sp ? o.sp - o.pr : null; const mg = prof !== null ? Math.round(prof / o.sp * 100) : null;
     return '<div class="lopt2"><div class="lol">' + esc(optLabel(o)) + '</div><div class="lgrid">' +
-      '<label class="lf"><span>Supplier price</span><span class="lpr">Rp <input data-lp="' + esc(it.id + '|' + i) + '" inputmode="numeric" value="' + (o.pr || '') + '" placeholder="ask" aria-label="Supplier price for ' + esc(it.n + ' ' + optLabel(o)) + '"' + ro + '></span></label>' +
+      '<label class="lf"><span>Supplier price</span><span class="lpr">Rp <input data-lp="' + esc(it.id + '|' + i) + '" inputmode="numeric" value="' + ((o.pr0 !== undefined ? o.pr0 : o.pr) || '') + '" placeholder="ask" aria-label="Supplier price for ' + esc(it.n + ' ' + optLabel(o)) + '"' + ro + '></span></label>' +
       '<label class="lf"><span>Sell price' + (o.spx ? '' : ' (auto)') + '</span><span class="lpr">Rp <input data-sp="' + esc(it.id + '|' + i) + '" inputmode="numeric" value="' + (o.spx ? o.sp : '') + '" placeholder="' + (o.sp || '') + '" aria-label="Sell price for ' + esc(it.n + ' ' + optLabel(o)) + '"' + ro + '></span></label></div>' +
       (prof !== null ? '<div class="lprofit ' + (prof > 0 ? 'pos' : 'neg') + '">Profit ' + fmtRp(prof) + ' per ' + esc(UNIT_EN[o.u] || o.u) + ' - ' + mg + '% margin</div>' : '<div class="lprofit">Add the supplier price to see profit</div>') +
       (priceChanged(it, i) ? '<div class="lwas">supplier price was ' + (BASE_BY[it.id].o[i].pr ? fmtRp(BASE_BY[it.id].o[i].pr) : 'not listed') + ' <button type="button" class="linkbtn" data-act="lreset" data-id="' + esc(it.id) + '" data-i="' + i + '">reset</button></div>' : '') + '</div>';
   }).join('');
-  const det = ed ? '<div class="ldet grid2 s-' + it.s + '"><div class="ldet-h span-all">Edit details</div><div class="field span-all"><label>Name</label><input data-ld="' + esc(it.id) + '|n" value="' + esc(it.n) + '"' + ro + '></div><div class="field"><label>English name</label><input data-ld="' + esc(it.id) + '|e" value="' + esc(it.e || '') + '"' + ro + '></div><div class="field"><label>Category</label><input data-ld="' + esc(it.id) + '|c" value="' + esc(it.c) + '"' + ro + '></div><div class="field"><label>Order from (supplier)</label><select data-lds="' + esc(it.id) + '|s"' + (canWrite ? '' : ' disabled') + '>' + SUP_ORDER.map(x => '<option value="' + x + '"' + (it.s === x ? ' selected' : '') + '>' + esc(SUPS[x].name) + '</option>').join('') + '</select></div><div class="field"><label>Customers find it under</label><select data-lds="' + esc(it.id) + '|d"' + (canWrite ? '' : ' disabled') + '>' + DEPTS.map(x => '<option value="' + x + '"' + (it.d === x ? ' selected' : '') + '>' + esc(SUPS[x].tag) + '</option>').join('') + '</select></div></div>' : '';
+  const det = ed ? '<div class="ldet grid2 s-' + it.s + '"><div class="ldet-h span-all">Edit details</div><div class="field span-all"><label>Name</label><input data-ld="' + esc(it.id) + '|n" value="' + esc(it.n) + '"' + ro + '></div><div class="field"><label>English name</label><input data-ld="' + esc(it.id) + '|e" value="' + esc(it.e || '') + '"' + ro + '></div><div class="field"><label>Category</label><input data-ld="' + esc(it.id) + '|c" value="' + esc(it.c) + '"' + ro + '></div><div class="field"><label>Customers find it under</label><select data-lds="' + esc(it.id) + '|d"' + (canWrite ? '' : ' disabled') + '>' + DEPTS.map(x => '<option value="' + x + '"' + (it.d === x ? ' selected' : '') + '>' + esc(SUPS[x].tag) + '</option>').join('') + '</select></div></div>' : '';
   return '<div class="lrow' + (it.hidden ? ' hid' : '') + '"><div class="lhead"><span class="thumb sm s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="lname"><b>' + esc(it.n) + '</b>' + (it.e ? '<span class="en">' + esc(it.e) + '</span>' : '') +
-    '<small><i class="dot2 sup-' + it.s + '"></i>' + esc(SUPS[it.s].name) + ' - ' + esc(it.c) + '</small>' + ltags(it) + '</div></div>' + opts + det +
+    '<small><i class="dot2 sup-' + (it.sOwn || it.s) + '"></i>' + esc(SUPS[it.sOwn || it.s].name) + ' - ' + esc(it.c) + '</small>' + ltags(it) + '</div></div>' + linkNote(it) + opts + det +
     (assetsCap ? '<div class="lphoto"><label class="lchip' + (it.img ? ' on' : '') + '">' + (it.img ? 'Change photo' : 'Add photo') + '<input type="file" accept="image/*" data-lphoto="' + esc(it.id) + '" class="sr"' + ro + '></label>' + (it.img ? '<button type="button" class="lchip" data-act="rmphoto" data-id="' + esc(it.id) + '"' + ro + '>Remove photo</button>' : '') + '</div>' : '') + '<div class="lact"><button type="button" class="lchip' + (ed ? ' on' : '') + '" data-act="ledit" data-id="' + esc(it.id) + '">' + lbl(ed ? 'Done' : 'Edit details', ed ? 'Done' : 'Edit') + '</button><button type="button" class="lchip' + (it.ft ? ' on ft' : '') + '" data-act="lft" data-id="' + esc(it.id) + '" data-s="' + (it.ft ? 0 : 1) + '"' + ro + '>' + (it.ft ? lbl('Remove from picks', 'Unfeature') : lbl('Feature', 'Feature')) + '</button><button type="button" class="lchip' + (it.so ? ' on so' : '') + '" data-act="lso" data-id="' + esc(it.id) + '" data-s="' + (it.so ? 0 : 1) + '"' + ro + '>' + (it.so ? lbl('Back in stock', 'In stock') : lbl('Sold out today', 'Sold out')) + '</button><button type="button" class="lchip' + (it.hidden ? ' on hd' : '') + '" data-act="lhide" data-id="' + esc(it.id) + '" data-h="' + (it.hidden ? 0 : 1) + '"' + ro + '>' + (it.hidden ? lbl('Restore', 'Restore') : lbl('Hide', 'Hide')) + '</button></div></div>';
 }
 function renderLedgerList() {
@@ -3048,6 +3113,8 @@ function renderLedger() {
     '<p class="hint" style="margin-top:8px">Customers enter a code in their order, under the delivery fee. It is added to the WhatsApp message so you can confirm it. Anyone with technical skills can read the codes, so use them for campaigns such as a flyer or a partner, not as secret vouchers.</p></section>' + '</div>';
   host.innerHTML = '<div class="card" id="ledCard"><div class="msg-head"><h3>Ledger</h3><span class="hint num">' + CATALOG.filter(i => !i.hidden).length + ' products</span></div>' +
     '<p class="hint lsub">All products with the supplier price, the sell price and your profit.</p>' + pubHtml() +
+    lbOpen('lb-sups', 'Suppliers', SUP_ORDER.length + ' suppliers') + (cardOpen('lb-sups') ? supsHtml() : '') + lbClose('lb-sups') +
+    lbOpen('lb-dups', 'Same product, different supplier', (() => { const n = dupPairs().length; return n ? n + ' to check' : 'Nothing to check'; })()) + (cardOpen('lb-dups') ? dupsHtml() : '') + lbClose('lb-dups') +
     lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%')) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' +
     '<div class="grid2"><div class="field"><label for="bk-sup">Which supplier</label><select id="bk-sup"><option value="all">All suppliers</option>' + SUP_ORDER.map(x => '<option value="' + x + '">' + esc(SUPS[x].name) + '</option>').join('') + '</select></div><div class="field"><label for="bk-pct">Change by (%)</label><input id="bk-pct" inputmode="decimal" placeholder="5 or -3"><p class="hint">5 = 5% higher. -3 = 3% lower.</p></div></div>' +
     '<div class="lact2"><div><button class="btn ghost" data-act="bulk"' + (canWrite ? '' : ' disabled') + '>Apply change</button><p class="hint">Changes the supplier prices by the % above.</p></div><div><button class="btn ghost" data-act="resetprices"' + (canWrite ? '' : ' disabled') + '>Reset to uploaded</button><p class="hint">Goes back to the prices in your uploaded list.</p></div></div></section>' +
@@ -3103,7 +3170,7 @@ function addProduct() {
   if (sid === '__new') {
     const sn = v('la-sname').trim(), sw = sn;
     if (!sn) { toast('Give the new supplier a name first.'); return; }
-    const sid2 = 's' + Date.now().toString(36); const cur = Object.assign({}, ledger.sups || {}); cur[sid2] = { name: sn, what: sw, phone: v('la-swa').trim(), h: Object.keys(cur).length };
+    const sid2 = 's' + Date.now().toString(36); const cur = Object.assign({}, ledger.sups || {}); cur[sid2] = { name: sn, what: sw, phone: v('la-swa').trim(), h: nextHue() };
     saveLedger({ sups: cur }); sid = sid2;
   }
   const id = 'x-' + Date.now().toString(36);
@@ -3148,6 +3215,11 @@ document.addEventListener('click', e => {
   else if (act === 'lsup') { ui.lsup = b.dataset.k; ui.llimit = 40; renderLedger(); }
   else if (act === 'lfil') { ui.lfil = b.dataset.k; ui.llimit = 40; renderLedger(); }
   else if (act === 'lmore') { ui.llimit += 40; renderLedgerList(); }
+  else if (act === 'supcol') { const id = b.dataset.id, h = +b.dataset.h; if (['fv', 'mt', 'gr', 'ot'].includes(id)) saveLedger({ supx: { [id]: { h } } }); else saveLedger({ sups: { [id]: { h } } }); renderLedger(); }
+  else if (act === 'supadd') { const nmv = ((document.getElementById('ns-name') || {}).value || '').trim(); if (!nmv) { toast('Type the supplier name first.'); return; } const id = 's' + Date.now().toString(36); saveLedger({ sups: { [id]: { name: nmv, what: nmv, phone: ((document.getElementById('ns-wa') || {}).value || '').trim(), h: nextHue() } } }); renderLedger(); toast('Added ' + nmv + '. Add their products with New product, or link one under Same product, different supplier.'); }
+  else if (act === 'dupyes') { const A = BY_ID[b.dataset.a], B = BY_ID[b.dataset.b]; if (!A || !B) return; const score = x => (/^x-/.test(x.id) ? 0 : 2) + (x.img ? 1 : 0); const main = score(A) >= score(B) ? A : B, alt = main === A ? B : A; saveLedger({ links: { [alt.id]: main.id } }); renderLedger(); toast('Linked. Customers see ' + nm(main).m + ' once.'); }
+  else if (act === 'dupno') { saveLedger({ nodup: { [[b.dataset.a, b.dataset.b].sort().join('~')]: 1 } }); renderLedger(); }
+  else if (act === 'unlink') { saveLedger({ links: { [b.dataset.id]: '' } }); renderLedger(); toast('Unlinked. It is its own product again, still hidden until you show it.'); }
   else if (act === 'ledit') { ui.ledit[b.dataset.id] = !ui.ledit[b.dataset.id]; renderLedgerList(); }
   else if (act === 'lhide') { saveLedger({ ov: { [b.dataset.id]: { hid: b.dataset.h === '1' } } }); }
   else if (act === 'lreset') { setPrice(b.dataset.id, +b.dataset.i, null); }
@@ -3284,6 +3356,7 @@ document.addEventListener('change', e => {
   else if (t.matches('[data-bs]')) { const p = t.dataset.bs.split('|'); const list = basketsNow(); const i = +p[0]; if (list[i]) { if (p[1] === 'v') list[i].h = !t.checked; else if (p[1] === 'ic') list[i].ic = t.value; else if (p[1] === 'n') { const v = t.value.trim(); if (!v) { toast('A basket needs a name.'); renderLedger(); return; } list[i].n = v.slice(0, 40); } else list[i].d = t.value.trim().slice(0, 90); saveLedger({ baskets: list }); renderLedger(); toast(p[1] === 'v' ? (list[i].h ? 'Hidden. Customers no longer see this basket.' : 'Shown to customers.') : 'Basket saved.'); } }
   else if (t.matches('[data-cd]')) { saveCodesFromDom(); if (t.dataset.cd.endsWith('|c') && codeKey(t.value)) toast('Code ' + codeKey(t.value) + ' saved.'); }
   else if (t.id === 'mk-round') { saveLedger({ cfg: { round: +t.value } }); renderLedger(); toast('Prices now round up to Rp ' + t.value + '. Live for customers in a moment.'); }
+  else if (t.matches('input[data-supf]')) { const k = t.dataset.supf.split('|'); const val = t.value.trim(); if (k[1] === 'name' && !val) { toast('A supplier needs a name.'); renderLedger(); return; } const patch = { [k[1]]: val }; if (k[1] === 'name') patch.what = val; if (['fv', 'mt', 'gr', 'ot'].includes(k[0])) { delete patch.what; saveLedger({ supx: { [k[0]]: patch } }); } else saveLedger({ sups: { [k[0]]: patch } }); renderLedger(); toast('Supplier saved.'); }
   else if (t.matches('select[data-lds]')) { const k = t.dataset.lds.split('|'); saveLedger({ ov: { [k[0]]: { [k[1]]: t.value } } }); renderLedgerList(); toast(k[1] === 's' ? 'Supplier changed. Customers see no difference.' : 'Customers now find it under ' + SUPS[t.value].tag + '.'); }
   else if (t.matches('input[data-ld]')) { const k = t.dataset.ld.split('|'); const val = t.value.trim(); if ((k[1] === 'n' || k[1] === 'c') && !val) { toast('That field cannot be empty.'); renderLedgerList(); return; } saveLedger({ ov: { [k[0]]: { [k[1]]: val } } }); }
   else if (t.id === 'importFile') { importFiles(t.files); t.value = ''; }
