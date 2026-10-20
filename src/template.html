@@ -803,7 +803,7 @@ section[id^="v-"]:not([hidden]) { animation: vin .2s ease both; }
 @media (prefers-reduced-motion: reduce) { section[id^="v-"]:not([hidden]), .saved-chip.pulse { animation: none; } }
 .hlinks { display: flex; gap: 18px; }
 .hren { min-width: 0; flex: 1; height: 36px; border: 1px solid var(--ink); background: var(--surface); border-radius: 9px; padding: 0 10px; font-size: 15px; font-weight: 600; }
-.lseg.five { grid-template-columns: repeat(5, minmax(0, 1fr)); } .lseg.five button { padding-inline: 2px; font-size: 12px; }
+.lseg.five { grid-template-columns: repeat(3, minmax(0, 1fr)); } .lseg.five button { min-height: 38px; } .lseg.five button { padding-inline: 2px; font-size: 12px; }
 
 /* ---- first-visit guide, loading veil, offline bar ---- */
 .how { margin: 12px 0 0; padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); box-shadow: inset 4px 0 0 var(--ink); } .how[hidden] { display: none; }
@@ -1058,6 +1058,18 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .othermsg { justify-self: start; font-size: 13px; margin-top: 2px; } .cmdbar { grid-template-columns: 1fr !important; }
 @media (hover: hover) { .stepmsg:not(.main):hover { background: color-mix(in srgb, var(--gold) 14%, var(--surface)); border-color: var(--gold); } .stepmsg.main:hover { filter: brightness(1.25); } }
 .langtag { font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border: 1px solid var(--gold); color: var(--gold-text); }
+/* ledger: fix-now and safe photo removal */
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.75); } }
+.pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50% !important; background: var(--danger); margin-right: 6px; vertical-align: middle; animation: pulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+.lrow.needfix { box-shadow: inset 3px 0 0 var(--danger); background: color-mix(in srgb, var(--danger) 5%, var(--surface)); }
+.fixbar { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 8px 12px; font-size: 12.5px; color: var(--danger); border-bottom: 1px dashed color-mix(in srgb, var(--danger) 40%, var(--line)); } .fixbar b { font-weight: 700; }
+.fixchip { color: var(--danger) !important; font-weight: 700 !important; }
+.rmlink { border: 0; background: none; padding: 0 4px; font: inherit; font-size: 12px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; opacity: .75; }
+.rmlink:hover { color: var(--danger); opacity: 1; }
+.rmask { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; color: var(--danger); } .lchip.danger { border-color: var(--danger); color: var(--danger); }
+.fixalert { width: 100%; display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; padding: 12px 14px; border: 1px solid var(--danger); background: color-mix(in srgb, var(--danger) 8%, var(--surface)); color: var(--ink); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.fixalert span { flex: 1; min-width: 0; } .fixalert b { color: var(--danger); } .fixalert em { flex: none; font-style: normal; font-weight: 700; color: var(--danger); text-decoration: underline; text-underline-offset: 3px; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3531,15 +3543,17 @@ function dupsHtml() {
   return '<section class="lsec"><div class="lsec-h"><b>Is this the same product?</b><span>Confirm and customers see one product. We order from the cheaper supplier, and customers keep the same price.</span></div>' +
     (ps.length ? ps.map(p => '<div class="duprow">' + side(p[0]) + side(p[1]) + '<div class="actions duo"><button type="button" class="btn ghost" data-act="dupyes" data-a="' + esc(p[0].id) + '" data-b="' + esc(p[1].id) + '"' + ro + '>Same product</button><button type="button" class="btn ghost" data-act="dupno" data-a="' + esc(p[0].id) + '" data-b="' + esc(p[1].id) + '"' + ro + '>Not the same</button></div></div>').join('') : '<p class="hint">No possible duplicates right now. When you add a product from a new supplier that matches one you already sell, it shows up here.</p>') + '</section>';
 }
+/* Live products customers would see without a price or a photo: listed first so they get fixed */
+const fixWhy = it => it.hidden ? [] : [!it.img ? 'No photo' : '', it.o.some(o => !o.sp) ? 'No price' : ''].filter(Boolean);
 function ledgerItems() {
   const toks = ui.lq.trim().split(/\s+/).filter(Boolean); const out = [];
   CATALOG.forEach((it, ix) => {
     if (ui.lsup !== 'all' && it.s !== ui.lsup) return;
-    if (ui.lfil === 'edited' && !isEdited(it)) return; if (ui.lfil === 'hidden' && !it.hidden) return; if (ui.lfil === 'added' && !/^x-/.test(it.id)) return; if (ui.lfil === 'so' && !it.so) return;
+    if (ui.lfil === 'edited' && !isEdited(it)) return; if (ui.lfil === 'hidden' && !it.hidden) return; if (ui.lfil === 'added' && !/^x-/.test(it.id)) return; if (ui.lfil === 'so' && !it.so) return; if (ui.lfil === 'fix' && !fixWhy(it).length) return;
     let sc = 0; if (toks.length) { sc = matchScore(it, toks); if (sc < 0) return; }
     out.push({ it, sc, ix });
   });
-  if (toks.length) out.sort((a, b) => a.sc - b.sc || a.ix - b.ix);
+  if (toks.length) out.sort((a, b) => a.sc - b.sc || a.ix - b.ix); else out.sort((a, b) => (fixWhy(b.it).length > 0) - (fixWhy(a.it).length > 0) || a.ix - b.ix);
   return out.map(x => x.it);
 }
 const lbl = (a, b) => '<span class="lg">' + a + '</span><span class="sh">' + b + '</span>';
@@ -3563,14 +3577,17 @@ function ledgerRowHtml(it) {
       (priceChanged(it, i) ? '<div class="lwas">supplier price was ' + (BASE_BY[it.id].o[i].pr ? fmtRp(BASE_BY[it.id].o[i].pr) : 'not listed') + ' <button type="button" class="linkbtn" data-act="lreset" data-id="' + esc(it.id) + '" data-i="' + i + '">reset</button></div>' : '') + '</div>';
   }).join('');
   const det = ed ? '<div class="ldet grid2 s-' + it.s + '"><div class="ldet-h span-all">Edit details</div><div class="field span-all"><label>Name</label><input data-ld="' + esc(it.id) + '|n" value="' + esc(it.n) + '"' + ro + '></div><div class="field"><label>English name</label><input data-ld="' + esc(it.id) + '|e" value="' + esc(it.e || '') + '"' + ro + '></div><div class="field"><label>Category</label><input data-ld="' + esc(it.id) + '|c" value="' + esc(it.c) + '"' + ro + '></div><div class="field"><label>Customers find it under</label><select data-lds="' + esc(it.id) + '|d"' + (canWrite ? '' : ' disabled') + '>' + DEPTS.map(x => '<option value="' + x + '"' + (it.d === x ? ' selected' : '') + '>' + esc(SUPS[x].tag) + '</option>').join('') + '</select></div></div>' : '';
-  return '<div class="lrow' + (it.hidden ? ' hid' : '') + '"><div class="lhead"><span class="thumb sm s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="lname"><b>' + esc(it.n) + '</b>' + (it.e ? '<span class="en">' + esc(it.e) + '</span>' : '') +
+  const why = fixWhy(it);
+  return '<div class="lrow' + (it.hidden ? ' hid' : '') + (why.length ? ' needfix' : '') + '">' + (why.length ? '<div class="fixbar"><i class="pulse" aria-hidden="true"></i><b>Fix before customers see it:</b> ' + why.join(' · ') + '</div>' : '') + '<div class="lhead"><span class="thumb sm s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="lname"><b>' + esc(it.n) + '</b>' + (it.e ? '<span class="en">' + esc(it.e) + '</span>' : '') +
     '<small><i class="dot2 sup-' + (it.sOwn || it.s) + '"></i>' + esc(SUPS[it.sOwn || it.s].name) + ' - ' + esc(it.c) + '</small>' + ltags(it) + '</div></div>' + linkNote(it) + opts + det +
-    (assetsCap ? '<div class="lphoto"><label class="lchip' + (it.img ? ' on' : '') + '">' + (it.img ? 'Change photo' : 'Add photo') + '<input type="file" accept="image/*" data-lphoto="' + esc(it.id) + '" class="sr"' + ro + '></label>' + (it.img ? '<button type="button" class="lchip" data-act="rmphoto" data-id="' + esc(it.id) + '"' + ro + '>Remove photo</button>' : '') + '</div>' : '') + '<div class="lact"><button type="button" class="lchip' + (ed ? ' on' : '') + '" data-act="ledit" data-id="' + esc(it.id) + '">' + lbl(ed ? 'Done' : 'Edit details', ed ? 'Done' : 'Edit') + '</button><button type="button" class="lchip' + (it.ft ? ' on ft' : '') + '" data-act="lft" data-id="' + esc(it.id) + '" data-s="' + (it.ft ? 0 : 1) + '"' + ro + '>' + (it.ft ? lbl('Remove from picks', 'Unfeature') : lbl('Feature', 'Feature')) + '</button><button type="button" class="lchip' + (it.so ? ' on so' : '') + '" data-act="lso" data-id="' + esc(it.id) + '" data-s="' + (it.so ? 0 : 1) + '"' + ro + '>' + (it.so ? lbl('Back in stock', 'In stock') : lbl('Sold out today', 'Sold out')) + '</button><button type="button" class="lchip' + (it.hidden ? ' on hd' : '') + '" data-act="lhide" data-id="' + esc(it.id) + '" data-h="' + (it.hidden ? 0 : 1) + '"' + ro + '>' + (it.hidden ? lbl('Restore', 'Restore') : lbl('Hide', 'Hide')) + '</button></div></div>';
+    (assetsCap ? '<div class="lphoto"><label class="lchip' + (it.img ? ' on' : '') + '">' + (it.img ? 'Change photo' : 'Add photo') + '<input type="file" accept="image/*" data-lphoto="' + esc(it.id) + '" class="sr"' + ro + '></label>' + (it.img ? (ui.rmAsk === it.id ? '<span class="rmask">Remove this photo? Customers will see no picture.<button type="button" class="lchip danger" data-act="rmphoto" data-id="' + esc(it.id) + '"' + ro + '>Remove</button><button type="button" class="lchip" data-act="rmno">Keep</button></span>' : '<button type="button" class="rmlink" data-act="rmask" data-id="' + esc(it.id) + '"' + ro + '>Remove photo</button>') : '') + '</div>' : '') + '<div class="lact"><button type="button" class="lchip' + (ed ? ' on' : '') + '" data-act="ledit" data-id="' + esc(it.id) + '">' + lbl(ed ? 'Done' : 'Edit details', ed ? 'Done' : 'Edit') + '</button><button type="button" class="lchip' + (it.ft ? ' on ft' : '') + '" data-act="lft" data-id="' + esc(it.id) + '" data-s="' + (it.ft ? 0 : 1) + '"' + ro + '>' + (it.ft ? lbl('Remove from picks', 'Unfeature') : lbl('Feature', 'Feature')) + '</button><button type="button" class="lchip' + (it.so ? ' on so' : '') + '" data-act="lso" data-id="' + esc(it.id) + '" data-s="' + (it.so ? 0 : 1) + '"' + ro + '>' + (it.so ? lbl('Back in stock', 'In stock') : lbl('Sold out today', 'Sold out')) + '</button><button type="button" class="lchip' + (it.hidden ? ' on hd' : '') + '" data-act="lhide" data-id="' + esc(it.id) + '" data-h="' + (it.hidden ? 0 : 1) + '"' + ro + '>' + (it.hidden ? lbl('Restore', 'Restore') : lbl('Hide', 'Hide')) + '</button></div></div>';
 }
 function renderLedgerList() {
   const box = document.getElementById('ledList'); if (!box) return; const a = document.activeElement; const keep = a && a.dataset && (a.dataset.lp || a.dataset.ld) ? ['data-lp', 'data-ld'].filter(x => a.hasAttribute(x)).map(x => [x, a.getAttribute(x)])[0] : null;
   const items = ledgerItems(); const shown = items.slice(0, ui.llimit);
-  box.innerHTML = '<div class="card"><div class="msg-head"><h3>Products</h3><span class="hint num">' + items.length + '</span></div>' + (shown.length ? shown.map(ledgerRowHtml).join('') : '<p class="hint">Nothing matches.</p>') + (items.length > shown.length ? '<button type="button" class="btn ghost more" data-act="lmore">Show ' + Math.min(40, items.length - shown.length) + ' more</button>' : '') + '</div>';
+  const nfix = CATALOG.filter(i => fixWhy(i).length).length;
+  const alert = nfix && ui.lfil !== 'fix' ? '<button type="button" class="fixalert" data-act="lfil" data-k="fix"><i class="pulse" aria-hidden="true"></i><span><b>' + nfix + ' product' + (nfix === 1 ? '' : 's') + ' need a price or photo.</b> Customers see them as they are now.</span><em>Fix now</em></button>' : '';
+  box.innerHTML = '<div class="card"><div class="msg-head"><h3>Products</h3><span class="hint num">' + items.length + '</span></div>' + alert + (shown.length ? shown.map(ledgerRowHtml).join('') : '<p class="hint">Nothing matches.</p>') + (items.length > shown.length ? '<button type="button" class="btn ghost more" data-act="lmore">Show ' + Math.min(40, items.length - shown.length) + ' more</button>' : '') + '</div>';
   if (keep) { const el = box.querySelector('[' + keep[0] + '="' + CSS.escape(keep[1]) + '"]'); if (el) el.focus({ preventScroll: true }); }
 }
 function renderLedger() {
@@ -3632,7 +3649,7 @@ function renderLedger() {
     '<section class="lsec"><div class="lsec-h"><b>Find a product</b><span>Search or filter the list below</span></div>' +
     '<div class="search"><input id="lq" type="search" placeholder="Search by product name" value="' + esc(ui.lq) + '" autocomplete="off" aria-label="Search the ledger"></div>' +
     '<span class="lgl">Supplier</span><div class="chips lchips">' + chip('lsup', 'all', ui.lsup, 'All suppliers', 'data-k="all"') + SUP_ORDER.map(x => '<button class="chip" data-act="lsup" data-s="' + x + '" data-k="' + x + '" aria-pressed="' + (ui.lsup === x) + '"><span class="dot"></span>' + esc(SUPS[x].name) + '</button>').join('') + '</div>' +
-    '<span class="lgl">Show</span><div class="lseg five" role="group" aria-label="Show products">' + [['all', 'All', CATALOG.filter(i => !i.hidden).length], ['edited', 'Changed', editedN], ['added', 'New', CATALOG.filter(i => /^x-/.test(i.id)).length], ['hidden', 'Hidden', CATALOG.filter(i => i.hidden).length], ['so', 'Sold out', CATALOG.filter(i => i.so).length]].map(x => '<button type="button" data-act="lfil" data-k="' + x[0] + '" aria-pressed="' + (ui.lfil === x[0]) + '">' + x[1] + ' <small>' + x[2] + '</small></button>').join('') + '</div>' +
+    '<span class="lgl">Show</span><div class="lseg five" role="group" aria-label="Show products">' + [['all', 'All', CATALOG.filter(i => !i.hidden).length], ['edited', 'Changed', editedN], ['added', 'New', CATALOG.filter(i => /^x-/.test(i.id)).length], ['hidden', 'Hidden', CATALOG.filter(i => i.hidden).length], ['so', 'Sold out', CATALOG.filter(i => i.so).length]].concat(CATALOG.some(i => fixWhy(i).length) ? [['fix', 'Fix now', CATALOG.filter(i => fixWhy(i).length).length]] : []).map(x => '<button type="button" data-act="lfil" data-k="' + x[0] + '" aria-pressed="' + (ui.lfil === x[0]) + '"' + (x[0] === 'fix' ? ' class="fixchip"' : '') + '>' + (x[0] === 'fix' ? '<i class="pulse" aria-hidden="true"></i>' : '') + x[1] + ' <small>' + x[2] + '</small></button>').join('') + '</div>' +
     '<div class="actions full" style="margin-top:16px"><button class="btn" data-act="ladd"' + (canWrite ? '' : ' disabled') + '>' + (ui.ladd ? 'Close form' : 'Add a new product') + '</button></div></section></div>' + photoCardHtml + importCard() + (dlOpen ? dlCardOpen : '<div class="card" id="dlCard">' + cardHead('dlCard', 'Delivery', false) + '<p class="hint">' + esc(dlSum) + '</p></div>') + form + '<div id="ledList"></div>';
   const lc = host.querySelector('.lchips'); if (lc) { const upd = () => lc.classList.toggle('at-end', lc.scrollLeft + lc.clientWidth >= lc.scrollWidth - 2); lc.addEventListener('scroll', upd, { passive: true }); upd(); }
   renderLedgerList();
@@ -3830,7 +3847,9 @@ document.addEventListener('click', e => {
   else if (act === 'photostart') { ui.photoMode = true; ui.photoSkip = {}; renderLedger(); }
   else if (act === 'photostop') { ui.photoMode = false; renderLedger(); }
   else if (act === 'photoskip') { ui.photoSkip = ui.photoSkip || {}; ui.photoSkip[b.dataset.id] = true; renderLedger(); }
-  else if (act === 'rmphoto') { removePhoto(b.dataset.id); }
+  else if (act === 'rmask') { ui.rmAsk = b.dataset.id; renderLedgerList(); }
+  else if (act === 'rmno') { ui.rmAsk = ''; renderLedgerList(); }
+  else if (act === 'rmphoto') { ui.rmAsk = ''; removePhoto(b.dataset.id); }
   else if (act === 'lso') { saveLedger({ ov: { [b.dataset.id]: { so: b.dataset.s === '1' } } }); }
   else if (act === 'dadd') { ui.ddNew = true; renderLedger(); const rs = document.querySelectorAll('.dayrow'); const last = rs[rs.length - 1]; if (last) { last.scrollIntoView({ block: 'center' }); last.querySelector('input').focus(); } }
   else if (act === 'ddel') { const dl = dlNow(); dl.closed.splice(+b.dataset.i, 1); dlSave({ closed: dl.closed }); renderLedger(); }
@@ -4100,7 +4119,7 @@ async function uploadPhoto(id, file) {
     if (ui.photoMode) { ui.photoSkip = ui.photoSkip || {}; renderLedger(); }
   } catch (e) { toast(e && e.code === 'too_large' ? 'That picture is too large.' : e && e.code === 'quota_or_state' ? 'Photo storage is full.' : 'Could not add the photo. Try again.'); }
 }
-function removePhoto(id) { const it = BY_ID[id]; if (!it || !it.img) return; const old = it.img; saveLedger({ ov: { [id]: { img: '' } } }); if (assetsCap && !/^(data:|photos\/)/.test(old) && !CATALOG.some(x => x.img === old)) assetsCap.delete(old).catch(() => {}); toast('Photo removed.'); }
+function removePhoto(id) { const it = BY_ID[id]; if (!it || !it.img) return; const old = it.img; saveLedger({ ov: { [id]: { img: '' } } }); toast('Photo removed. ' + nm(it).m + ' now shows no picture.', { label: 'Undo', fn: () => { saveLedger({ ov: { [id]: { img: old } } }); toast('Photo restored.'); } }); }
 function photoNext() { ui.photoSkip = ui.photoSkip || {}; return CATALOG.find(i => !i.hidden && !i.img && !ui.photoSkip[i.id] && (ui.lsup === 'all' || ui.lsup === i.s)); }
 function importCard() {
   if (cmode || !db) return '';
