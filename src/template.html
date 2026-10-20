@@ -3120,18 +3120,28 @@ function payLines(c, comp) { const p = c.pay || '';
   if (/cash/i.test(p)) return ['💵 Payment: cash on delivery. Please have ' + fmtRp(comp.grand) + ' ready for the driver.'];
   return p ? ['💳 Payment: ' + p] : []; }
 function billText(c, comp) {
-  const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const f = (c.name || 'there').split(' ')[0];
-  const out = ['Hi ' + f + ', thank you for your order ' + orderNo(c) + '! ✅', fin ? 'Here is your final bill, with the packed weights.' : 'We have checked stock. Here is your confirmed bill.'];
+  const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const f = (c.name || 'there').split(' ')[0]; const p = c.pay || '';
+  const due = c.paid ? 0 : Math.max(0, comp.grand - (+c.dep || 0)); const amt = fmtRp(due);
+  /* 1. What to do, first */
+  const out = ['Hi ' + f + ', your order ' + orderNo(c) + ' is confirmed ✅'];
+  if (c.paid || due === 0) out.push('*Paid in full. Nothing more to pay.* Thank you!');
+  else if (/qris/i.test(p)) out.push('*Please pay ' + amt + ' now by QRIS:*', '1. Open our QR code: ' + QRIS_URL, '2. Scan it in any banking or e-wallet app and enter ' + amt, '3. Send us a screenshot here when it is done');
+  else if (/deposit|transfer/i.test(p)) out.push('*Please transfer ' + amt + ' now:*', bankTxt || 'Reply here and we will send our bank details.', 'Then send us a screenshot here when it is done.');
+  else if (/cash/i.test(p)) out.push('*Total to pay: ' + amt + '*', '💵 Pay in cash when it arrives. Please have the exact amount ready for the driver.');
+  else if (/cafe/i.test(p)) out.push('*Total: ' + amt + '*', 'This is added to the cafe order.');
+  else out.push('*Total to pay: ' + amt + '*', p ? 'Payment: ' + p : 'Reply here to tell us how you would like to pay.');
+  /* 2. When and where */
+  const when = [c.need ? '📅 ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : '') : '', addrOnly(c.addr) ? '📍 ' + addrOnly(c.addr) : ''].filter(Boolean);
+  if (when.length) out.push('', when.join('\n'));
+  /* 3. The bill, as proof */
+  out.push('', '🧾 *Your bill*');
   const secs = {}; comp.groups.forEach(g => g.lines.forEach(ln => { const d = ln.it.d || ln.it.s; (secs[d] = secs[d] || []).push(ln); }));
   Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + ((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true))); });
   out.push('');
   if (hasDel(comp)) out.push('🚚 Delivery' + (c.zone && c.zone !== '__other' ? ' (' + zoneLabel(c.zone) + ')' : '') + ': ' + delLine(comp) + (c.dcode ? ' (code ' + c.dcode + ')' : ''));
-  out.push('*💰 TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''));
-  if (+c.dep > 0) out.push('Received so far: ' + fmtRp(c.dep) + '. Balance: ' + fmtRp(Math.max(0, comp.grand - c.dep)) + '.');
-  out.push('_' + (fin ? 'Items sold by weight use the packed weights above.' : 'Items sold by weight are confirmed after weighing.') + '_', '');
-  if (c.need) out.push('📅 Delivery: ' + fmtDate(c.need) + (c.slot ? ', ' + c.slot : ''));
-  if (addrOnly(c.addr)) out.push('📍 Deliver to: ' + addrOnly(c.addr));
-  const pl = payLines(c, comp); if (pl.length) out.push.apply(out, pl);
+  out.push('*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : '') + (comp.unpriced ? ' (+ ' + comp.unpriced + ' item(s) still to be priced)' : ''));
+  if (+c.dep > 0 && due > 0) out.push('Received so far: ' + fmtRp(c.dep) + '. Left to pay: ' + amt + '.');
+  if (fin) out.push('_Fresh items use the packed weights above._');
   out.push('', 'We will message you when your order is on its way. Thank you! 🙏'); return out.join('\n');
 }
 function combinedData() {
@@ -3180,7 +3190,7 @@ function renderCustomers() {
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
         '<div class="grand"><span>Total</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (() => { const p = profitOf(custState(c)); return '<p class="hint" style="margin-top:6px">Your cost ' + fmtRp(p.cost) + ' - profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b></p>'; })() +
         '<textarea class="pre sm" id="bill-' + esc(c.id) + '" readonly>' + esc(billText(c, comp)) + '</textarea>' +
-        '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and send bill</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">Same as Step 2 in Message ' + esc((c.name || 'customer').split(' ')[0]) + '. Send it once stock is checked.</p>' +
+        '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and ask for payment</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">Same as Step 2 in Message ' + esc((c.name || 'customer').split(' ')[0]) + '. Send it once stock is checked.</p>' +
         '<div class="hdel">' + (ui.custDel[c.id] ? '<span>Remove this order? You can restore it later.</span><button type="button" class="btn danger sm" data-act="cdelyes" data-id="' + esc(c.id) + '">Remove</button><button type="button" class="btn ghost sm" data-act="cdelno" data-id="' + esc(c.id) + '">Keep</button>' : '<button type="button" class="linkbtn" data-act="cdelask" data-id="' + esc(c.id) + '">Remove order</button>') + '</div></div>';
     }
     return ccardHead(c, comp, date) +
@@ -3248,7 +3258,7 @@ function offerStatusMsg(id, st) {
 }
 const CMSG = [
   { step: 'Step 1 · While checking stock', items: [['oos', '🔄', 'An item is unavailable', 'Ask if they want a replacement']] },
-  { step: 'Step 2 · Confirm the order', items: [['bill', '✅', 'Confirm order and send bill', 'Their full bill, total and how to pay']] },
+  { step: 'Step 2 · Confirm the order', items: [['bill', '✅', 'Confirm order and ask for payment', 'Opens with how and what to pay, then the bill']] },
   { step: 'Step 3 · Delivery day', items: [['eta', '🛵', 'On our way', ''], ['late', '⏰', 'Running a little late', '']] },
   { step: 'Step 4 · After delivery', items: [['done', '🙏', 'Thank you', 'Delivered, thanks for ordering']] },
   { step: 'Anytime', items: [['pay', '💳', 'Payment reminder', 'Total and how to pay']] }];
