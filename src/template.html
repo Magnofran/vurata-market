@@ -1374,7 +1374,7 @@ body { margin: 0; padding-inline: 8px; }
 .dpinact { display: flex; gap: 12px; align-items: center; } .dpinact a { color: var(--gold-text); text-underline-offset: 3px; font-weight: 600; }
 .delbox textarea#m-addr { border: 0 !important; border-top: 1px solid var(--line) !important; border-radius: 0 !important; width: 100%; min-height: 64px; box-shadow: none !important; }
 .dpin svg { width: 30px; height: 40px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); } .dpin path { fill: #C2A679; stroke: #6b5530; stroke-width: 1.2; } .dpin circle { fill: #fff; }
-.leaflet-container { font: inherit; } .leaflet-control-attribution { font-size: 10px; }
+.maplibregl-map { font: inherit; } .maplibregl-ctrl-attrib { font-size: 10px; } .dpin { cursor: grab; }
 /* desktop: who (name, WhatsApp), when (day, time), how (payment), then where at full width: area, then the map */
 @media (min-width: 760px) {
   #orderBody .grid2 > .field:has(#m-phone-n) { order: 3; } #orderBody .grid2 > .field:has(#m-need) { order: 4; }
@@ -1382,6 +1382,7 @@ body { margin: 0; padding-inline: 8px; }
   #orderBody .grid2 > .field:has(#m-zone) { order: 7; grid-column: 1 / -1; } #orderBody .grid2 > .field:has(#m-addr) { order: 8; grid-column: 1 / -1; }
   .delivf .dmap { height: 280px; }
 }
+.fdel.ok { align-items: flex-start; line-height: 1.5; } .fdel.ok::before { margin-top: -1px; } .fdel .snt { display: inline-block; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -1794,7 +1795,7 @@ function areaListHtml(q) {
   return (ms.length ? ms.map(row).join('') : '<p class="areanone">No area matches that. Choose "Another area in Bali" and we will confirm the fee.</p>') +
     '<button type="button" class="areaopt other" role="option" data-act="areapick" data-z="__other"><span class="an"><b>Another area in Bali</b><small>We confirm the fee by message</small></span></button>';
 }
-/* Deliver to: a free map (OpenStreetMap) with a pin the customer drags to their gate, their own location, or a pasted Maps link.
+/* Deliver to: a free map (OpenFreeMap) with a pin the customer drags to their gate, their own location, or a pasted Maps link.
    Everyone downstream gets a plain Google Maps link to that exact spot. */
 const AREA_C = { 'Canggu / Berawa / Pererenan': [-8.6478, 115.1385], 'Seminyak / Kerobokan / Umalas': [-8.682, 115.164], 'Kuta / Legian': [-8.716, 115.17], 'Denpasar / Sanur': [-8.67, 115.235], 'Jimbaran / Nusa Dua': [-8.79, 115.19], 'Ubud': [-8.507, 115.263], 'Uluwatu / Bingin': [-8.812, 115.105],
   'Tabanan town / Kediri': [-8.54, 115.125], 'Tanah Lot / Kerambitan / Beraban': [-8.615, 115.09], 'Jatiluwih / Penebel / Baturiti': [-8.37, 115.13], 'Mengwi / Munggu / Abiansemal': [-8.57, 115.17], 'Munduk / Pupuan / Belimbing': [-8.265, 115.07], 'Bedugul / Candikuning': [-8.28, 115.165],
@@ -1811,19 +1812,23 @@ function delBoxHtml(m, ro) {
     '<textarea id="m-addr" data-meta="addr" rows="2" placeholder="Villa name, street and gate, e.g. Villa Asri, Jl. Batu Bolong 12, green gate"' + ro + '>' + esc(m.addr) + '</textarea></div>';
 }
 let DMAP = null, DMAPEL = null, DMARK = null, DMAPKEY = '', LEAF = null;
-function leafletReady() { if (window.L) return Promise.resolve(); if (LEAF) return LEAF;
-  LEAF = new Promise((res, rej) => { const c = document.createElement('link'); c.rel = 'stylesheet'; c.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(c); const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'; sc.onload = () => res(); sc.onerror = () => { LEAF = null; rej(); }; document.head.appendChild(sc); }); return LEAF; }
+/* Map: MapLibre with OpenFreeMap's Liberty style. Free for any use, no key, no account. */
+function leafletReady() { if (window.maplibregl) return Promise.resolve(); if (LEAF) return LEAF;
+  LEAF = new Promise((res, rej) => { const c = document.createElement('link'); c.rel = 'stylesheet'; c.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'; document.head.appendChild(c); const sc = document.createElement('script'); sc.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'; sc.onload = () => res(); sc.onerror = () => { LEAF = null; rej(); }; document.head.appendChild(sc); }); return LEAF; }
 function setPinLL(ll) { const v = ll.lat.toFixed(6) + ',' + ll.lng.toFixed(6); DMAPKEY = v + '|' + (S.meta.zone || ''); ui.pinFail = false; patch({ meta: { pin: v } }); renderOrder(compute(S)); }
 function mountDelMap() {
   const slot = document.getElementById('dmapSlot'); if (!slot) return;
   leafletReady().then(() => {
-    const L = window.L; if (!DMAPEL) { DMAPEL = document.createElement('div'); DMAPEL.className = 'dmap'; }
+    const ML = window.maplibregl; if (!DMAPEL) { DMAPEL = document.createElement('div'); DMAPEL.className = 'dmap'; }
     slot.appendChild(DMAPEL); const pin = parsePin(S.meta.pin); const zc = AREA_C[S.meta.zone]; const key = (S.meta.pin || '') + '|' + (S.meta.zone || '');
-    const icon = L.divIcon({ className: 'dpin', html: '<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M12 31s10-11.3 10-19A10 10 0 0 0 2 12c0 7.7 10 19 10 19z"/><circle cx="12" cy="12" r="3.6"/></svg>', iconSize: [30, 40], iconAnchor: [15, 39] });
-    if (!DMAP) { DMAP = L.map(DMAPEL, { zoomControl: true, scrollWheelZoom: false }).setView(pin || zc || [-8.45, 115.13], pin ? 17 : zc ? 13 : 9); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(DMAP); DMAP.on('click', e => { if (canWrite) setPinLL(e.latlng); }); DMAPKEY = key; }
-    else if (key !== DMAPKEY) { DMAP.setView(pin || zc || [-8.45, 115.13], pin ? 17 : zc ? 13 : 9); DMAPKEY = key; }
-    if (pin) { if (!DMARK) { DMARK = L.marker(pin, { draggable: canWrite, icon }).addTo(DMAP); DMARK.on('dragend', e => setPinLL(e.target.getLatLng())); } else DMARK.setLatLng(pin); } else if (DMARK) { DMAP.removeLayer(DMARK); DMARK = null; }
-    setTimeout(() => DMAP && DMAP.invalidateSize(), 60);
+    const at = p => [p[1], p[0]]; const ctr = pin ? at(pin) : zc ? at(zc) : [115.13, -8.45]; const zm = pin ? 16 : zc ? 12.5 : 8.6;
+    if (!DMAP) { DMAP = new ML.Map({ container: DMAPEL, style: 'https://tiles.openfreemap.org/styles/liberty', center: ctr, zoom: zm, attributionControl: false, cooperativeGestures: false, dragRotate: false, pitchWithRotate: false });
+      DMAP.touchZoomRotate.disableRotation(); DMAP.addControl(new ML.NavigationControl({ showCompass: false }), 'top-left'); DMAP.addControl(new ML.AttributionControl({ compact: true }), 'bottom-right'); DMAP.on('load', () => { const at = DMAPEL.querySelector('.maplibregl-ctrl-attrib'); if (at) at.classList.remove('maplibregl-compact-show'); }); DMAP.on('click', e => { if (canWrite) setPinLL(e.lngLat); }); DMAPKEY = key; }
+    else if (key !== DMAPKEY) { DMAP.jumpTo({ center: ctr, zoom: zm }); DMAPKEY = key; }
+    if (pin) { if (!DMARK) { const el = document.createElement('div'); el.className = 'dpin'; el.innerHTML = '<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M12 31s10-11.3 10-19A10 10 0 0 0 2 12c0 7.7 10 19 10 19z"/><circle cx="12" cy="12" r="3.6"/></svg>';
+        DMARK = new ML.Marker({ element: el, anchor: 'bottom', draggable: canWrite }).setLngLat(at(pin)).addTo(DMAP); DMARK.on('dragend', () => setPinLL(DMARK.getLngLat())); } else DMARK.setLngLat(at(pin)); }
+    else if (DMARK) { DMARK.remove(); DMARK = null; }
+    setTimeout(() => DMAP && DMAP.resize(), 60);
   }).catch(() => { slot.innerHTML = '<p class="hint dmapfail">The map could not load. Use your location or paste a Maps link instead.</p>'; });
 }
 function dlBreak(c) {
@@ -1860,7 +1865,7 @@ function freeNudge(c) {
   if (mg > 0) return '<div class="fdel warn"><span>Minimum order is <b>' + fmtRp(dl.min) + '</b>.<br>Add <b>' + fmtRp(mg) + '</b> more to send it.</span><i><u style="width:' + Math.round(c.total / dl.min * 100) + '%"></u></i></div>';
   const fa = freeAt(c.zone); if (!cmode || !fa || !c.total || !dl.zones.some(z => z.fee > 0)) return '';
   if (c.zone && c.feeKnown && c.fee === 0 && !c.free) return '';
-  if (c.total >= fa) return '<div class="fdel ok"><span><b>Free delivery unlocked.</b> Your delivery is on us.</span></div>';
+  if (c.total >= fa) return '<div class="fdel ok"><span><b class="snt">Free delivery unlocked.</b> <span class="snt">Your delivery is on us.</span></span></div>';
   const gap = fa - c.total;
   if (gap <= NEAR_FREE) { const br = bridgeItems(gap); return '<div class="fdel near"><span class="fdt">' + FD_TRUCK + '<span><b>Only ' + fmtRp(gap) + ' more</b> and delivery is free.</span></span><i><u style="width:' + Math.round(c.total / fa * 100) + '%"></u></i>' + (br.length ? '<div class="bridge"><small>Add something you like:</small>' + br.map(x => '<button type="button" data-act="addq" data-key="' + esc(x.k) + '" data-q="' + x.q + '">+ ' + esc(x.it.n) + ' <em>' + fmtRp(x.add) + '</em></button>').join('') + '</div>' : '') + '</div>'; }
   return '<div class="fdel"><span class="fdt">' + FD_TRUCK + '<span>Add <b>' + fmtRp(gap) + '</b> more for free delivery</span></span><i><u style="width:' + Math.round(c.total / fa * 100) + '%"></u></i></div>';
