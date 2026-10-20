@@ -1370,7 +1370,7 @@ body { margin: 0; padding-inline: 8px; }
 .dbtn[aria-pressed="true"], .dbtn:hover { background: var(--surface-2); }
 .dpaste { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); } .dpaste input { min-height: 40px; }
 .dpinstat { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); line-height: 1.45; }
-.dpinstat.ok { color: var(--ink); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); } .dpinstat.ok b { font-weight: 600; }
+.dpinstat.ok { color: var(--ink); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); } .dpinstat.ok b { font-weight: 600; } .dpinstat.rough { background: color-mix(in srgb, var(--gold) 16%, var(--surface)); }
 .dpinact { display: flex; gap: 12px; align-items: center; } .dpinact a { color: var(--gold-text); text-underline-offset: 3px; font-weight: 600; }
 .delbox textarea#m-addr { border: 0 !important; border-top: 1px solid var(--line) !important; border-radius: 0 !important; width: 100%; min-height: 64px; box-shadow: none !important; }
 .dpin svg { width: 30px; height: 40px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); } .dpin path { fill: #C2A679; stroke: #6b5530; stroke-width: 1.2; } .dpin circle { fill: #fff; }
@@ -1808,27 +1808,34 @@ function delBoxHtml(m, ro) {
   return '<div class="delbox"><div class="dmapslot" id="dmapSlot"></div>' +
     (ro ? '' : '<div class="dmapbar"><button type="button" class="dbtn" data-act="getpin"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>Use my location</button><button type="button" class="dbtn" data-act="pastepin"' + (ui.pinPaste ? ' aria-pressed="true"' : '') + '><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Paste a Maps link</button></div>') +
     (ui.pinPaste && !ro ? '<div class="dpaste"><input id="m-pinlink" inputmode="url" placeholder="Paste the Google Maps link here" autocomplete="off"><button type="button" class="btn sm" data-act="pinlinkok">Use it</button></div>' : '') +
-    '<div class="dpinstat' + (pin ? ' ok' : '') + '">' + (pin ? '<span><b>&#10003; Pin set.</b> This is exactly where we deliver.</span><span class="dpinact"><a href="' + gm + '" target="_blank" rel="noopener">Check in Google Maps</a>' + (ro ? '' : '<button type="button" class="linkbtn" data-act="clrpin">Remove</button>') + '</span>' : (ui.pinFail ? 'We could not read your location. Tap the map at your gate instead, or paste a Maps link.' : 'Tap the map or drag the pin to your gate, so the driver comes straight to you.')) + '</div>' +
+    '<div class="dpinstat' + (pin ? (pinRough(m) ? ' ok rough' : ' ok') : '') + '">' + (pin ? (pinRough(m) ? '<span><b>Approximate pin, about &plusmn;' + pinRough(m) + ' m.</b> Drag it to your gate so the driver finds you.</span>' : '<span><b>&#10003; Pin set.</b> This is exactly where we deliver.</span>') + '<span class="dpinact"><a href="' + gm + '" target="_blank" rel="noopener">Check in Google Maps</a>' + (ro ? '' : '<button type="button" class="linkbtn" data-act="clrpin">Remove</button>') + '</span>' : (ui.pinFail ? 'We could not read your location. Tap the map at your gate instead, or paste a Maps link.' : 'Tap the map or drag the pin to your gate, so the driver comes straight to you.')) + '</div>' +
     '<textarea id="m-addr" data-meta="addr" rows="2" placeholder="Villa name, street and gate, e.g. Villa Asri, Jl. Batu Bolong 12, green gate"' + ro + '>' + esc(m.addr) + '</textarea></div>';
 }
 let DMAP = null, DMAPEL = null, DMARK = null, DMAPKEY = '', LEAF = null;
 /* Map: MapLibre with OpenFreeMap's Liberty style. Free for any use, no key, no account. */
 function leafletReady() { if (window.maplibregl) return Promise.resolve(); if (LEAF) return LEAF;
   LEAF = new Promise((res, rej) => { const c = document.createElement('link'); c.rel = 'stylesheet'; c.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'; document.head.appendChild(c); const sc = document.createElement('script'); sc.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'; sc.onload = () => res(); sc.onerror = () => { LEAF = null; rej(); }; document.head.appendChild(sc); }); return LEAF; }
-function setPinLL(ll) { const v = ll.lat.toFixed(6) + ',' + ll.lng.toFixed(6); DMAPKEY = v + '|' + (S.meta.zone || ''); ui.pinFail = false; patch({ meta: { pin: v } }); renderOrder(compute(S)); }
+/* GPS accuracy in metres; anything looser than 25 m asks for a drag. A tap or drag sets it exact. */
+function pinRough(m) { const a = +m.pinacc || 0; return a > 25 ? Math.round(a / 5) * 5 : 0; }
+function accRing(lat, lng, r) { const c = [], k = r / 111320, kx = k / Math.cos(lat * Math.PI / 180); for (let i = 0; i <= 48; i++) { const t = i / 48 * 2 * Math.PI; c.push([lng + kx * Math.cos(t), lat + k * Math.sin(t)]); } return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [c] } }; }
+function drawAcc() { if (!DMAP) return;
+  const pin = parsePin(S.meta.pin), r = pin ? pinRough(S.meta) : 0; const d = r ? accRing(pin[0], pin[1], r) : { type: 'FeatureCollection', features: [] };
+  const src = DMAP.getSource('acc'); if (src) { src.setData(d); return; } if (!DMAP.isStyleLoaded()) { DMAP.once('idle', drawAcc); return; }
+  DMAP.addSource('acc', { type: 'geojson', data: d }); DMAP.addLayer({ id: 'acc-fill', type: 'fill', source: 'acc', paint: { 'fill-color': '#C2A679', 'fill-opacity': 0.18 } }); DMAP.addLayer({ id: 'acc-line', type: 'line', source: 'acc', paint: { 'line-color': '#9a7b45', 'line-width': 1.2, 'line-opacity': 0.7 } }); }
+function setPinLL(ll) { const v = ll.lat.toFixed(6) + ',' + ll.lng.toFixed(6); DMAPKEY = v + '|' + (S.meta.zone || ''); ui.pinFail = false; patch({ meta: { pin: v, pinacc: '' } }); renderOrder(compute(S)); }
 function mountDelMap() {
   const slot = document.getElementById('dmapSlot'); if (!slot) return;
   leafletReady().then(() => {
     const ML = window.maplibregl; if (!DMAPEL) { DMAPEL = document.createElement('div'); DMAPEL.className = 'dmap'; }
     slot.appendChild(DMAPEL); const pin = parsePin(S.meta.pin); const zc = AREA_C[S.meta.zone]; const key = (S.meta.pin || '') + '|' + (S.meta.zone || '');
-    const at = p => [p[1], p[0]]; const ctr = pin ? at(pin) : zc ? at(zc) : [115.13, -8.45]; const zm = pin ? 16 : zc ? 12.5 : 8.6;
+    const at = p => [p[1], p[0]]; const ctr = pin ? at(pin) : zc ? at(zc) : [115.13, -8.45]; const ra = pin ? pinRough(S.meta) : 0; const zm = pin ? (ra > 150 ? 15 : ra > 60 ? 16 : 17) : zc ? 12.5 : 8.6;
     if (!DMAP) { DMAP = new ML.Map({ container: DMAPEL, style: 'https://tiles.openfreemap.org/styles/liberty', center: ctr, zoom: zm, attributionControl: false, cooperativeGestures: false, dragRotate: false, pitchWithRotate: false });
       DMAP.touchZoomRotate.disableRotation(); DMAP.addControl(new ML.NavigationControl({ showCompass: false }), 'top-left'); DMAP.addControl(new ML.AttributionControl({ compact: true }), 'bottom-right'); DMAP.on('load', () => { const at = DMAPEL.querySelector('.maplibregl-ctrl-attrib'); if (at) at.classList.remove('maplibregl-compact-show'); }); DMAP.on('click', e => { if (canWrite) setPinLL(e.lngLat); }); DMAPKEY = key; }
     else if (key !== DMAPKEY) { DMAP.jumpTo({ center: ctr, zoom: zm }); DMAPKEY = key; }
     if (pin) { if (!DMARK) { const el = document.createElement('div'); el.className = 'dpin'; el.innerHTML = '<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M12 31s10-11.3 10-19A10 10 0 0 0 2 12c0 7.7 10 19 10 19z"/><circle cx="12" cy="12" r="3.6"/></svg>';
         DMARK = new ML.Marker({ element: el, anchor: 'bottom', draggable: canWrite }).setLngLat(at(pin)).addTo(DMAP); DMARK.on('dragend', () => setPinLL(DMARK.getLngLat())); } else DMARK.setLngLat(at(pin)); }
     else if (DMARK) { DMARK.remove(); DMARK = null; }
-    setTimeout(() => DMAP && DMAP.resize(), 60);
+    drawAcc(); setTimeout(() => DMAP && DMAP.resize(), 60);
   }).catch(() => { slot.innerHTML = '<p class="hint dmapfail">The map could not load. Use your location or paste a Maps link instead.</p>'; });
 }
 function dlBreak(c) {
@@ -2859,7 +2866,7 @@ function decodeCode(code) {
 function customerMessage(state, comp) {
   const m = state.meta; const out = ['Hi! New order from Vurata Market.'];
   out.push('Name: ' + (m.who || '(please add your name)') + (m.phone ? '  |  WhatsApp: ' + m.phone : ''));
-  if (m.pin) out.push('Pin: https://maps.google.com/?q=' + m.pin); if (m.need) out.push('Needed by: ' + fmtDate(m.need)); if (m.slot) out.push('Delivery time: ' + m.slot); if (m.zone) out.push('Area: ' + zoneLabel(m.zone)); if (m.addr) out.push('Deliver to: ' + m.addr); if (m.pay) out.push('Payment: ' + m.pay); if (m.notes) out.push('Notes: ' + m.notes);
+  if (m.pin) out.push('Pin: https://maps.google.com/?q=' + m.pin + (pinRough(m) ? ' (approximate, about ' + pinRough(m) + ' m)' : '')); if (m.need) out.push('Needed by: ' + fmtDate(m.need)); if (m.slot) out.push('Delivery time: ' + m.slot); if (m.zone) out.push('Area: ' + zoneLabel(m.zone)); if (m.addr) out.push('Deliver to: ' + m.addr); if (m.pay) out.push('Payment: ' + m.pay); if (m.notes) out.push('Notes: ' + m.notes);
   comp.groups.forEach(g => { out.push('', '*' + SUPS[g.sid].name.toUpperCase() + '*'); g.lines.forEach((ln, i) => { out.push((i + 1) + '. ' + lineText(ln)); if (ln.note) out.push('   Note: ' + ln.note); }); out.push('Subtotal: ' + fmtRp(g.subtotal)); });
   if (hasDel(comp)) out.push('', 'Delivery: ' + delLine(comp) + (comp.codeUsed ? ' (code ' + comp.codeUsed + ': ' + comp.codeText + ')' : (state.meta.dcode ? ' (code ' + state.meta.dcode + ' entered)' : '')));
   out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : ''), '', 'Order code (your host pastes this into the app):', makeCode(state));
@@ -3446,12 +3453,16 @@ document.addEventListener('click', e => {
   else if (act === 'goled') { showView('ledger'); }
   else if (act === 'shareapp') { const hw = hostWA || LS.get('mumu-hostwa') || ''; const url = ARTIFACT_URL + (hw ? '#f-' + hw : '#f'); const text = 'Fresh fruit, vegetables, meat and groceries delivered in Bali. Order here:'; if (navigator.share) { navigator.share({ title: 'Vurata Market', text, url }).catch(() => {}); } else { window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener'); } }
   else if (act === 'totop') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-  else if (act === 'getpin') { const fail = () => { ui.pinFail = true; renderOrder(compute(S)); }; if (!navigator.geolocation) { fail(); } else { toast('Finding your location...'); navigator.geolocation.getCurrentPosition(p => { ui.pinFail = false; patch({ meta: { pin: p.coords.latitude.toFixed(6) + ',' + p.coords.longitude.toFixed(6) } }); renderOrder(compute(S)); toast('Pin set at your location. Drag it to your gate if needed.'); }, () => { const tt = document.getElementById('toast'); if (tt) tt.hidden = true; fail(); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }); } }
-  else if (act === 'clrpin') { patch({ meta: { pin: '' } }); renderOrder(compute(S)); }
+  else if (act === 'getpin') { const fail = () => { ui.pinFail = true; renderOrder(compute(S)); }; if (!navigator.geolocation) { fail(); } else { toast('Finding your location...');
+    let best = null, wid = null, tm = null; const use = p => { ui.pinFail = false; patch({ meta: { pin: p.coords.latitude.toFixed(6) + ',' + p.coords.longitude.toFixed(6), pinacc: String(Math.round(p.coords.accuracy || 0)) } }); renderOrder(compute(S)); };
+    const done = () => { if (wid !== null) navigator.geolocation.clearWatch(wid); wid = null; clearTimeout(tm); if (!best) { const tt = document.getElementById('toast'); if (tt) tt.hidden = true; fail(); return; } toast(pinRough(S.meta) ? 'Approximate location. Drag the pin to your gate.' : 'Pin set at your location.'); };
+    wid = navigator.geolocation.watchPosition(p => { if (!best || p.coords.accuracy < best.coords.accuracy) { best = p; use(p); } if (p.coords.accuracy <= 15) done(); }, () => { if (!best) done(); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+    tm = setTimeout(done, 10000); } }
+  else if (act === 'clrpin') { patch({ meta: { pin: '', pinacc: '' } }); renderOrder(compute(S)); }
   else if (act === 'pastepin') { ui.pinPaste = !ui.pinPaste; renderOrder(compute(S)); const i = document.getElementById('m-pinlink'); if (i) i.focus(); }
   else if (act === 'pinlinkok') { const i = document.getElementById('m-pinlink'); const raw = i ? i.value.trim() : ''; if (!raw) { toast('Paste the link first.'); return; } const v = pinFromLink(raw);
     if (v === 'far') { toast('That link points outside Bali. Check it and try again.'); return; }
-    if (v) { ui.pinPaste = false; ui.pinFail = false; patch({ meta: { pin: v } }); renderOrder(compute(S)); toast('Pin set from your link.'); return; }
+    if (v) { ui.pinPaste = false; ui.pinFail = false; patch({ meta: { pin: v, pinacc: '' } }); renderOrder(compute(S)); toast('Pin set from your link.'); return; }
     if (/^https?:\/\/\S+$/.test(raw)) { ui.pinPaste = false; const a = String(S.meta.addr || ''); patch({ meta: { addr: (a ? a + '\n' : '') + 'Map: ' + raw } }); renderOrder(compute(S)); toast('Link added to your address. Tap the map at your gate too, if you can.'); return; }
     toast('That does not look like a Maps link.'); }
   else if (act === 'featdec') { const k = b.dataset.key; const o = BY_ID[k.split('|')[0]].o[0]; const cur = (S.lines[k] && S.lines[k].q) || 0; let q = cur - (o.st || 1); if (q < 0.001 || (o.mn && q < o.mn)) q = 0; setQty(k, q, false); renderPick(); }
