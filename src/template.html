@@ -1067,6 +1067,7 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 /* outlined buttons: border two shades stronger so they read as buttons */
 .btn.ghost, .themebtn, .stepper button, .chip:not([data-s]):not([aria-pressed="true"]), .lseg, .seg { border-color: var(--line-dark); }
 .btn.ghost[disabled] { border-color: var(--line); }
+.nhead { margin: 6px 0 0; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .nsteps { list-style: none; margin: 4px 0 0; padding: 0; display: grid; }
 .nsteps li { display: grid; grid-template-columns: 34px 1fr; align-items: baseline; padding: 14px 0; background: var(--dotline); }
 .nsteps li:first-child { background: none; padding-top: 6px; } .nsteps li:last-child { padding-bottom: 2px; }
@@ -1370,7 +1371,7 @@ body { margin: 0; padding-inline: 8px; }
 .dbtn + .dbtn { border-left: 1px solid var(--line); } .dbtn svg { width: 17px; height: 17px; fill: none; stroke: var(--gold-text); stroke-width: 1.8; stroke-linecap: round; }
 .dopt { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); } .dopt svg { width: 14px !important; height: 14px !important; } .dlab { white-space: nowrap; } @media (max-width: 350px) { .dbtn { padding-inline: 12px; } .dlab { font-size: 12.5px; } }
 .dbtn[aria-pressed="true"], .dbtn:hover { background: var(--surface-2); }
-.dpaste { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); } .dpaste input { min-height: 40px; }
+.dpaste { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); } .dpaste input { min-height: 40px; } .dtip { grid-column: 1 / -1; margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
 .dpinstat { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); line-height: 1.45; }
 .dpinstat.ok { color: var(--ink); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); } .dpinstat.ok b { font-weight: 600; } .dpinstat.rough { background: color-mix(in srgb, var(--gold) 16%, var(--surface)); }
 .dpinact { display: flex; gap: 12px; align-items: center; } .dpinact a { color: var(--gold-text); text-underline-offset: 3px; font-weight: 600; }
@@ -1805,18 +1806,19 @@ const AREA_C = { 'Canggu / Berawa / Pererenan': [-8.6478, 115.1385], 'Seminyak /
 const parsePin = v => { const m = String(v || '').match(/^(-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)$/); return m ? [+m[1], +m[2]] : null; };
 const pinFromLink = t => { const s = String(t || '').trim(); const pats = [/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/, /!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)/, /[?&](?:q|query|ll|destination|center)=(-?\d{1,2}\.\d+)(?:,|%2C)\s*(-?\d{1,3}\.\d+)/i, /^(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)$/];
   for (const re of pats) { const m = s.match(re); if (m) { const la = +m[1], ln = +m[2]; if (la < -7.9 && la > -9.1 && ln > 114.3 && ln < 115.8) return la.toFixed(6) + ',' + ln.toFixed(6); return 'far'; } } return ''; };
+const mapLinkOf = m => { const x = /(?:^|\n)Map: (https?:\/\/\S+)/.exec(String(m.addr || '')); return x ? x[1] : ''; };
 function delBoxHtml(m, ro) {
   const pin = parsePin(m.pin); const gm = pin ? 'https://maps.google.com/?q=' + m.pin : '';
   return '<div class="delbox"><div class="dmapslot" id="dmapSlot"></div>' +
     (ro ? '' : '<div class="dmapbar"><button type="button" class="dbtn" data-act="getpin"><span class="dopt"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>Option 1</span><span class="dlab">Use my location</span></button><button type="button" class="dbtn" data-act="pastepin"' + (ui.pinPaste ? ' aria-pressed="true"' : '') + '><span class="dopt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Option 2</span><span class="dlab">Paste a Maps link</span></button></div>') +
-    (ui.pinPaste && !ro ? '<div class="dpaste"><input id="m-pinlink" inputmode="url" placeholder="Paste the Google Maps link here" autocomplete="off"><button type="button" class="btn sm" data-act="pinlinkok">Use it</button></div>' : '') +
-    '<div class="dpinstat' + (pin ? (pinRough(m) ? ' ok rough' : ' ok') : '') + '">' + (pin ? (pinRough(m) ? '<span><b>Approximate pin, about &plusmn;' + pinRough(m) + ' m.</b> Drag it to your gate so the driver finds you.</span>' : '<span><b>&#10003; Pin set.</b> This is exactly where we deliver.</span>') + '<span class="dpinact"><a href="' + gm + '" target="_blank" rel="noopener">Check in Google Maps</a>' + (ro ? '' : '<button type="button" class="linkbtn" data-act="clrpin">Remove</button>') + '</span>' : (ui.pinFail ? 'We could not read your location. Tap the map at your gate instead, or paste a Maps link.' : 'Tap the map or drag the pin to your gate, so the driver comes straight to you.')) + '</div>' +
+    (ui.pinPaste && !ro ? '<div class="dpaste"><input id="m-pinlink" inputmode="url" placeholder="Paste the Google Maps link here" autocomplete="off"><button type="button" class="btn sm" data-act="pinlinkok">Use it</button><p class="dtip">Any Google Maps link works. For an exact pin on this map, press and hold your gate in Google Maps, copy the numbers that appear, and paste them here.</p></div>' : '') +
+    '<div class="dpinstat' + (pin ? (pinRough(m) ? ' ok rough' : ' ok') : mapLinkOf(m) ? ' ok' : '') + '">' + (pin ? (pinRough(m) ? '<span><b>Approximate pin, about &plusmn;' + pinRough(m) + ' m.</b> Drag it to your gate so the driver finds you.</span>' : '<span><b>&#10003; Pin set.</b> This is exactly where we deliver.</span>') + '<span class="dpinact"><a href="' + gm + '" target="_blank" rel="noopener">Check in Google Maps</a>' + (ro ? '' : '<button type="button" class="linkbtn" data-act="clrpin">Remove</button>') + '</span>' : (mapLinkOf(m) ? '<span><b>&#10003; Maps link saved.</b> Your host opens it to find you. To see the pin here too, tap your gate on the map.</span><span class="dpinact"><a href="' + esc(mapLinkOf(m)) + '" target="_blank" rel="noopener">Open link</a></span>' : ui.pinFail ? 'We could not read your location. Tap the map at your gate instead, or paste a Maps link.' : 'Tap the map or drag the pin to your gate, so the driver comes straight to you.')) + '</div>' +
     '<textarea id="m-addr" data-meta="addr" rows="2" placeholder="Villa name, street and gate, e.g. Villa Asri, Jl. Batu Bolong 12, green gate"' + ro + '>' + esc(m.addr) + '</textarea></div>';
 }
 let DMAP = null, DMAPEL = null, DMARK = null, DMAPKEY = '', LEAF = null;
-/* Map: MapLibre with OpenFreeMap's Liberty style. Free for any use, no key, no account. */
+/* Map: MapLibre 4.7.1 (self-hosted in vendor/) with OpenFreeMap's Liberty style. Free for any use, no key, no account. */
 function leafletReady() { if (window.maplibregl) return Promise.resolve(); if (LEAF) return LEAF;
-  LEAF = new Promise((res, rej) => { const c = document.createElement('link'); c.rel = 'stylesheet'; c.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'; document.head.appendChild(c); const sc = document.createElement('script'); sc.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'; sc.onload = () => res(); sc.onerror = () => { LEAF = null; rej(); }; document.head.appendChild(sc); }); return LEAF; }
+  LEAF = new Promise((res, rej) => { const c = document.createElement('link'); c.rel = 'stylesheet'; c.href = 'vendor/maplibre-gl.css'; document.head.appendChild(c); const sc = document.createElement('script'); sc.src = 'vendor/maplibre-gl.js'; sc.onload = () => res(); sc.onerror = () => { LEAF = null; rej(); }; document.head.appendChild(sc); }); return LEAF; }
 /* GPS accuracy in metres; anything looser than 25 m asks for a drag. A tap or drag sets it exact. */
 function pinRough(m) { const a = +m.pinacc || 0; return a > 25 ? Math.round(a / 5) * 5 : 0; }
 function accRing(lat, lng, r) { const c = [], k = r / 111320, kx = k / Math.cos(lat * Math.PI / 180); for (let i = 0; i <= 48; i++) { const t = i / 48 * 2 * Math.PI; c.push([lng + kx * Math.cos(t), lat + k * Math.sin(t)]); } return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [c] } }; }
@@ -3465,7 +3467,7 @@ document.addEventListener('click', e => {
   else if (act === 'pinlinkok') { const i = document.getElementById('m-pinlink'); const raw = i ? i.value.trim() : ''; if (!raw) { toast('Paste the link first.'); return; } const v = pinFromLink(raw);
     if (v === 'far') { toast('That link points outside Bali. Check it and try again.'); return; }
     if (v) { ui.pinPaste = false; ui.pinFail = false; patch({ meta: { pin: v, pinacc: '' } }); renderOrder(compute(S)); toast('Pin set from your link.'); return; }
-    if (/^https?:\/\/\S+$/.test(raw)) { ui.pinPaste = false; const a = String(S.meta.addr || ''); patch({ meta: { addr: (a ? a + '\n' : '') + 'Map: ' + raw } }); renderOrder(compute(S)); toast('Link added to your address. Tap the map at your gate too, if you can.'); return; }
+    if (/^https?:\/\/\S+$/.test(raw)) { ui.pinPaste = false; const a = String(S.meta.addr || ''); if (!a.includes(raw)) patch({ meta: { addr: (a ? a + '\n' : '') + 'Map: ' + raw } }); renderOrder(compute(S)); toast('Maps link saved. Your host opens it to find you.'); return; }
     toast('That does not look like a Maps link.'); }
   else if (act === 'featdec') { const k = b.dataset.key; const o = BY_ID[k.split('|')[0]].o[0]; const cur = (S.lines[k] && S.lines[k].q) || 0; let q = cur - (o.st || 1); if (q < 0.001 || (o.mn && q < o.mn)) q = 0; setQty(k, q, false); renderPick(); }
   else if (act === 'dzall') { ui.dzAll = !ui.dzAll; renderLedger(); }
@@ -3691,13 +3693,18 @@ function installHtml() {
   if (/iPad|iPhone|iPod/.test(ua)) return '<p class="hint sentip"><b>Order faster next time:</b> tap the <b>Share</b> icon in Safari, then <b>Add to Home Screen</b>.</p>';
   return '';
 }
+function payStep(p) { p = String(p || '');
+  if (/qris/i.test(p)) return ['Pay with QRIS', 'Your host sends the QR code with your confirmed total. Scan it with any banking or e-wallet app.'];
+  if (/cash/i.test(p)) return ['Pay on delivery', 'Pay the driver in cash when your order arrives.'];
+  if (/cafe/i.test(p)) return ['Added to the cafe order', 'Your share is added to the cafe bill.'];
+  return ['Payment', 'Pay as agreed with your host once your total is confirmed.']; }
 async function confirmSent() {
   const comp = compute(S), m = S.meta, who = (m.who || '').trim().split(/\s+/)[0] || '', hw = hostWA || LS.get('mumu-hostwa') || '', hadPin = !!m.pin;
   const rows = [['Order total', fmtRp(comp.grand), 'estimate'], m.need ? ['Needed by', fmtDate(m.need), ''] : null, m.zone ? ['Area', zoneLabel(m.zone), ''] : null, m.pay ? ['Payment', m.pay, ''] : null].filter(Boolean);
   await archive(); const tt = document.getElementById('toast'); if (tt) tt.hidden = true;
   const el = sentBox();
   el.innerHTML = '<div class="sentbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Thank you' + (who ? ', ' + esc(who) : '') + '.</h3><p class="hint">Your order is with the Vurata team.</p><div class="sentrows">' + rows.map(r => '<div><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('') + '</div>' +
-    '<ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Stock and your order, on WhatsApp.</span></div></li><li><i>02</i><div><b>Your total</b><span>The total you saw is what you pay. If an item is out of stock, you get an updated total first.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day and you pay as agreed.</span></div></li></ol>' + (hadPin ? '' : '<p class="hint sentip"><b>Tip:</b> share your location in the same WhatsApp chat so the driver finds you faster. Tap <b>+</b>, then <b>Location</b>.</p>') + installHtml() +
+    '<p class="nhead">What happens next</p><ol class="nsteps"><li><i>01</i><div><b>We confirm on WhatsApp</b><span>Your host checks stock and replies with your final total. It only changes if an item is out of stock.</span></div></li><li><i>02</i><div><b>' + payStep(m.pay)[0] + '</b><span>' + payStep(m.pay)[1] + '</span></div></li><li><i>03</i><div><b>Delivery' + (m.need ? ' on ' + esc(fmtDate(m.need)) : '') + '</b><span>' + (m.slot ? esc(m.slot) + '. ' : '') + (m.pin ? 'We bring it to your pin.' : 'We bring it to the address you gave.') + '</span></div></li></ol>' + (hadPin ? '' : '<p class="hint sentip"><b>Tip:</b> share your location in the same WhatsApp chat so the driver finds you faster. Tap <b>+</b>, then <b>Location</b>.</p>') + installHtml() +
     '<div class="actions full"><button type="button" class="btn" data-act="sentdone">Start a new order</button>' + (hw ? '<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Chat with us</a>' : '') + '</div></div>';
   el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
 }

@@ -23,7 +23,7 @@ out = out.replace("</script></script>", "</script>")
 open(os.path.join(ROOT, "index.html"), "w").write(out)
 import time
 open(os.path.join(ROOT, "sw.js"), "w").write(open(os.path.join(ROOT, "src/sw.js")).read().replace("__BUILD__", time.strftime("%Y%m%d%H%M%S")))
-for f in ("shim.js", "vendor/supabase.js"):
+for f in ("shim.js", "vendor/supabase.js", "vendor/maplibre-gl.js", "vendor/maplibre-gl.css"):
     dst = os.path.join(ROOT, f); os.makedirs(os.path.dirname(dst), exist_ok=True)
     open(dst, "w").write(open(os.path.join(ROOT, "src", f)).read())
 print("built index.html", len(out) // 1024, "KB")
