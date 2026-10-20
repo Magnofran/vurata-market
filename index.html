@@ -3102,7 +3102,7 @@ function renderShareC(comp) {
   const qrisHtml = (/qris/i.test(S.meta.pay || '') ? '<div class="card qriscard"><div class="msg-head"><h3>Pay with QRIS</h3></div><ol class="qsteps"><li>Wait for our WhatsApp confirmation.</li><li>Scan this code in any banking or e-wallet app and enter your total.</li><li>Send us a screenshot.</li></ol><p class="payhint">Pay before or when your order arrives. We hand it over once it\'s paid.</p><div class="qrisimg"><img src="assets/qris.jpg" alt="QRIS code for Vurata Market" width="380" height="438" loading="lazy"></div><p class="hint">On your phone, press and hold the code to save it, then choose it from your gallery in your banking app.</p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div></div>' : '');
   const sendCard = '<div class="card"><div class="msg-head"><h3>Send your order</h3></div>' +
     (S.meta.who ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Add your name in My order first, so your host knows who it is from.</p>') + (S.meta.pay ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Choose how you will pay in My order: cash on delivery or QRIS.</p>') +
-    (dlNow().cutoff && pastCutoff() ? '<div class="cutnote"><b>Ordering after ' + cutLabel(dlNow().cutoff) + '.</b> Your order goes to our suppliers tomorrow, so the earliest delivery is ' + dayLabel(minNeed()) + ' morning.</div>' : '') +
+    (dlNow().cutoff && pastCutoff() ? '<div class="cutnote"><b>Ordering after ' + cutLabel(dlNow().cutoff) + '.</b> Your order is prepared tomorrow, so the earliest delivery is ' + dayLabel(minNeed()) + ' morning.</div>' : '') +
     '<div class="recapm">' + recapHtml + '</div>' +
     '<p class="choose">Choose <b>one</b> way to send it. Your host gets the same order whichever you pick.</p>' +
     (cmode ? '<div class="sendpick" role="group" aria-label="How to send">' + pick + '</div>' : '<div class="lseg three sendseg" role="group" aria-label="How to send">' + seg + '</div>') + '<div class="sendpanel">' + panel + '</div>' +
@@ -4275,6 +4275,7 @@ const ID_RULES = [
   [/^(\d+) lines? - about (.+)$/, (m, n, w) => n + ' barang - sekitar ' + w], [/^About (.+) where weights are listed\.$/, (m, w) => 'Sekitar ' + w + ' untuk barang yang ada beratnya.'],
   [/^(\d+) of (\d+) details$/, (m, a, b) => a + ' dari ' + b + ' data'], [/^Unlocked, over (.+)$/, (m, v) => 'Aktif, di atas ' + v],
   [/^Delivery starting from (.+), depending on your area\.$/, (m, v) => 'Ongkir mulai ' + v + ', tergantung area Anda.'],
+  [/^Ordering after (.+)\.$/, (m, t) => 'Pesan setelah ' + t + '.'], [/^Your order is prepared tomorrow, so the earliest delivery is (.+) morning\.$/, (m, d) => 'Pesanan Anda disiapkan besok, jadi pengantaran paling cepat ' + idcDate(d) + ' pagi.'],
   [/^Order by (.+) for delivery tomorrow morning\.$/, (m, t) => 'Pesan sebelum ' + t + ' untuk diantar besok pagi.'],
   [/^per (\S+)(.*?) - listed as (.+)$/, (m, u, x, l) => 'per ' + unitId(u) + x + ' - tertera ' + l], [/^(.+) \+ (\d+) more$/, (m, a, n) => a + ' + ' + n + ' lainnya'], [/^per (\S+)$/, (m, u) => 'per ' + unitId(u)],
   [/^([\d.,]+) (pcs|pack|box|carton|can|bottle|jar|sachet|hand|sack)$/, (m, q, u) => q + ' ' + unitId(u)], [/^(pcs|pack|box|carton|can|bottle|jar|sachet|hand|sack)$/, (m, u) => unitId(u)],
