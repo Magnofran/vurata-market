@@ -1340,6 +1340,8 @@ body { margin: 0; padding-inline: 8px; }
 .dlbreak { margin: 8px 0 0; display: grid; border: 1px solid var(--line); }
 .dlbreak > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--line); font-size: 13.5px; } .dlbreak > div:first-child { border-top: 0; }
 .dlbreak dt { color: var(--muted); } .dlbreak dd { margin: 0; color: var(--ink); font-weight: 600; text-align: right; }
+/* each sentence wraps as a whole: if it does not fit on the line, it starts a new one */
+.hownote .snt { display: inline-block; }
 /* add-a-note is a dashed field, the same box the note input becomes */
 .ln .linkbtn[data-act="note"] { display: flex; align-items: center; width: 100%; height: 40px; padding: 0 12px; border: 1px dashed var(--line-dark); background: transparent; color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 500; text-align: left; cursor: text; }
 .ln input.note { height: 40px; border-color: var(--line-dark); padding: 0 12px; }
@@ -2145,7 +2147,7 @@ function renderFilters() {
   const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
   const hw = document.getElementById('howCard'); if (hw) {
     const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
-    if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span>Pick what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().join(' ') + '</p>' : '') + (cmode && dlNow().cutoff ? '<p class="hownote howcut">Order by <b>' + cutLabel(dlNow().cutoff) + '</b> for delivery the next morning. Later orders arrive the morning after.</p>' : '');
+    if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span><b>Pick</b> what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().map(x => '<span class="snt">' + x + '</span>').join(' ') + '</p>' : '') + (cmode && dlNow().cutoff ? '<p class="hownote howcut"><span class="snt">Order by <b>' + cutLabel(dlNow().cutoff) + '</b> for delivery the next morning.</span> <span class="snt">Later orders arrive the morning after.</span></p>' : '');
   }
   const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; supVisible().forEach(s => { counts[s] = CATALOG.filter(i => gs(i) === s && !i.hidden).length; });
