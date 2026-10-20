@@ -556,7 +556,15 @@ body.has-bar .toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
 .pill.pay { background: var(--surface); border: 1px solid var(--line-dark); }
 .payrow .dep .lpr input { width: 100px; height: 34px; }
 .due { margin-left: auto; font-size: 13px; font-weight: 600; }
-.lseg.three { grid-template-columns: repeat(3, minmax(0, 1fr)); } .lseg.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lseg.three { grid-template-columns: repeat(3, minmax(0, 1fr)); } 
+.sendpick { position: relative; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line-dark); overflow: hidden; }
+.sendpick button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 12px 18px 13px; border: 0; background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+.sendpick button + button { border-left: 1px solid var(--line); }
+.sendpick button[aria-pressed="true"] { background: color-mix(in srgb, var(--gold) 12%, var(--surface)); box-shadow: inset 0 -2px 0 var(--gold); }
+.sendpick button[aria-pressed="false"]:hover { background: var(--surface-2); }
+.sendpick .dlab { font-size: 14.5px; font-weight: 600; } .sendpick button[aria-pressed="false"] .dlab { color: var(--muted); }
+.sendpick svg { fill: none; stroke: var(--gold-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sendpick::after { content: 'or'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--muted); font-size: 11px; font-weight: 500; pointer-events: none; }
 .qrbox { margin-top: 16px; text-align: center; }
 .qrbox svg { width: 100%; max-width: 320px; height: auto; display: block; margin: 8px auto; border: 1px solid var(--line-dark); border-radius: 10px; }
 .filebtn { width: 100%; min-height: 48px; cursor: pointer; position: relative; }
@@ -2885,6 +2893,8 @@ function renderShareC(comp) {
   if (minGap(comp) > 0) { host.innerHTML = '<div class="card"><div class="msg-head"><h3>Send your order</h3><span class="pill">' + fmtRp(comp.grand) + '</span></div><div class="gate"><b>Almost there.</b> The minimum order is <b>' + fmtRp(dlNow().min) + '</b>. Add <b>' + fmtRp(minGap(comp)) + '</b> more to send it.</div><div class="actions full"><button class="btn" data-view="pick">Add items</button></div></div>' + histHtml(); return; }
   const msg = customerMessage(S, comp); const wa = 'https://wa.me/' + hw; const link = wa + '?text=' + encodeURIComponent(msg);
   const opt = (cmode && ui.sendOpt === 'qr') ? 'wa' : (ui.sendOpt || 'wa'); const q = opt === 'qr' ? qrSvg(makeCode(S)) : '';
+  const SICON = { wa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z"/><path d="M9 10h6M9 13.5h4"/></svg>', pdf: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>' };
+  const pick = [['wa', '1', 'WhatsApp'], ['pdf', '2', 'PDF receipt']].map(x => '<button type="button" data-act="sendopt" data-k="' + x[0] + '" aria-pressed="' + (opt === x[0]) + '"><span class="dopt">' + SICON[x[0]] + 'Option ' + x[1] + '</span><span class="dlab">' + x[2] + '</span></button>').join('');
   const seg = [['wa', '1', 'WhatsApp'], ['pdf', '2', 'PDF']].concat(cmode ? [] : [['qr', '3', 'QR']]).map(x => '<button type="button" data-act="sendopt" data-k="' + x[0] + '" aria-pressed="' + (opt === x[0]) + '"><span class="no">' + x[1] + '</span>' + x[2] + '</button>').join('');
   const openWa = '<a class="btn ghost" target="_blank" rel="noopener" href="' + wa + '">Open WhatsApp</a>';
   const panel = opt === 'wa'
@@ -2900,7 +2910,7 @@ function renderShareC(comp) {
     (dlNow().cutoff && pastCutoff() ? '<div class="cutnote"><b>Ordering after ' + cutLabel(dlNow().cutoff) + '.</b> Your order goes to our suppliers tomorrow, so the earliest delivery is ' + dayLabel(minNeed()) + ' morning.</div>' : '') +
     '<div class="recapm">' + recapHtml + '</div>' +
     '<p class="choose">Choose <b>one</b> way to send it. Your host gets the same order whichever you pick.</p>' +
-    '<div class="lseg' + (cmode ? ' two' : ' three') + ' sendseg" role="group" aria-label="How to send">' + seg + '</div><div class="sendpanel">' + panel + '</div>' +
+    (cmode ? '<div class="sendpick" role="group" aria-label="How to send">' + pick + '</div>' : '<div class="lseg three sendseg" role="group" aria-label="How to send">' + seg + '</div>') + '<div class="sendpanel">' + panel + '</div>' +
     (hw ? '' : '<div class="field" style="margin-top:14px"><label for="hostwa">Your host\'s WhatsApp number</label><input id="hostwa" inputmode="numeric" placeholder="e.g. 6281234567890"><span class="hint">Not needed if you open the link your host sent. Without it, WhatsApp asks who to send to.</span></div>') + '</div>';
   const nextCards = '<div class="card"><h3>What happens next</h3><ol class="nsteps"><li><i>01</i><div><b>We confirm</b><span>Your host reads your order and confirms it with you on WhatsApp.</span></div></li><li><i>02</i><div><b>Your total</b><span>The total you see in the app is what you pay. If an item is out of stock, your host removes it and sends you the updated total.</span></div></li><li><i>03</i><div><b>Delivery</b><span>We deliver on your day' + (S.meta.slot ? ' (' + esc(S.meta.slot) + ')' : '') + ', and you pay the way you chose.</span></div></li></ol></div>' +
     '<div class="card"><h3>Know someone who would like this?</h3><p class="hint">Share the app with a friend. They can order the same way you did.</p><div class="actions full"><button type="button" class="btn ghost" data-act="shareapp">Share this app</button></div></div>' +
