@@ -1482,14 +1482,17 @@ const SUPS = {
     "phone": "",
     "wa": "",
     "addr": "",
-    "what": "Eggs & more",
-    "tag": "Eggs & more",
+    "what": "More products",
+    "tag": "More",
     "list": ""
   }
 };
 const SUP_ORDER = ['fv', 'mt', 'gr', 'ot'];
 /* "ot" holds products from suppliers that are not one of the three main ones. Customers only see it once it has a product. */
-const supVisible = () => SUP_ORDER.filter(x => x !== 'ot' || CATALOG.some(i => i.s === 'ot' && !i.hidden));
+/* Customers see products by department (d: fv, mt or gr). Staff see them by the supplier we order from (s). */
+const gs = it => (cmode && it.d) || it.s;
+const DEPTS = ['fv', 'mt', 'gr'];
+const supVisible = () => SUP_ORDER.filter(x => DEPTS.includes(x) || CATALOG.some(i => gs(i) === x && !i.hidden));
 const STATUS = { new: 'Not ordered yet', ordered: 'Ordered', received: 'Delivered' };
 const PAYMENTS = ['', 'Cash on delivery', 'QRIS (QR code)', 'Add to the cafe order, I pay my share'];
 const QRIS_URL = 'https://market.vurata.com/assets/qris.jpg';
@@ -1635,9 +1638,9 @@ const stepOf = (id, ix) => { const it = BY_ID[id]; const o = it && it.o[+ix]; re
 function bsEditRender() {
   const e = ui.bsEdit; if (!e) return; const b = basketsNow()[e.i]; if (!b) return; const el = sentBox(); const keep = el.querySelector('.bvlist'); const top = keep ? keep.scrollTop : 0;
   const rows = Object.keys(e.l).map(k => { const p = k.split('|'); const it = BY_ID[p[0]]; const o = it && it.o[+p[1]]; if (!o) return ''; const sp = o.sp;
-    return '<div class="bvrow"><span class="thumb sm s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="bvn"><b>' + esc(it.n) + '</b><span>' + esc(UNIT_EN[o.u] || o.u) + '</span></div><div class="bsq"><button type="button" data-act="bsq" data-k="' + esc(k) + '" data-d="-1" aria-label="Less">&minus;</button><span class="num">' + fmtQty(e.l[k]) + '</span><button type="button" data-act="bsq" data-k="' + esc(k) + '" data-d="1" aria-label="More">+</button></div><button type="button" class="x" data-act="bsx" data-k="' + esc(k) + '" aria-label="Remove ' + esc(it.n) + '">&times;</button></div>'; }).join('');
+    return '<div class="bvrow"><span class="thumb sm s-' + gs(it) + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="bvn"><b>' + esc(it.n) + '</b><span>' + esc(UNIT_EN[o.u] || o.u) + '</span></div><div class="bsq"><button type="button" data-act="bsq" data-k="' + esc(k) + '" data-d="-1" aria-label="Less">&minus;</button><span class="num">' + fmtQty(e.l[k]) + '</span><button type="button" data-act="bsq" data-k="' + esc(k) + '" data-d="1" aria-label="More">+</button></div><button type="button" class="x" data-act="bsx" data-k="' + esc(k) + '" aria-label="Remove ' + esc(it.n) + '">&times;</button></div>'; }).join('');
   const q = norm(e.q || '').trim(); let res = '';
-  if (q) { const found = CATALOG.filter(it => !it.hidden && it._h && it._h.includes(q)).slice(0, 8); res = found.length ? found.map(it => { const k = it.id + '|0'; const have = e.l[k] !== undefined; return '<div class="bsres"><span class="thumb sm s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="bvn"><b>' + esc(it.n) + '</b><span>' + esc(it.e || it.c) + '</span></div><button type="button" class="btn ghost sm" data-act="bsa" data-k="' + esc(k) + '"' + (have ? ' disabled' : '') + '>' + (have ? 'Added' : 'Add') + '</button></div>'; }).join('') : '<p class="hint" style="margin:6px 0 0">Nothing found. Try another word.</p>'; }
+  if (q) { const found = CATALOG.filter(it => !it.hidden && it._h && it._h.includes(q)).slice(0, 8); res = found.length ? found.map(it => { const k = it.id + '|0'; const have = e.l[k] !== undefined; return '<div class="bsres"><span class="thumb sm s-' + gs(it) + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="bvn"><b>' + esc(it.n) + '</b><span>' + esc(it.e || it.c) + '</span></div><button type="button" class="btn ghost sm" data-act="bsa" data-k="' + esc(k) + '"' + (have ? ' disabled' : '') + '>' + (have ? 'Added' : 'Add') + '</button></div>'; }).join('') : '<p class="hint" style="margin:6px 0 0">Nothing found. Try another word.</p>'; }
   const orig = basketOriginal(b);
   el.innerHTML = '<div class="sentbox bviewbox"><button type="button" class="sentx" data-act="bsclose" aria-label="Close">&times;</button><div class="bhead"><span class="bic">' + bIcon(b.ic) + '</span><h3>Edit ' + esc(b.n) + '</h3></div>' +
     '<div class="field"><label for="bse-q">Add a product</label><input id="bse-q" type="search" placeholder="Search by name" autocomplete="off" value="' + esc(e.q || '') + '"></div>' + (res ? '<div class="bsresl">' + res + '</div>' : '') +
@@ -1647,7 +1650,7 @@ function bsEditRender() {
 }
 function basketViewHtml(b) {
   const inf = basketInfo(b); const lines = {}; inf.keys.forEach(k => { lines[k] = { q: b.l[k] }; }); const c = compute({ meta: {}, lines, sup: {} });
-  const rows = []; c.groups.forEach(g => g.lines.forEach(ln => rows.push('<div class="bvrow"><span class="thumb sm s-' + ln.it.s + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="bvn"><b>' + esc(nm(ln.it).m) + '</b><span>' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + '</span></div><span class="num bvp">' + (ln.total != null ? fmtRp(ln.total) : 'ask') + '</span></div>')));
+  const rows = []; c.groups.forEach(g => g.lines.forEach(ln => rows.push('<div class="bvrow"><span class="thumb sm s-' + gs(ln.it) + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="bvn"><b>' + esc(nm(ln.it).m) + '</b><span>' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + '</span></div><span class="num bvp">' + (ln.total != null ? fmtRp(ln.total) : 'ask') + '</span></div>')));
   return '<div class="sentbox bviewbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><div class="bhead"><span class="bic">' + bIcon(b.ic) + '</span><h3>' + esc(b.n) + '</h3></div>' + (b.d ? '<p class="hint">' + esc(b.d) + '</p>' : '') + '<div class="bvlist">' + rows.join('') + '</div><div class="bvtot"><span>' + inf.n + ' item' + (inf.n === 1 ? '' : 's') + '</span><b class="num">' + fmtRp(c.total) + '</b></div><p class="hint" style="margin:0">Tap <b>Add to order</b> to put all items in <b>My order</b>. You can change quantities there.</p><div class="actions duo"><button type="button" class="btn ghost" data-act="sentx">Close</button><button type="button" class="btn" data-act="basketadd" data-id="' + esc(b.id) + '">Add to order</button></div></div>';
 }
 /* Delivery codes: only ever change the delivery fee, never product prices. */
@@ -1735,17 +1738,17 @@ function compute(state, mode) {
     const o = it.o[+ix]; if (!o) continue;
     const L = state.lines[key]; const q0 = +L.q; const q = (mode === 'sell' && +L.aq > 0) ? +L.aq : q0; const st = ((L.s || '') === 'x' || (it.so && mode === 'sell')) ? 'x' : (L.s || ''); const skip = st === 'x';
     const ov = +L.p > 0 ? +L.p : 0; const base = mode === 'sell' ? o.sp : o.pr; const price = ov || base; const tot = price && !skip ? q * price : null;
-    const g = groups[it.s] || (groups[it.s] = { sid: it.s, lines: [], subtotal: 0, unpriced: 0, est: 0, w: 0, v: 0, noMeasure: 0, ordered: 0, out: 0 });
+    const gk = gs(it); const g = groups[gk] || (groups[gk] = { sid: gk, lines: [], subtotal: 0, unpriced: 0, est: 0, w: 0, v: 0, noMeasure: 0, ordered: 0, out: 0 });
     const ln = { key, it, o, q, q0, note: L.n || '', price, listPrice: base, total: tot, st, w: o.w && !skip ? o.w * q : 0, v: o.v && !skip ? o.v * q : 0 };
     g.lines.push(ln); count++;
     if (st === 'o') g.ordered++;
     if (skip) { g.out++; out++; continue; }
-    if (tot != null) { g.subtotal += tot; total += tot; } else { g.unpriced++; unpriced++; warnings.push({ sid: it.s, text: (cmode ? nm(it).m : it.n) + ' (' + optLabel(o) + '): no price on the list. Ask ' + (cmode ? 'the host' : SUPS[it.s].short) + ' before ordering.' }); }
+    if (tot != null) { g.subtotal += tot; total += tot; } else { g.unpriced++; unpriced++; warnings.push({ sid: gk, text: (cmode ? nm(it).m : it.n) + ' (' + optLabel(o) + '): no price on the list. Ask ' + (cmode ? 'the host' : SUPS[gk].short) + ' before ordering.' }); }
     if (o.est) g.est++;
     if (o.w || o.v) { g.w += ln.w; g.v += ln.v; w += ln.w; v += ln.v; } else { g.noMeasure++; noMeasure++; }
     if (o.u === 'kg') kgQty += q; else unitQty += q;
-    if (o.mn && q < o.mn) warnings.push({ sid: it.s, text: (cmode ? nm(it).m : it.n) + ': the minimum for this item is ' + o.mn + ' ' + o.u + ' (you have ' + fmtQty(q) + ').' });
-    if (needsCheck(it)) warnings.push({ sid: it.s, text: (cmode ? nm(it).m : it.n) + ': ' + it.x });
+    if (o.mn && q < o.mn) warnings.push({ sid: gk, text: (cmode ? nm(it).m : it.n) + ': the minimum for this item is ' + o.mn + ' ' + o.u + ' (you have ' + fmtQty(q) + ').' });
+    if (needsCheck(it)) warnings.push({ sid: gk, text: (cmode ? nm(it).m : it.n) + ': ' + it.x });
   }
   if (out) warnings.push({ sid: '', text: out + ' line' + (out > 1 ? 's are' : ' is') + ' marked out of stock and not counted in the total.' });
   const estLines = Object.values(groups).reduce((n, g) => n + g.est, 0);
@@ -1829,9 +1832,10 @@ function applyLedger() {
   applySups();
   const ov = ledger.ov || {};
   const mk = src => {
-    const it = JSON.parse(JSON.stringify(src)); const o = ov[it.id];
+    const it = JSON.parse(JSON.stringify(src)); const o = ov[it.id]; it.d = DEPTS.includes(src.d) ? src.d : src.s;
     if (o) {
       if (Array.isArray(o.pr)) o.pr.forEach((p, i) => { if (p !== null && p !== undefined && it.o[i]) it.o[i].pr = p > 0 ? p : null; });
+      if (o.d && DEPTS.includes(o.d)) it.d = o.d; if (o.s && SUPS[o.s]) it.s = o.s;
       if (o.n) it.n = o.n; if (o.e !== undefined && o.e !== null) it.e = o.e; if (o.c) it.c = o.c; if (o.hid) it.hidden = true; if (o.so) it.so = true; if (o.ft) it.ft = true; if (o.img !== undefined && o.img !== null) it.img = o.img ? String(o.img) : '';
     }
     
@@ -1958,7 +1962,7 @@ async function copyFrom(id) {
 
 /* ================= pick view ================= */
 function pickedByCat() {
-  const m = {}; Object.keys(S.lines).forEach(k => { const L = S.lines[k]; if (L && L.q > 0) { const it = BY_ID[k.split('|')[0]]; if (it) { const c = it.s + '|' + it.c; m[c] = (m[c] || 0) + 1; } } });
+  const m = {}; Object.keys(S.lines).forEach(k => { const L = S.lines[k]; if (L && L.q > 0) { const it = BY_ID[k.split('|')[0]]; if (it) { const c = gs(it) + '|' + it.c; m[c] = (m[c] || 0) + 1; } } });
   return m;
 }
 function itemPicked(it) { return it.o.some((o, i) => { const L = S.lines[keyOf(it.id, i)]; return L && L.q > 0; }); }
@@ -1987,12 +1991,12 @@ function itemHtml(it, showSup) {
   const flags = it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : '';
   const pk = it.k && it.k.length < 70 && it.o.length > 1 ? '<p class="meta">Listed as: ' + esc(it.k) + '</p>' : '';
   const picked = itemPicked(it);
-  const thumb = '<span class="thw"><span class="thumb s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><button type="button" class="fav" data-act="fav" data-id="' + it.id + '" aria-pressed="' + !!favs[it.id] + '" aria-label="Favorite ' + esc(it.n) + '">&#9733;</button></span>';
-  const title = (showSup ? '<div class="tagrow"><span class="tag ' + it.s + '">' + SUPS[it.s].short + '</span></div>' : '') + '<div class="nmrow"><h4>' + esc(nm(it).m) + '</h4>' + (nm(it).s ? '<p class="en">' + esc(nm(it).s) + '</p>' : '') + '</div>';
+  const thumb = '<span class="thw"><span class="thumb s-' + gs(it) + thumbCls(it) + '">' + thumbIn(it) + '</span><button type="button" class="fav" data-act="fav" data-id="' + it.id + '" aria-pressed="' + !!favs[it.id] + '" aria-label="Favorite ' + esc(it.n) + '">&#9733;</button></span>';
+  const title = (showSup ? '<div class="tagrow"><span class="tag ' + gs(it) + '">' + SUPS[gs(it)].short + '</span></div>' : '') + '<div class="nmrow"><h4>' + esc(nm(it).m) + '</h4>' + (nm(it).s ? '<p class="en">' + esc(nm(it).s) + '</p>' : '') + '</div>';
   const priceLine = (o) => ((cmode ? o.sp : o.pr) ? '<b>' + fmtRp(cmode ? o.sp : o.pr) + '</b>' : (cmode ? askLink(it, o) : '<b class="ask">Ask for price</b>')) + '<span>' + esc(optLabel(o)) + (o.mn ? ' - min ' + o.mn : '') + '</span>';
   if (it.o.length === 1) {
     const o = it.o[0]; const key = keyOf(it.id, 0); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
-    return '<article class="item single s-' + it.s + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '">' + thumb + '<div class="main">' + title + flags + '</div>' +
+    return '<article class="item single s-' + gs(it) + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '">' + thumb + '<div class="main">' + title + flags + '</div>' +
       '<div class="opt' + (q ? ' on' : '') + '" data-key="' + esc(key) + '">' + stepperHtml(it, o, 0, q) + '</div>' +
       '<div class="price line">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div></article>';
   }
@@ -2000,15 +2004,15 @@ function itemHtml(it, showSup) {
     const key = keyOf(it.id, i); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
     return '<div class="opt multi' + (q ? ' on' : '') + '" data-key="' + esc(key) + '"><div class="price">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div>' + stepperHtml(it, o, i, q) + '</div>';
   }).join('');
-  return '<article class="item s-' + it.s + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '"><div class="head">' + thumb + '<div>' + title + pk + flags + '</div></div>' + opts + '</article>';
+  return '<article class="item s-' + gs(it) + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '"><div class="head">' + thumb + '<div>' + title + pk + flags + '</div></div>' + opts + '</article>';
 }
 function filteredItems() {
   const toks = ui.q.trim().split(/\s+/).filter(Boolean);
   const out = [];
   CATALOG.forEach((it, ix) => {
     if (it.hidden) return;
-    if (ui.sup !== 'all' && it.s !== ui.sup) return;
-    if (ui.cat !== 'all' && (it.s + '|' + it.c) !== ui.cat) return;
+    if (ui.sup !== 'all' && gs(it) !== ui.sup) return;
+    if (ui.cat !== 'all' && (gs(it) + '|' + it.c) !== ui.cat) return;
     if (ui.picked && !itemPicked(it)) return;
     if (ui.fav && !favs[it.id]) return;
     let sc = 0; if (toks.length) { sc = matchScore(it, toks); if (sc < 0) return; }
@@ -2041,7 +2045,7 @@ function renderPick() {
   if (cmode && ui.sup === 'all') { const bh = basketsHtml(); if (bh) html.push(bh); }
   if (feat.length && ui.sup === 'all') html.push('<div class="feat"><h3 class="feath">Today\'s picks</h3><div class="featrow">' + feat.map(i => { const o = i.o[0]; const k = keyOf(i.id, 0); const q = (S.lines[k] && S.lines[k].q) || 0; return '<div class="fcard' + (q ? ' in' : '') + '"><span class="fth' + thumbCls(i) + '">' + thumbIn(i) + '</span><b>' + esc(nm(i).m) + '</b>' + (nm(i).s ? '<small>' + esc(nm(i).s) + '</small>' : '') + '<span class="fpr num">' + fmtRp(cmode ? o.sp : o.pr) + ' <em>' + esc(optLabel(o)) + '</em></span>' + (q ? '<div class="fstep"><button type="button" data-act="featdec" data-key="' + esc(k) + '" aria-label="Less ' + esc(i.n) + '">&minus;</button><span>' + fmtQty(q) + ' ' + esc(UNIT_EN[o.u] || o.u) + '</span><button type="button" data-act="featadd" data-key="' + esc(k) + '" aria-label="More ' + esc(i.n) + '">+</button></div>' : '<button type="button" class="fadd" data-act="featadd" data-key="' + esc(k) + '" aria-label="Add ' + esc(i.n) + '">+ Add</button>') + '</div>'; }).join('') + '</div></div>');
   supVisible().filter(s => ui.sup === 'all' || ui.sup === s).forEach(s => {
-    const items = CATALOG.filter(i => i.s === s && !i.hidden); const cats = []; const seen = {};
+    const items = CATALOG.filter(i => gs(i) === s && !i.hidden); const cats = []; const seen = {};
     items.forEach(i => { if (!seen[i.c]) { seen[i.c] = []; cats.push(i.c); } seen[i.c].push(i); });
     html.push('<h3 class="supband sup-' + s + '"><i class="dotc"></i><span class="nm">' + SUPS[s].name + '</span><span class="ct">' + items.length + (items.length === 1 ? ' item' : ' items') + '</span><small>' + esc(SUPS[s].what) + '</small></h3><div class="cats">');
     cats.forEach(c => {
@@ -2083,7 +2087,7 @@ function renderFilters() {
     if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span>Pick what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().join(' ') + '</p>' : '');
   }
   const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
-  const counts = { all: CATALOG.filter(i => !i.hidden).length }; supVisible().forEach(s => { counts[s] = CATALOG.filter(i => i.s === s && !i.hidden).length; });
+  const counts = { all: CATALOG.filter(i => !i.hidden).length }; supVisible().forEach(s => { counts[s] = CATALOG.filter(i => gs(i) === s && !i.hidden).length; });
   const chipHost = document.getElementById('supChips'); if (!chipHost.dataset.bound) { chipHost.dataset.bound = '1'; chipHost.addEventListener('scroll', chipsFade, { passive: true }); window.addEventListener('resize', chipsFade); }
   document.getElementById('supChips').innerHTML = '<div class="chipgrp' + (supVisible().length > 3 ? ' many' : '') + '">' + ['all'].concat(supVisible()).map(s =>
     '<button class="chip" data-act="sup" data-s="' + s + '" aria-pressed="' + (ui.sup === s && !ui.fav && !ui.picked && !ui.saved) + '">' + (s === 'all' ? '' : '<span class="dot"></span>') + (s === 'all' ? 'All' : (cmode ? SUPS[s].tag : SUPS[s].name)) + ' <small>' + counts[s] + '</small></button>').join('') + '</div><div class="chipgrp lists">' +
@@ -2093,7 +2097,7 @@ function renderFilters() {
   setTimeout(chipsFade, 0);
   const sel = document.getElementById('catSel'); const cur = ui.cat; const parts = ['<option value="all">All categories</option>'];
   supVisible().filter(s => ui.sup === 'all' || ui.sup === s).forEach(s => {
-    const cats = []; CATALOG.forEach(i => { if (i.s === s && !i.hidden && !cats.includes(i.c)) cats.push(i.c); });
+    const cats = []; CATALOG.forEach(i => { if (gs(i) === s && !i.hidden && !cats.includes(i.c)) cats.push(i.c); });
     parts.push('<optgroup label="' + SUPS[s].name + '">' + cats.map(c => '<option value="' + esc(s + '|' + c) + '">' + esc(c) + '</option>').join('') + '</optgroup>');
   });
   sel.innerHTML = parts.join(''); sel.value = [...sel.options].some(o => o.value === cur) ? cur : 'all'; ui.cat = sel.value;
@@ -2152,7 +2156,7 @@ function renderOrder(comp) {
       const unitTxt = ln.price ? fmtQty(ln.q) + ' x ' + fmtRp(ln.price) + (ln.listPrice && ln.price !== ln.listPrice ? ' (list ' + fmtRp(ln.listPrice) + ')' : '') : '';
       const priceBlock = cmode ? '<span class="pbtn" style="cursor:default">' + esc(unitTxt || 'price to be confirmed') + '</span>' : pe ? '<span class="pedit">Rp <input data-price="1" inputmode="numeric" value="' + (ln.price || '') + '" placeholder="list price" aria-label="Price per unit"></span>'
         : '<button type="button" class="pbtn" data-act="price"' + (canWrite ? '' : ' disabled') + '>' + (ln.st === 'x' ? 'not counted' : unitTxt ? esc(unitTxt) + ' <u>edit</u>' : '<u>Set price</u>') + '</button>';
-      return '<div class="ln' + (ln.st === 'x' ? ' out' : '') + '" data-key="' + esc(ln.key) + '"><span class="ln-n" aria-hidden="true">' + (idx + 1) + '</span><span class="thumb sm s-' + ln.it.s + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="ln-a">' +
+      return '<div class="ln' + (ln.st === 'x' ? ' out' : '') + '" data-key="' + esc(ln.key) + '"><span class="ln-n" aria-hidden="true">' + (idx + 1) + '</span><span class="thumb sm s-' + gs(ln.it) + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="ln-a">' +
         '<div class="ln-name"><div class="nmrow"><b>' + esc(nm(ln.it).m) + '</b>' + (nm(ln.it).s ? '<p class="en">' + esc(nm(ln.it).s) + '</p>' : '') + '</div><p>' + esc(lb) + (ln.it.k && ln.it.k.length < 60 && !/pack|box|carton/.test(lb) ? ' - listed as ' + esc(ln.it.k) : '') + (o.est ? ' - sold by weight' : '') + '</p>' +
         (ln.it.x ? '<p class="' + (needsCheck(ln.it) ? 'chk' : '') + '">' + esc(ln.it.x) + '</p>' : '') +
         (cmode ? '' : '<button type="button" class="stbtn st-' + (ln.st || 'n') + '" data-act="status"' + (canWrite ? '' : ' disabled') + '>' + stl + '</button>') + '</div>' +
@@ -2368,7 +2372,7 @@ function histHtml() {
     let det = '';
     if (open) {
       const by = {};
-      Object.keys(h.lines || {}).forEach(k => { const it = BY_ID[k.split('|')[0]]; if (!it) return; const o = it.o[+k.split('|')[1]]; if (!o) return; (by[it.s] = by[it.s] || []).push({ it, o, q: h.lines[k].q, n: h.lines[k].n }); });
+      Object.keys(h.lines || {}).forEach(k => { const it = BY_ID[k.split('|')[0]]; if (!it) return; const o = it.o[+k.split('|')[1]]; if (!o) return; (by[gs(it)] = by[gs(it)] || []).push({ it, o, q: h.lines[k].q, n: h.lines[k].n }); });
       const ask = ui.delConfirm[h.id];
       det = '<div class="hdet">' + SUP_ORDER.filter(x => by[x]).map(x => '<div class="hgrp" style="--c:var(--' + x + '); --t:var(--' + x + '-t)"><b>' + esc(SUPS[x].name) + '</b><span>' + by[x].length + ' item' + (by[x].length > 1 ? 's' : '') + '</span></div>' +
         by[x].map(l => '<div class="hline"><div class="hname">' + esc(cmode ? nm(l.it).m : l.it.n) + (l.n ? '<em>' + esc(l.n) + '</em>' : '') + '</div><span class="hqty"><b>' + fmtQty(l.q) + '</b> ' + esc(UNIT_EN[l.o.u] || l.o.u) + '</span></div>').join('')).join('') +
@@ -2880,7 +2884,7 @@ function publicLedger() {
   const ov = {}, srcOv = ledger.ov || {};
   CATALOG.forEach(it => {
     const s = srcOv[it.id] || {}, o = {}; const sp = it.o.map(op => (op.sp > 0 ? op.sp : null)); if (sp.some(v => v)) o.sp = sp;
-    ['n', 'c', 'e', 'hid', 'so', 'ft', 'img'].forEach(k => { if (s[k] !== undefined && s[k] !== null && s[k] !== '' && s[k] !== false) o[k] = s[k]; });
+    ['n', 'c', 'e', 'hid', 'so', 'ft', 'img', 'd'].forEach(k => { if (s[k] !== undefined && s[k] !== null && s[k] !== '' && s[k] !== false) o[k] = s[k]; });
     if (Object.keys(o).length) ov[it.id] = o;
   });
   const add = {}; Object.keys(ledger.add || {}).forEach(id => { const a = clone(ledger.add[id]); (a.o || []).forEach(op => { delete op.pr; delete op.sp; }); delete a.x; add[id] = a; });
@@ -2983,7 +2987,7 @@ function ledgerRowHtml(it) {
       (prof !== null ? '<div class="lprofit ' + (prof > 0 ? 'pos' : 'neg') + '">Profit ' + fmtRp(prof) + ' per ' + esc(UNIT_EN[o.u] || o.u) + ' - ' + mg + '% margin</div>' : '<div class="lprofit">Add the supplier price to see profit</div>') +
       (priceChanged(it, i) ? '<div class="lwas">supplier price was ' + (BASE_BY[it.id].o[i].pr ? fmtRp(BASE_BY[it.id].o[i].pr) : 'not listed') + ' <button type="button" class="linkbtn" data-act="lreset" data-id="' + esc(it.id) + '" data-i="' + i + '">reset</button></div>' : '') + '</div>';
   }).join('');
-  const det = ed ? '<div class="ldet grid2 s-' + it.s + '"><div class="ldet-h span-all">Edit details</div><div class="field span-all"><label>Name</label><input data-ld="' + esc(it.id) + '|n" value="' + esc(it.n) + '"' + ro + '></div><div class="field"><label>English name</label><input data-ld="' + esc(it.id) + '|e" value="' + esc(it.e || '') + '"' + ro + '></div><div class="field"><label>Category</label><input data-ld="' + esc(it.id) + '|c" value="' + esc(it.c) + '"' + ro + '></div></div>' : '';
+  const det = ed ? '<div class="ldet grid2 s-' + it.s + '"><div class="ldet-h span-all">Edit details</div><div class="field span-all"><label>Name</label><input data-ld="' + esc(it.id) + '|n" value="' + esc(it.n) + '"' + ro + '></div><div class="field"><label>English name</label><input data-ld="' + esc(it.id) + '|e" value="' + esc(it.e || '') + '"' + ro + '></div><div class="field"><label>Category</label><input data-ld="' + esc(it.id) + '|c" value="' + esc(it.c) + '"' + ro + '></div><div class="field"><label>Order from (supplier)</label><select data-lds="' + esc(it.id) + '|s"' + (canWrite ? '' : ' disabled') + '>' + SUP_ORDER.map(x => '<option value="' + x + '"' + (it.s === x ? ' selected' : '') + '>' + esc(SUPS[x].name) + '</option>').join('') + '</select></div><div class="field"><label>Customers find it under</label><select data-lds="' + esc(it.id) + '|d"' + (canWrite ? '' : ' disabled') + '>' + DEPTS.map(x => '<option value="' + x + '"' + (it.d === x ? ' selected' : '') + '>' + esc(SUPS[x].tag) + '</option>').join('') + '</select></div></div>' : '';
   return '<div class="lrow' + (it.hidden ? ' hid' : '') + '"><div class="lhead"><span class="thumb sm s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="lname"><b>' + esc(it.n) + '</b>' + (it.e ? '<span class="en">' + esc(it.e) + '</span>' : '') +
     '<small><i class="dot2 sup-' + it.s + '"></i>' + esc(SUPS[it.s].name) + ' - ' + esc(it.c) + '</small>' + ltags(it) + '</div></div>' + opts + det +
     (assetsCap ? '<div class="lphoto"><label class="lchip' + (it.img ? ' on' : '') + '">' + (it.img ? 'Change photo' : 'Add photo') + '<input type="file" accept="image/*" data-lphoto="' + esc(it.id) + '" class="sr"' + ro + '></label>' + (it.img ? '<button type="button" class="lchip" data-act="rmphoto" data-id="' + esc(it.id) + '"' + ro + '>Remove photo</button>' : '') + '</div>' : '') + '<div class="lact"><button type="button" class="lchip' + (ed ? ' on' : '') + '" data-act="ledit" data-id="' + esc(it.id) + '">' + lbl(ed ? 'Done' : 'Edit details', ed ? 'Done' : 'Edit') + '</button><button type="button" class="lchip' + (it.ft ? ' on ft' : '') + '" data-act="lft" data-id="' + esc(it.id) + '" data-s="' + (it.ft ? 0 : 1) + '"' + ro + '>' + (it.ft ? lbl('Remove from picks', 'Unfeature') : lbl('Feature', 'Feature')) + '</button><button type="button" class="lchip' + (it.so ? ' on so' : '') + '" data-act="lso" data-id="' + esc(it.id) + '" data-s="' + (it.so ? 0 : 1) + '"' + ro + '>' + (it.so ? lbl('Back in stock', 'In stock') : lbl('Sold out today', 'Sold out')) + '</button><button type="button" class="lchip' + (it.hidden ? ' on hd' : '') + '" data-act="lhide" data-id="' + esc(it.id) + '" data-h="' + (it.hidden ? 0 : 1) + '"' + ro + '>' + (it.hidden ? lbl('Restore', 'Restore') : lbl('Hide', 'Hide')) + '</button></div></div>';
@@ -3001,8 +3005,9 @@ function renderLedger() {
   const chip = (act, key, cur, label, extra) => '<button class="chip" data-act="' + act + '" ' + extra + ' aria-pressed="' + (cur === key) + '">' + label + '</button>';
   const form = ui.ladd ? '<div class="card"><h3>New product</h3><div class="grid2">' +
     '<div class="field"><label for="la-sup">Supplier</label><select id="la-sup">' + SUP_ORDER.map(x => '<option value="' + x + '">' + esc(SUPS[x].name) + '</option>').join('') + '<option value="__new">+ Add a new supplier</option></select></div>' +
+    '<div class="field"><label for="la-dept">Customers find it under</label><select id="la-dept">' + DEPTS.map(x => '<option value="' + x + '">' + esc(SUPS[x].tag) + '</option>').join('') + '</select></div>' +
     '<div class="field"><label for="la-cat">Category</label><input id="la-cat" list="la-cats" placeholder="e.g. Fruits"><datalist id="la-cats">' + cats.map(c => '<option value="' + esc(c) + '">').join('') + '</datalist></div>' +
-    '<div class="span-all newsup" id="la-newsup" hidden><div class="ldet-h">New supplier</div><div class="field"><label for="la-sname">Supplier name</label><input id="la-sname" placeholder="e.g. Bali Bakery"></div><div class="field"><label for="la-swhat">What they sell <span class="hint">(customers see this, not the name)</span></label><input id="la-swhat" placeholder="e.g. Bread and pastry"></div><div class="field"><label for="la-swa">Their WhatsApp (optional)</label><input id="la-swa" inputmode="tel" placeholder="e.g. 0812 3456 7890"></div></div>' +
+    '<div class="span-all newsup" id="la-newsup" hidden><div class="ldet-h">New supplier</div><div class="field"><label for="la-sname">Supplier name</label><input id="la-sname" placeholder="e.g. Bali Bakery"></div><div class="field"><label for="la-swa">Their WhatsApp (optional)</label><input id="la-swa" inputmode="tel" placeholder="e.g. 0812 3456 7890"></div></div>' +
     '<div class="field span-all"><label for="la-name">Name, as the supplier writes it</label><input id="la-name" placeholder="e.g. Pisang raja"></div>' +
     '<div class="field span-all"><label for="la-en">English name</label><input id="la-en" placeholder="e.g. Raja banana"></div>' +
     '<div class="field"><label for="la-unit">Sold per</label><select id="la-unit">' + ['kg', 'pcs', 'pack', 'box', 'carton', 'can', 'btl', 'ltr', 'jar'].map(u => '<option value="' + u + '">' + u + '</option>').join('') + '</select></div>' +
@@ -3090,15 +3095,15 @@ function addProduct() {
   if (!name) { toast('Give the product a name first.'); return; }
   let sid = v('la-sup'); const unit = v('la-unit'), cat = v('la-cat').trim() || 'Other', price = parseInt(v('la-price').replace(/\D/g, ''), 10) || 0;
   if (sid === '__new') {
-    const sn = v('la-sname').trim(), sw = v('la-swhat').trim();
+    const sn = v('la-sname').trim(), sw = sn;
     if (!sn) { toast('Give the new supplier a name first.'); return; }
-    if (!sw) { toast('Say what they sell, like "Bread and pastry". Customers see this instead of the name.'); return; }
     const sid2 = 's' + Date.now().toString(36); const cur = Object.assign({}, ledger.sups || {}); cur[sid2] = { name: sn, what: sw, phone: v('la-swa').trim(), h: Object.keys(cur).length };
     saveLedger({ sups: cur }); sid = sid2;
   }
   const id = 'x-' + Date.now().toString(36);
   const o = { u: unit, pr: price > 0 ? price : null, lb: 'per ' + unit, st: unit === 'kg' ? 0.5 : 1 }; if (unit === 'kg') { o.w = 1; if (sid !== 'gr') o.est = true; }
-  saveLedger({ add: { [id]: { s: sid, c: cat, n: name, e: v('la-en').trim(), i: iconFor(name + ' ' + v('la-en'), sid, cat), o: [o] } } });
+  const dept = DEPTS.includes(v('la-dept')) ? v('la-dept') : 'gr';
+  saveLedger({ add: { [id]: { s: sid, d: dept, c: cat, n: name, e: v('la-en').trim(), i: iconFor(name + ' ' + v('la-en'), sid, cat), o: [o] } } });
   ui.ladd = false; renderLedger(); toast('Added "' + name + '". It is live in the picker now.');
 }
 
@@ -3267,12 +3272,13 @@ document.addEventListener('change', e => {
   else if (t.matches('input[data-price]')) { const key = t.closest('[data-key]').dataset.key; const n = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; ui.priceEdit[key] = false; patch({ lines: { [key]: { p: n } } }); renderAll(false); }
   else if (t.matches('input[data-lp]')) { const k = t.dataset.lp.split('|'); const n = parseInt(String(t.value).replace(/\D/g, ''), 10) || 0; setPrice(k[0], +k[1], n); }
   else if (t.matches('input[data-sp]')) { const k = t.dataset.sp.split('|'); setSell(k[0], +k[1], parseInt(String(t.value).replace(/\D/g, ''), 10) || 0); }
-  else if (t.id === 'la-sup') { const nb = document.getElementById('la-newsup'); if (nb) { nb.hidden = t.value !== '__new'; if (!nb.hidden) { const i = document.getElementById('la-sname'); if (i) i.focus(); } } }
+  else if (t.id === 'la-sup') { const dd = document.getElementById('la-dept'); if (dd && DEPTS.includes(t.value)) dd.value = t.value; const nb = document.getElementById('la-newsup'); if (nb) { nb.hidden = t.value !== '__new'; if (!nb.hidden) { const i = document.getElementById('la-sname'); if (i) i.focus(); } } }
   else if (t.id === 'dl-free' || t.id === 'dl-min' || t.id === 'dl-cut' || t.matches('input[data-dz], input[data-dd]')) { saveDlFromDom(); }
   else if (t.id === 'mx-kg') { const v = Math.max(1, Math.min(200, parseFloat(String(t.value).replace(',', '.')) || 10)); saveLedger({ cfg: { mx: v } }); renderLedger(); toast('Limit set to ' + fmtQty(v) + ' kg per item.'); }
   else if (t.matches('[data-bs]')) { const p = t.dataset.bs.split('|'); const list = basketsNow(); const i = +p[0]; if (list[i]) { if (p[1] === 'v') list[i].h = !t.checked; else if (p[1] === 'ic') list[i].ic = t.value; else if (p[1] === 'n') { const v = t.value.trim(); if (!v) { toast('A basket needs a name.'); renderLedger(); return; } list[i].n = v.slice(0, 40); } else list[i].d = t.value.trim().slice(0, 90); saveLedger({ baskets: list }); renderLedger(); toast(p[1] === 'v' ? (list[i].h ? 'Hidden. Customers no longer see this basket.' : 'Shown to customers.') : 'Basket saved.'); } }
   else if (t.matches('[data-cd]')) { saveCodesFromDom(); if (t.dataset.cd.endsWith('|c') && codeKey(t.value)) toast('Code ' + codeKey(t.value) + ' saved.'); }
   else if (t.id === 'mk-round') { saveLedger({ cfg: { round: +t.value } }); renderLedger(); toast('Prices now round up to Rp ' + t.value + '. Live for customers in a moment.'); }
+  else if (t.matches('select[data-lds]')) { const k = t.dataset.lds.split('|'); saveLedger({ ov: { [k[0]]: { [k[1]]: t.value } } }); renderLedgerList(); toast(k[1] === 's' ? 'Supplier changed. Customers see no difference.' : 'Customers now find it under ' + SUPS[t.value].tag + '.'); }
   else if (t.matches('input[data-ld]')) { const k = t.dataset.ld.split('|'); const val = t.value.trim(); if ((k[1] === 'n' || k[1] === 'c') && !val) { toast('That field cannot be empty.'); renderLedgerList(); return; } saveLedger({ ov: { [k[0]]: { [k[1]]: val } } }); }
   else if (t.id === 'importFile') { importFiles(t.files); t.value = ''; }
   else if (t.id === 'unpaidOnly') { ui.cunpaid = t.checked; renderCustomers(); }
