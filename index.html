@@ -1003,7 +1003,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .drvmsg-h { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; } .drvmsg-h span { color: var(--muted); font-size: 13px; }
 .drvmsg details summary { cursor: pointer; font-size: 13px; color: var(--gold-text); font-weight: 600; } .drvmsg textarea { margin-top: 8px; min-height: 220px; }
 /* staff order card: two command buttons, message menu, add item, recently removed */
-.cmdbar { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); grid-auto-flow: dense; gap: 8px; margin-top: 12px; } .cmdbar .cmsgmenu { grid-column: 1 / -1; margin-top: -2px; } .cmd { min-width: 0; }
+.cmdbar { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); grid-auto-flow: dense; gap: 8px; margin-top: 12px; } .cmdbar .cmsgmenu { grid-column: 1 / -1; margin-top: -2px; } .cmd { min-width: 0; }
 .cmd { display: flex; align-items: center; gap: 9px; min-height: 48px; padding: 0 14px; border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; text-align: left; }
 .cmd span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cmd svg { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--gold-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -1024,6 +1024,15 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .cbin-h { width: 100%; display: flex; justify-content: space-between; align-items: center; min-height: 40px; border: 0; background: none; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--muted); cursor: pointer; padding: 0; } .cbin-h b { color: var(--ink); margin-left: 4px; }
 .cbin-h .chev { width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); } .cbin-h[aria-expanded="true"] .chev { transform: rotate(-135deg); }
 .cbin-list { display: grid; gap: 8px; margin-top: 6px; } .cbin-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface-2); } .cbin-row span { display: grid; gap: 2px; } .cbin-row small { color: var(--muted); font-size: 12px; }
+.custgrid > * { min-width: 0; }
+/* staff: edit order details */
+.edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.edbtn[aria-expanded="true"] { background: color-mix(in srgb, var(--gold) 14%, var(--surface)); border-color: var(--gold); }
+.edpill { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border: 1px solid var(--gold); color: var(--gold-text); }
+.cedit { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding: 12px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 6%, var(--surface)); }
+.cefld { display: grid; gap: 4px; min-width: 0; } .cefld.wide, .cedit .wide { grid-column: 1 / -1; } .cefld span { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.cefld input, .cefld select, .cefld textarea { width: 100%; min-height: 40px; font: inherit; font-size: 14px; }
+@media (max-width: 420px) { .cedit { grid-template-columns: 1fr; } }
 /* first-visit trust strip */
 .trust { list-style: none; margin: 12px 0 0; padding: 12px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); }
 .trust[hidden] { display: none; }
@@ -2975,12 +2984,39 @@ function ccardHead(c, comp, date) {
     ['Needed', c.need ? esc(fmtDate(c.need)) + (c.slot ? ' &middot; ' + esc(c.slot) : '') : ''],
     ['Area', c.zone ? esc(zoneLabel(c.zone)) : ''],
     ['Address', c.addr ? esc(c.addr) : ''],
-    ['Map', (c.pin || c.addr) ? '<a href="' + mapUrl(c) + '" target="_blank" rel="noopener">' + (c.pin ? 'Open customer pin' : 'Search the address') + '</a>' : ''],
+    ['Map', (c.pin || c.addr) ? '<a href="' + mapUrl(c) + '" target="_blank" rel="noopener">' + (c.pin ? 'Open customer pin' : mapLinkOf(c) ? 'Open their Maps link' : 'Search the address') + '</a>' : ''],
+    ['Notes', c.notes ? esc(c.notes) : ''],
     ['Order', comp.count + ' line' + (comp.count === 1 ? '' : 's') + ' &middot; received ' + esc(date)]
   ].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('');
   const ret = c.phone && cust.filter(x => digitsOf(x.phone) === digitsOf(c.phone)).length > 1;
-  return '<div class="ccard' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(c.status || 'new') + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono" title="Order number">#' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div><dl class="cinfo">' + rows + '</dl>' + '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label>';
+  return '<div class="ccard' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(c.status || 'new') + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono" title="Order number">#' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.ed ? '<span class="edpill" title="Details changed after the order arrived">Edited</span>' : '') + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div>' + (ui.cedit && ui.cedit[c.id] ? ceditHtml(c) : '<dl class="cinfo">' + rows + '</dl>') + (canWrite ? '<button type="button" class="edbtn" data-act="cedit" data-id="' + esc(c.id) + '" aria-expanded="' + !!(ui.cedit && ui.cedit[c.id]) + '">' + (ui.cedit && ui.cedit[c.id] ? '✓ Done editing' : '✏️ Edit details') + '</button>' : '') + '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label>';
 }
+/* Staff can correct anything the customer typed. Order number and received date stay as they arrived. */
+const SLOTS = ['', 'Morning (8 to 12)', 'Afternoon (12 to 4)', 'Evening (4 to 7)'];
+function ceditHtml(c) { const k = f => esc(c.id) + '|' + f; const zs = dlNow().zones.map(z => z.n);
+  const fld = (lb, inner, wide) => '<label class="cefld' + (wide ? ' wide' : '') + '"><span>' + lb + '</span>' + inner + '</label>';
+  return '<div class="cedit">' +
+    fld('Name', '<input data-ced="' + k('name') + '" value="' + esc(c.name || '') + '" autocomplete="off">') +
+    fld('WhatsApp number', '<input data-ced="' + k('phone') + '" inputmode="tel" value="' + esc(c.phone || '') + '" placeholder="+62 812 3456 7890" autocomplete="off">') +
+    fld('Needed by', '<input type="date" data-ced="' + k('need') + '" value="' + esc(c.need || '') + '">') +
+    fld('Delivery time', '<select data-ced="' + k('slot') + '">' + SLOTS.map(o => '<option value="' + o + '"' + (o === (c.slot || '') ? ' selected' : '') + '>' + (o || 'Any time on the day') + '</option>').join('') + '</select>') +
+    fld('Delivery area', '<select data-ced="' + k('zone') + '"><option value="">Not set</option>' + zs.map(z => '<option value="' + esc(z) + '"' + (z === c.zone ? ' selected' : '') + '>' + esc(z) + '</option>').join('') + (c.zone && zs.indexOf(c.zone) < 0 ? '<option value="' + esc(c.zone) + '" selected>' + esc(zoneLabel(c.zone)) + '</option>' : '') + '</select>', true) +
+    fld('Address', '<textarea data-ced="' + k('addr') + '" rows="2">' + esc(addrOnly(c.addr)) + '</textarea>', true) +
+    fld('Map pin or Google Maps link', '<input data-ced="' + k('map') + '" value="' + esc(c.pin || mapLinkOf(c) || '') + '" placeholder="Paste a Maps link or -8.65, 115.13" autocomplete="off">', true) +
+    fld('Customer notes', '<textarea data-ced="' + k('notes') + '" rows="2">' + esc(c.notes || '') + '</textarea>', true) +
+    '<p class="hint wide">Changes save as you go. The delivery fee updates when you change the area.</p></div>'; }
+function custEdit(id, f, v) { const c = cust.find(x => x.id === id); if (!c) return; const p = { ed: Date.now() }; v = String(v || '').trim();
+  if (f === 'phone') { const d = digitsOf(v); p.phone = d ? '+' + d : ''; }
+  else if (f === 'zone') { p.zone = v; const st = custState(c); st.meta.zone = v; delete st.meta.fee; const cp = compute(st, 'sell'); p.fee = v && cp.feeKnown ? cp.fee : null; }
+  else if (f === 'addr') { const ml = mapLinkOf(c); p.addr = v + (ml ? (v ? '\n' : '') + 'Map: ' + ml : ''); }
+  else if (f === 'map') { const pin = pinFromLink(v); const a = addrOnly(c.addr).replace(/, /g, ', ');
+    if (!v) { p.pin = ''; p.addr = addrOnly(c.addr); }
+    else if (pin && pin !== 'far') { p.pin = pin; p.addr = addrOnly(c.addr); }
+    else if (pin === 'far') { toast('That location is outside Bali. Check it and try again.'); renderCustomers(); return; }
+    else if (/^https?:\/\/\S+$/.test(v)) { p.pin = ''; p.addr = (addrOnly(c.addr) ? addrOnly(c.addr) + '\n' : '') + 'Map: ' + v; }
+    else { toast('That does not look like a Maps link or a pin.'); renderCustomers(); return; } }
+  else p[f] = v;
+  updCust(id, p); toast('Saved.'); }
 function repeatInfo(c) {
   if (!c.phone) return ''; const ph = digitsOf(c.phone); const prev = cust.filter(x => x.id !== c.id && digitsOf(x.phone) === ph && (x.at || 0) < (c.at || 0)).sort((x, y) => y.at - x.at); if (!prev.length) return '';
   const cnt = {}; prev.concat([c]).forEach(x => Object.keys(x.lines || {}).forEach(k => { const it = BY_ID[k.split('|')[0]]; if (it && x.lines[k].q > 0) cnt[it.n] = (cnt[it.n] || 0) + 1; }));
@@ -3702,6 +3738,7 @@ document.addEventListener('click', e => {
   else if (act === 'addpick') { const c = cust.find(x => x.id === b.dataset.id); const k = b.dataset.key; const p = k.split('|'); const it = BY_ID[p[0]]; const o = it && it.o[+p[1]]; if (!c || !o) return;
     const cur = (c.lines[k] && c.lines[k].q) || 0; const q = cur > 0 ? Math.round((cur + (o.st || 1)) * 100) / 100 : (o.mn || o.st || 1);
     updCust(c.id, { lines: { [k]: { q, n: (c.lines[k] && c.lines[k].n) || '' } } }); toast('Added ' + nm(it).m + ' to #' + orderNo(c) + '.'); const i = document.getElementById('addq'); if (i) i.focus(); }
+  else if (act === 'cedit') { ui.cedit = ui.cedit || {}; ui.cedit[b.dataset.id] = !ui.cedit[b.dataset.id]; renderCustomers(); }
   else if (act === 'cmsgtog') { ui.cmsgOpen = ui.cmsgOpen || {}; ui.cmsgOpen[b.dataset.id] = !ui.cmsgOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'cview') { ui.custOpen[b.dataset.id] = !ui.custOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'cq') { const c = cust.find(x => x.id === b.dataset.id); const key = b.dataset.key; if (c && c.lines[key]) { const o = BY_ID[key.split('|')[0]].o[+key.split('|')[1]]; const q = Math.max(0, Math.round((c.lines[key].q + (+b.dataset.d) * (o.st || 1)) * 100) / 100); updCust(c.id, { lines: { [key]: { q } } }); } }
@@ -3737,6 +3774,7 @@ document.addEventListener('change', e => {
   else if (t.matches('input[data-ld]')) { const k = t.dataset.ld.split('|'); const val = t.value.trim(); if ((k[1] === 'n' || k[1] === 'c') && !val) { toast('That field cannot be empty.'); renderLedgerList(); return; } saveLedger({ ov: { [k[0]]: { [k[1]]: val } } }); }
   else if (t.id === 'importFile') { importFiles(t.files); t.value = ''; }
   else if (t.id === 'unpaidOnly') { ui.cunpaid = t.checked; renderCustomers(); }
+  else if (t.dataset && t.dataset.ced) { const i = t.dataset.ced.indexOf('|'); custEdit(t.dataset.ced.slice(0, i), t.dataset.ced.slice(i + 1), t.value); }
   else if (t.id === 'runDate') { if (t.value) { ui.runDay = t.value; renderCustomers(); } }
   else if (t.matches && t.matches('select[data-drvfor]')) { updCust(t.dataset.drvfor, { drv: t.value }); }
   else if (t.id === 'bankTxt') { bankTxt = t.value.slice(0, 400); LS.set('mumu-bank', bankTxt); if (db) { custChain = custChain.then(() => db.doc('settings/host').set({ wa: myWA, bank: bankTxt })).catch(() => {}); } toast('Payment details saved.'); renderCustomers(); }
