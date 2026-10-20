@@ -2619,7 +2619,10 @@ function showView(v) {
 }
 function setQty(key, q, fromOrder) {
   const [id, ix] = key.split('|'); const it = BY_ID[id]; if (!it) return; const o = it.o[+ix]; if (!o) return;
-  q = Math.max(0, Math.round(q * 100) / 100); const cap = QTY_MAX(o); if (q > cap) { q = cap; toast('The most we take online is ' + fmtQty(cap) + ' ' + (UNIT_EN[o.u] || o.u) + ' of one item. Need more? Message us on WhatsApp.'); }
+  q = Math.max(0, Math.round(q * 100) / 100);
+  /* Pack items (a minimum is set): always a whole number of packs, and the online cap stops on a whole pack */
+  const pk = o.mn ? (o.st || o.mn) : 0; if (pk && q > 0) q = Math.round(Math.max(o.mn, Math.round(q / pk) * pk) * 100) / 100;
+  let cap = QTY_MAX(o); if (pk) cap = Math.max(o.mn, Math.round(Math.floor(cap / pk + 1e-9) * pk * 100) / 100); if (q > cap) { q = cap; toast('The most we take online is ' + fmtQty(cap) + ' ' + (UNIT_EN[o.u] || o.u) + ' of one item. Need more? Message us on WhatsApp.'); }
   const cur = S.lines[key] || {}; if ((cur.q || 0) === q) return;
   patch({ lines: { [key]: q === 0 ? { q: 0, s: '', p: 0 } : { q: q } } });
   if (!fromOrder) document.querySelectorAll('.opt[data-key="' + CSS.escape(key) + '"]').forEach(el => { el.classList.toggle('on', q > 0); const inp = el.querySelector('input'); if (inp !== document.activeElement) inp.value = fmtStep(q, o); const art = el.closest('.item'); if (art) { art.classList.toggle('on', itemPicked(it)); const lt = art.querySelector('.lt[data-lt="' + CSS.escape(key) + '"]'); if (lt) lt.textContent = ltText(o, q, key); } });
