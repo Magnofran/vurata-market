@@ -84,7 +84,7 @@ h1, h2, h3, h4, p { margin: 0; }
 @media (min-width: 1000px) { .side { display: block; } .bottombar { display: none !important; } }
 
 /* filters */
-.filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; } .sticky + .filters { margin-top: 10px; }
 .sticky { margin-inline: -16px; padding-inline: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px)); z-index: 15; background: var(--bg); padding: 8px 0 6px; display: grid; gap: 10px; margin-top: -6px; }
 .search { position: relative; }
 .search input { width: 100%; height: 46px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 0 14px; font-size: 16px; }
@@ -1483,9 +1483,9 @@ body { margin: 0; padding-inline: 8px; }
         <div class="how" id="howCard" hidden></div>
         <div class="dlinfo" id="dlInfo" hidden></div>
         <button type="button" class="howlink" id="cNote" data-act="showhow" hidden aria-label="Show how it works"><span>How it works</span><i aria-hidden="true">+</i></button>
-        <div class="filters">
-          <div class="sticky">
+        <div class="sticky">
           <div class="chips" id="supChips"></div></div>
+        <div class="filters">
           <div class="row2"><label class="sr" for="catSel">Category</label><select id="catSel"></select></div>
           <div class="search"><label class="sr" for="q">Search items</label><input id="q" type="search" enterkeyhint="search" placeholder="Search: buah naga, dragon fruit" autocomplete="off"><button type="button" class="sclear" data-act="qclear" aria-label="Clear search" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
         </div>
@@ -3793,20 +3793,24 @@ function photoCard() {
   else { const n = photoNext(); body += n ? '<div class="pmode"><div class="pmthumb"><span class="thumb s-' + n.s + '">' + (n.i || '') + '</span></div><b>' + esc(n.n) + '</b>' + (n.e ? '<span class="en">' + esc(n.e) + '</span>' : '') + '<span class="hint">' + esc(SUPS[n.s].name) + ' - ' + esc(n.c) + '</span><label class="btn filebtn">Take or choose a photo<input type="file" accept="image/*" data-lphoto="' + esc(n.id) + '" class="sr"></label><div class="actions duo"><button type="button" class="btn ghost" data-act="photoskip" data-id="' + esc(n.id) + '">Skip this one</button><button type="button" class="btn ghost" data-act="photostop">Stop</button></div></div>' : '<p class="gate" style="border-color:var(--ok);background:transparent">All done. Every product here has a photo or was skipped.</p><div class="actions full"><button type="button" class="btn ghost" data-act="photostop">Close</button></div>'; }
   return '<div class="card" id="photoCard"><h3>Product photos</h3>' + body + '</div>';
 }
+/* Customers see the catalog at once from the prices built into the page; live prices replace them quietly. */
+const HAS_INIT = !!(INIT_LEDGER && (INIT_LEDGER.ov || INIT_LEDGER.add));
 async function boot() {
+  const early = cmode && HAS_INIT && !/access_token|type=recovery/.test(location.hash);
+  if (early) { restoreUi(); try { hist = JSON.parse(LS.get('mumu-hist') || '[]') || []; } catch (e) { hist = []; } const sv = LS.get('mumu-order'); if (sv) { try { S = deepMerge(blankState(), JSON.parse(sv)); } catch (e) {} } renderFilters(); renderPick(); showView('pick'); renderAll(false); setSync('local', 'Saved on this phone'); }
   const st = await window.SB.ready;
   if (window.SB.recovery) { showLogin('', 'recovery'); return; }
   if (location.hash === '#staff' && !st.admin) { showLogin(st.session ? 'This account does not have staff access.' : ''); return; }
-  restoreUi(); if (cmode) ui.loading = true;
+  if (!early) restoreUi(); if (cmode && !HAS_INIT) ui.loading = true;
   
-  renderFilters(); renderPick(); showView('pick'); renderAll(false); setSync('local', 'Connecting');
+  renderFilters(); renderPick(); showView('pick'); renderAll(false); if (!early) setSync('local', 'Connecting');
   const [dbc, uc, dc, ac] = await Promise.all([cap('db'), cap('user'), cap('downloads'), cap('assets')]);
   userCap = uc; dlCap = dc; assetsCap = ac;
   document.body.classList.toggle('staffmode', !cmode); document.getElementById('staffFoot').hidden = !cmode; document.getElementById('outBtn').hidden = cmode;
   try { favs = JSON.parse(LS.get('mumu-fav') || '{}') || {}; } catch (e) { favs = {}; } renderFilters();
   try { if (uc) { myId = await uc.id(); const cw = await uc.can('data.write'); if (cw === false) canWrite = false; } } catch (e) {}
   if (!canWrite) cmode = true;
-  if (cmode) { canWrite = true; ui.loading = !!dbc; setMode(); applyLedger(); renderFilters(); renderPick(); if (dbc) setTimeout(() => { if (ui.loading) { ui.loading = false; renderFilters(); renderPick(); renderAll(false); } }, 6000); }
+  if (cmode) { canWrite = true; ui.loading = !!dbc && !HAS_INIT; setMode(); applyLedger(); renderFilters(); renderPick(); if (dbc) setTimeout(() => { if (ui.loading) { ui.loading = false; renderFilters(); renderPick(); renderAll(false); } }, 6000); }
   if (dbc) {
     try {
       if (!cmode) { await loadPrivate(dbc); pubRef = dbc.doc('catalog/ledger'); }
