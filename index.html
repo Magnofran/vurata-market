@@ -983,6 +983,8 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'atau'; width: auto; min-width: 24px; padding: 0 7px; border-radius: 12px; }
 .langbtn { font-size: 12px; font-weight: 700; letter-spacing: .06em; } .langbtn[hidden] { display: none; }
 .brand.stk { row-gap: 6px; } .brand.stk .wm { flex-basis: 100%; } .brand.stk .mk { border-left: 0; padding-left: 0; gap: 8px; white-space: nowrap; }
+/* header, logo and tabs share the page content's left and right edges */
+.bar-in, .tabs { max-width: calc(1180px - 2 * var(--g, 16px)) !important; }
 /* first-visit trust strip */
 .trust { list-style: none; margin: 12px 0 0; padding: 12px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); }
 .trust[hidden] { display: none; }
