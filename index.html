@@ -970,6 +970,8 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.07); color: var(--gold-text); } 100% { transform: scale(1); } }
 #bbTotal { display: inline-block; transform-origin: left center; } #bbTotal.bump, #nBadge.bump { animation: bump .42s cubic-bezier(.3,.7,.4,1); }
 @media (prefers-reduced-motion: reduce) { #bbTotal.bump, #nBadge.bump { animation: none; } }
+html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'atau'; width: auto; min-width: 24px; padding: 0 7px; border-radius: 12px; }
+.langbtn { font-size: 12px; font-weight: 700; letter-spacing: .06em; } .langbtn[hidden] { display: none; }
 /* first-visit trust strip */
 .trust { list-style: none; margin: 12px 0 0; padding: 12px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); }
 .trust[hidden] { display: none; }
@@ -1475,7 +1477,7 @@ body { margin: 0; padding-inline: 8px; }
   <div class="bar-in">
     <div class="brandwrap"><div class="brand"><span class="wm"><img draggable="false" class="wm-l" src="assets/wordmark-light.svg" alt="Vurata" height="17"><img draggable="false" class="wm-d" src="assets/wordmark-dark.svg" alt="" height="17"></span><span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12h17"/><path d="M5 12l1.3 7a2 2 0 0 0 2 1.7h7.4a2 2 0 0 0 2-1.7l1.3-7"/><path d="M9.5 15v3M12 15v3M14.5 15v3"/><circle cx="9" cy="8.6" r="2.7"/><path d="M9 5.9c0-1 .6-1.8 1.6-2"/><path d="M15 12V7.5"/><path d="M15 9c0-1.8 1.2-3 3-3.2"/><path d="M15 10.4c0-1.4-1-2.3-2.4-2.5"/></svg>Market</span><small>Fresh, frozen &amp; pantry delivered in Bali</small></div>
       <div class="sync" id="sync" data-s="local" role="status"><i></i><span id="syncTxt">Loading</span></div></div>
-    <div class="barbtns"><button class="themebtn" id="outBtn" type="button" hidden>Sign out</button><button class="sqbtn" id="themeBtn" type="button" aria-label="Switch between light and dark"><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></svg></button><button class="sqbtn" id="infoBtn" type="button" data-act="installguide" aria-label="How to add this app to your home screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10.8v6.2"/><path d="M12 7.2h.01"/></svg></button></div>
+    <div class="barbtns"><button class="themebtn" id="outBtn" type="button" hidden>Sign out</button><button class="sqbtn langbtn" id="langBtn" type="button" hidden>ID</button><button class="sqbtn" id="themeBtn" type="button" aria-label="Switch between light and dark"><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></svg></button><button class="sqbtn" id="infoBtn" type="button" data-act="installguide" aria-label="How to add this app to your home screen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10.8v6.2"/><path d="M12 7.2h.01"/></svg></button></div>
   </div>
   <div class="tabs" role="tablist" aria-label="Sections">
     <button class="tab" role="tab" id="t-pick" aria-selected="true" data-view="pick"><span class="lg">Pick items</span><span class="sh">Pick</span></button>
@@ -2203,7 +2205,7 @@ const imgSrc = id => /^(data:image\/|photos\/)/.test(id) ? id : window.SB.imgUrl
 /* English name first in bold and the Indonesian one in grey, for customers and on staff screens. Messages and PDFs addressed to suppliers keep the supplier's own name. */
 const NM_UNIT = { KG: 'Kg', GR: 'Gr', ML: 'Ml', LTR: 'Ltr', PCS: 'Pcs', SAK: 'Sak' };
 const nmCase = t => t.replace(/\b[A-Za-z]+\b/g, w => NM_UNIT[w] || (w.length >= 4 && w === w.toUpperCase() ? w.charAt(0) + w.slice(1).toLowerCase() : w));
-const nm = it => { const e = (it.e || '').trim(), n = it.n.trim(), same = e.toLowerCase() === n.toLowerCase(); const f = x => nmCase(x).replace(/^[a-z]/, c => c.toUpperCase()); return e && !same && !/^unclear/i.test(e) && n.indexOf(' / ') < 0 ? { m: f(e), s: f(n) } : { m: f(n), s: same || !e ? '' : f(e) }; };
+const nm = it => { const e = (it.e || '').trim(), n = it.n.trim(), same = e.toLowerCase() === n.toLowerCase(); const f = x => nmCase(x).replace(/^[a-z]/, c => c.toUpperCase()); const r = e && !same && !/^unclear/i.test(e) && n.indexOf(' / ') < 0 ? { m: f(e), s: f(n) } : { m: f(n), s: same || !e ? '' : f(e) }; return (typeof LANG !== 'undefined' && LANG === 'id' && cmode && r.s && r.m === f(e)) ? { m: r.s, s: r.m } : r; };
 const supName = it => (it.via && BY_ID[it.via] ? BY_ID[it.via].n : it.n);
 const nmBoth = it => { const v = nm(it); return v.m + (v.s ? ' (' + v.s + ')' : ''); };
 const thumbIn = it => it.img ? '<img loading="lazy" decoding="async" alt="" data-e="' + esc(it.i || '') + '" data-zoomname="' + esc(it.n) + '" src="' + esc(imgSrc(it.img)) + '">' : (it.i || '');
@@ -3696,6 +3698,7 @@ document.addEventListener('keydown', e => { const t = e.target; if (!t.matches |
 document.addEventListener('keydown', e => { const t = e.target; if (!t.matches || !t.matches('.areaopt')) return; const opts = [...document.querySelectorAll('#areaList .areaopt')]; const i = opts.indexOf(t);
   if (e.key === 'ArrowDown') { e.preventDefault(); (opts[i + 1] || t).focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); (opts[i - 1] || document.getElementById('m-zone')).focus(); } else if (e.key === 'Escape') { areaClose(); document.getElementById('m-zone').focus(); } });
 document.addEventListener('pointerdown', e => { if (!e.target.closest || !e.target.closest('.areabox')) areaClose(); });
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#langBtn')) { try { localStorage.setItem('vm-lang', LANG === 'id' ? 'en' : 'id'); } catch (x) {} location.reload(); } });
 document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.brand')) e.preventDefault(); });
 document.addEventListener('focusin', e => { const t = e.target; if (t.matches && t.matches('input[data-act="qty"]')) setTimeout(() => { try { t.select(); } catch (x) {} }, 0); });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'q') e.target.blur(); if (e.key === 'Enter' && e.target && e.target.id === 'm-code') { const b = document.querySelector('[data-act="codeapply"]'); if (b) b.click(); } if (e.key === 'Enter' && e.target && e.target.id === 'mk-pct') { const b = document.getElementById('mk-apply'); if (b && !b.disabled) b.click(); } });
@@ -3710,7 +3713,7 @@ function termsHtml() {
   const sec = (h, b) => '<div class="tsec"><b>' + h + '</b><span>' + b + '</span></div>';
   return '<div class="sentbox termsbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Privacy and order terms</h3><p class="hint">The short version, in plain words.</p><div class="tlist">' +
     sec('Your details', 'Your name, phone and address stay on your phone until you send your order. When you send it, Vurata receives it on WhatsApp and keeps it to prepare and deliver your order.') +
-    sec('Your location', 'We only get your location if you tap <b>Add my pin location</b>, and only together with your order.') +
+    sec('Your location', 'We only get your location if you tap <b>Use my location</b>, and only together with your order.') +
     sec('Ordering', 'Orders need 24 hours notice.' + cutoff + money) +
     sec('Prices and weight', 'Items sold by weight are ordered in steps of 500 g. We confirm stock with you on WhatsApp, and if an item is out of stock we send you an updated total.') +
     sec('Payment', 'Pay on delivery in cash, or with QRIS (QR code) after your host confirms your order on WhatsApp.') +
@@ -3908,6 +3911,149 @@ window.addEventListener('unhandledrejection', () => softFail());
 ensureWordmark();
 if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); ui.installEv = e; });
+/* Bahasa Indonesia for customers. Screens are written in English; in ID mode visible text is swapped from this list as it renders.
+   Messages to the host, the PDF and staff screens stay in English. Anything not listed stays English. */
+const LANG = (() => { try { const v = localStorage.getItem('vm-lang'); if (v === 'id' || v === 'en') return v; } catch (e) {} return /^id\b/i.test(navigator.language || '') ? 'id' : 'en'; })();
+const ID_TEXT = {
+  'Fresh, frozen & pantry delivered in Bali': 'Segar, beku & bahan pokok, diantar di Bali',
+  'Saved on this phone': 'Tersimpan di HP ini',
+  'Pick items': 'Pilih barang', 'Pick': 'Pilih', 'My order': 'Pesanan saya', 'Order': 'Pesanan', 'Send': 'Kirim',
+  'How it works': 'Cara pesan', 'what you want': 'barang yang Anda mau', 'Add your details in': 'Isi data Anda di', 'Tap': 'Ketuk', 'to message your host': 'untuk kirim pesan ke host Anda',
+  'Minimum order Rp 400.000.': 'Minimal pesanan Rp 400.000.',
+  'Order by': 'Pesan sebelum', 'for delivery the next morning.': 'untuk diantar besok pagi.', 'Later orders arrive the morning after.': 'Pesanan setelahnya diantar lusa pagi.',
+  'Fresh on delivery day': 'Segar di hari pengantaran', 'Pay cash or QRIS': 'Bayar tunai atau QRIS', 'By Vurata Bali Experiences': 'Oleh Vurata Bali Experiences',
+  'All': 'Semua', 'Fruit & veg': 'Buah & sayur', 'Meat & seafood': 'Daging & seafood', 'Frozen & grocery': 'Beku & kebutuhan dapur',
+  '★ Favorites': '★ Favorit', 'Saved orders': 'Pesanan tersimpan', 'Picked': 'Dipilih', 'All categories': 'Semua kategori',
+  'Buy again': 'Beli lagi', "Today's picks": 'Pilihan hari ini', 'Ready-made baskets': 'Paket siap pesan', '+ Add': '+ Tambah',
+  'View basket': 'Lihat paket', 'Add to order': 'Tambah ke pesanan',
+  'Plant-based week': 'Seminggu nabati', 'Vegetarian: greens, veg, beans, oats and fruit.': 'Vegetarian: sayuran hijau, sayur, kacang, oat dan buah.',
+  'Low-carb protein box': 'Paket protein rendah karbo', 'Meat, fish, cheese and low-carb veg, for keto and high-protein diets.': 'Daging, ikan, keju dan sayur rendah karbo, untuk diet keto dan tinggi protein.',
+  'Fresh family box': 'Paket segar keluarga', 'Fruit, vegetables and meat for everyday cooking.': 'Buah, sayur dan daging untuk masak sehari-hari.',
+  'Fresh fruits, vegetables & groceries': 'Buah segar, sayur & bahan makanan', 'Meat processing & raw meat': 'Daging olahan & daging mentah', 'Frozen food, dairy, groceries & sauces': 'Makanan beku, susu, bahan makanan & saus',
+  'Order so far': 'Pesanan sejauh ini', 'Total': 'Total', 'Subtotal': 'Subtotal', 'TOTAL': 'TOTAL',
+  'Free delivery unlocked.': 'Gratis ongkir aktif.', 'Your delivery is on us.': 'Ongkir kami yang tanggung.', 'Free delivery unlocked': 'Gratis ongkir aktif',
+  'Review order': 'Cek pesanan', 'Save for later': 'Simpan untuk nanti', 'Clear all': 'Hapus semua', 'Add items': 'Tambah barang',
+  'Questions? Chat with us on WhatsApp': 'Ada pertanyaan? Chat kami di WhatsApp', 'Questions? Chat with us': 'Ada pertanyaan? Chat kami', 'Privacy & terms': 'Privasi & ketentuan',
+  'Nothing picked yet': 'Belum ada yang dipilih', 'Send order': 'Kirim pesanan',
+  'Order details': 'Data pesanan', 'required': 'wajib', 'Hide': 'Tutup', 'Show order details': 'Isi data pesanan', 'No details added yet.': 'Belum ada data.',
+  'Order name': 'Nama pesanan', 'Your name': 'Nama Anda', 'Needed by': 'Dibutuhkan tanggal', 'Tomorrow': 'Besok',
+  'Payment': 'Pembayaran', 'Your WhatsApp, so your host can reach you': 'WhatsApp Anda, agar host bisa menghubungi Anda',
+  'Pick your country, then type your number. No need for a + or the first 0.': 'Pilih negara, lalu ketik nomor Anda. Tidak perlu + atau angka 0 di depan.',
+  'Delivery area': 'Area pengantaran', 'Delivery to your area': 'Ongkir ke area Anda', 'Free': 'Gratis', 'Free delivery': 'Gratis ongkir',
+  'Delivery time': 'Jam pengantaran', 'Any time on the day': 'Kapan saja di hari itu', 'Morning (8 to 12)': 'Pagi (8 sampai 12)', 'Afternoon (12 to 4)': 'Siang (12 sampai 4)', 'Evening (4 to 7)': 'Sore (4 sampai 7)',
+  'Deliver to': 'Antar ke', 'Option 1': 'Pilihan 1', 'Option 2': 'Pilihan 2', 'or': 'atau',
+  'Use my location': 'Pakai lokasi saya', 'Paste a Maps link': 'Tempel link Maps', 'Use it': 'Pakai',
+  '✓ Pin set.': '✓ Pin terpasang.', 'This is exactly where we deliver.': 'Di sinilah kami antar.', 'Check in Google Maps': 'Cek di Google Maps', 'Remove': 'Hapus',
+  '✓ Maps link saved.': '✓ Link Maps tersimpan.', 'Your host opens it to find you. To see the pin here too, tap your gate on the map.': 'Host Anda membukanya untuk menemukan Anda. Agar pin juga muncul di sini, ketuk gerbang Anda di peta.', 'Open link': 'Buka link',
+  'Drag it to your gate so the driver finds you.': 'Geser ke gerbang Anda agar driver mudah menemukan Anda.',
+  'Tap the map or drag the pin to your gate, so the driver comes straight to you.': 'Ketuk peta atau geser pin ke gerbang Anda, agar driver langsung menuju Anda.',
+  'We could not read your location. Tap the map at your gate instead, or paste a Maps link.': 'Lokasi Anda tidak terbaca. Ketuk peta di gerbang Anda, atau tempel link Maps.',
+  'Any Google Maps link works. For an exact pin on this map, press and hold your gate in Google Maps, copy the numbers that appear, and paste them here.': 'Link Google Maps apa pun bisa. Untuk pin yang tepat di peta ini, tekan lama gerbang Anda di Google Maps, salin angka yang muncul, lalu tempel di sini.',
+  'Notes for your host': 'Catatan untuk host', '+ Add a note': '+ Tambah catatan', 'per kg - sold by weight': 'per kg - dijual per berat',
+  'Delivery': 'Ongkir', 'Fresh produce arrives the morning of delivery.': 'Buah dan sayur segar datang pagi hari pengantaran.', 'From the team behind Vurata Bali Experiences': 'Dari tim Vurata Bali Experiences',
+  'Choose your area to see the delivery fee.': 'Pilih area Anda untuk melihat ongkir.', 'We will confirm the delivery fee for your area by message.': 'Kami akan konfirmasi ongkir ke area Anda lewat pesan.',
+  'Free delivery to your area.': 'Gratis ongkir ke area Anda.', 'more for free delivery.': 'lagi untuk gratis ongkir.', 'more for free delivery': 'lagi untuk gratis ongkir', 'Add': 'Tambah', 'Only': 'Kurang',
+  'to free delivery': 'lagi untuk gratis ongkir', 'to the minimum order': 'lagi untuk minimal pesanan', 'Minimum order is': 'Minimal pesanan', 'On orders over': 'Untuk pesanan di atas',
+  'Send your order': 'Kirim pesanan Anda', 'Almost there.': 'Hampir selesai.', 'Please fill in': 'Mohon isi', 'the day you need it': 'tanggal yang Anda butuhkan', 'before you send.': 'sebelum mengirim.', 'Fill in my details': 'Isi data saya',
+  'The minimum order is': 'Minimal pesanan', '. Add': '. Tambah', 'more to send it.': 'lagi untuk mengirim.',
+  'Choose': 'Pilih', 'one': 'satu', 'way to send it. Your host gets the same order whichever you pick.': 'cara untuk mengirim. Host Anda menerima pesanan yang sama, apa pun pilihan Anda.',
+  'WhatsApp': 'WhatsApp', 'PDF receipt': 'Struk PDF',
+  'Option 1: send a WhatsApp message': 'Pilihan 1: kirim pesan WhatsApp', 'The quickest. WhatsApp opens with your whole order written out. Just press send.': 'Paling cepat. WhatsApp terbuka dengan seluruh pesanan sudah tertulis. Tinggal tekan kirim.',
+  'Send on WhatsApp': 'Kirim via WA', 'Google Maps link': 'Link Google Maps', 'Copy message': 'Salin pesan',
+  'Option 2: send a PDF receipt': 'Pilihan 2: kirim struk PDF', 'Save the receipt, then attach it in your WhatsApp chat with your host. Your order is inside it, so they can add it automatically.': 'Simpan struknya, lalu lampirkan di chat WhatsApp dengan host Anda. Pesanan Anda ada di dalamnya, jadi bisa langsung dimasukkan.',
+  'Save the PDF': 'Simpan PDF', 'Open WhatsApp and attach the file': 'Buka WhatsApp dan lampirkan file-nya', 'Save PDF receipt': 'Simpan struk PDF', 'Open WhatsApp': 'Buka WhatsApp',
+  'What happens next': 'Langkah selanjutnya', 'We confirm': 'Kami konfirmasi', 'Your host reads your order and confirms it with you on WhatsApp.': 'Host Anda membaca pesanan dan mengonfirmasinya lewat WhatsApp.',
+  'Your total': 'Total Anda', 'The total you see in the app is what you pay. If an item is out of stock, your host removes it and sends you the updated total.': 'Total di aplikasi adalah yang Anda bayar. Jika ada barang yang habis, host akan menghapusnya dan mengirim total terbaru.',
+  'We deliver on your day, and you pay the way you chose.': 'Kami antar di hari pilihan Anda, dan Anda bayar dengan cara yang Anda pilih.',
+  'For friends in Bali': 'Untuk teman di Bali', 'Know someone who’d love this?': 'Punya teman yang pasti suka?',
+  'Fresh produce, meat and pantry staples, brought to their villa or home. Nothing to download, and ordering takes a few minutes.': 'Buah, sayur, daging dan bahan pokok segar, diantar ke villa atau rumah mereka. Tanpa unduh aplikasi, pesan hanya beberapa menit.',
+  'Order on WhatsApp': 'Pesan lewat WhatsApp', 'Cash or QRIS': 'Tunai atau QRIS', 'Next-morning delivery': 'Diantar besok pagi', 'Share with a friend': 'Bagikan ke teman', 'Copy link': 'Salin link', 'Copied': 'Tersalin',
+  'Done with this order?': 'Pesanan ini sudah selesai?', 'Save it to history and start a fresh one. You can order the same thing again later and change it first.': 'Simpan ke riwayat dan mulai pesanan baru. Nanti Anda bisa memesan yang sama lagi dan mengubahnya dulu.',
+  'Save to history and start new': 'Simpan ke riwayat dan mulai baru', 'Order summary': 'Ringkasan pesanan',
+  'Your basket': 'Keranjang Anda', 'Nothing in this order yet': 'Pesanan ini masih kosong', 'Pick items and they appear here with your total worked out.': 'Pilih barang, dan barang itu muncul di sini lengkap dengan totalnya.',
+  'Nothing to send yet': 'Belum ada yang dikirim', 'Pick items first. Your order and total are built from them.': 'Pilih barang dulu. Pesanan dan total Anda dihitung dari situ.',
+  'Open one to put it back in your cart, change anything, then send it.': 'Buka salah satu untuk memasukkannya lagi ke keranjang, ubah sesuka Anda, lalu kirim.',
+  'Past order': 'Pesanan lalu', 'Personal order': 'Pesanan pribadi', 'Order again': 'Pesan lagi', 'Add to current': 'Tambah ke pesanan sekarang', 'See items': 'Lihat barang', 'Rename': 'Ganti nama',
+  'Nothing saved yet. In My order, tap Save for later to keep the order you are building.': 'Belum ada yang tersimpan. Di Pesanan saya, ketuk Simpan untuk nanti untuk menyimpan pesanan yang sedang Anda buat.',
+  'Add to your home screen': 'Tambahkan ke layar utama', 'Open Vurata Market in one tap, like any other app. Takes 10 seconds.': 'Buka Vurata Market dengan satu ketukan, seperti aplikasi lain. Hanya 10 detik.',
+  'Your phone': 'HP Anda', 'Tap the': 'Ketuk', 'menu': 'menu', ', the three dots.': ', titik tiga.', 'Add to Home screen': 'Tambahkan ke Layar utama', 'Install app': 'Instal aplikasi', '. Done.': '. Selesai.',
+  ', the square with an arrow.': ', kotak dengan panah.', 'Add to Home Screen': 'Tambahkan ke Layar Utama', '. Scroll the list if you do not see it.': '. Geser daftarnya jika belum terlihat.', 'Share': 'Bagikan',
+  'Privacy and order terms': 'Privasi dan ketentuan pesanan', 'The short version, in plain words.': 'Versi singkat, dengan bahasa sederhana.',
+  'Your details': 'Data Anda', 'Your name, phone and address stay on your phone until you send your order. When you send it, Vurata receives it on WhatsApp and keeps it to prepare and deliver your order.': 'Nama, nomor HP dan alamat Anda tetap di HP Anda sampai Anda mengirim pesanan. Saat dikirim, Vurata menerimanya lewat WhatsApp dan menyimpannya untuk menyiapkan dan mengantar pesanan Anda.',
+  'Your location': 'Lokasi Anda', 'We only get your location if you tap': 'Kami hanya menerima lokasi Anda jika Anda mengetuk', ', and only together with your order.': ', dan hanya bersama pesanan Anda.',
+  'Ordering': 'Pemesanan', 'Prices and weight': 'Harga dan berat', 'Items sold by weight are ordered in steps of 500 g. We confirm stock with you on WhatsApp, and if an item is out of stock we send you an updated total.': 'Barang yang dijual per berat dipesan kelipatan 500 g. Kami konfirmasi stok lewat WhatsApp, dan jika ada barang yang habis kami kirim total terbaru.',
+  'Pay on delivery in cash, or with QRIS (QR code) after your host confirms your order on WhatsApp.': 'Bayar tunai saat barang sampai, atau dengan QRIS (kode QR) setelah host mengonfirmasi pesanan Anda di WhatsApp.',
+  'Changes': 'Perubahan', 'To change or cancel an order, message us on WhatsApp as early as you can.': 'Untuk mengubah atau membatalkan pesanan, kirim pesan WhatsApp ke kami secepatnya.',
+  'Did your order go through?': 'Pesanan Anda sudah terkirim?', 'Once you have sent it on WhatsApp, your host confirms your order and stock by message.': 'Setelah Anda kirim lewat WhatsApp, host akan mengonfirmasi pesanan dan stok lewat pesan.',
+  'Yes, I sent it': 'Ya, sudah saya kirim', 'Not yet': 'Belum',
+  'Your order is with the Vurata team.': 'Pesanan Anda sudah diterima tim Vurata.', 'Order total': 'Total pesanan', 'Area': 'Area',
+  'We confirm on WhatsApp': 'Kami konfirmasi lewat WhatsApp', 'Your host checks stock and replies with your final total. It only changes if an item is out of stock.': 'Host Anda cek stok dan membalas dengan total akhir. Total hanya berubah jika ada barang yang habis.',
+  'Pay with QRIS': 'Bayar dengan QRIS', 'Your host sends the QR code with your confirmed total. Scan it with any banking or e-wallet app.': 'Host Anda mengirim kode QR bersama total yang sudah dikonfirmasi. Scan dengan aplikasi bank atau e-wallet apa pun.',
+  'Pay on delivery': 'Bayar saat barang sampai', 'Pay the driver in cash when your order arrives.': 'Bayar tunai ke driver saat pesanan sampai.',
+  'We bring it to your pin.': 'Kami antar ke pin Anda.', 'We bring it to the address you gave.': 'Kami antar ke alamat yang Anda berikan.',
+  'Help the driver find you:': 'Bantu driver menemukan Anda:', 'Start a new order': 'Mulai pesanan baru', 'Chat with us': 'Chat kami', 'Order faster next time:': 'Lain kali pesan lebih cepat:',
+  'No match': 'Tidak ditemukan', 'Try a shorter word, or clear the filters.': 'Coba kata yang lebih pendek, atau hapus filter.', 'Show all items': 'Tampilkan semua barang', 'Did you mean': 'Maksud Anda',
+  'No favorites yet': 'Belum ada favorit', 'Tap the star on an item to keep it here for next time.': 'Ketuk bintang di barang untuk menyimpannya di sini.', 'Items you add show up here.': 'Barang yang Anda tambahkan muncul di sini.',
+  'Request price': 'Tanya harga', 'Order code': 'Kode pesanan', 'Day': 'Hari', 'Time': 'Jam',
+  'Cash on delivery': 'Bayar tunai saat barang sampai', 'QRIS (QR code)': 'QRIS (kode QR)', 'Add to the cafe order, I pay my share': 'Masukkan ke pesanan kafe, saya bayar bagian saya', 'Choose how to pay': 'Pilih cara bayar',
+  // toasts
+  'Finding your location...': 'Mencari lokasi Anda...', 'Pin set at your location.': 'Pin dipasang di lokasi Anda.', 'Approximate location. Drag the pin to your gate.': 'Lokasi perkiraan. Geser pin ke gerbang Anda.',
+  'Pin set from your link.': 'Pin dipasang dari link Anda.', 'Maps link saved. Your host opens it to find you.': 'Link Maps tersimpan. Host Anda membukanya untuk menemukan Anda.',
+  'Paste the link first.': 'Tempel link-nya dulu.', 'That does not look like a Maps link.': 'Itu sepertinya bukan link Maps.', 'That link points outside Bali. Check it and try again.': 'Link itu menunjuk ke luar Bali. Cek lagi dan coba ulang.',
+  'Copied. Paste it into WhatsApp.': 'Tersalin. Tempel di WhatsApp.', 'PDF ready.': 'PDF siap.', 'Saved to history. New order started.': 'Tersimpan di riwayat. Pesanan baru dimulai.', 'Saved.': 'Tersimpan.',
+  'Nothing to reorder.': 'Tidak ada yang bisa dipesan ulang.', 'Nothing to save yet.': 'Belum ada yang bisa disimpan.', 'Nothing to clear.': 'Tidak ada yang perlu dihapus.', 'Add some items first.': 'Tambah barang dulu.',
+  'Orders need 24 hours notice, so your date moved to the earliest available day.': 'Pesanan perlu 24 jam sebelumnya, jadi tanggal Anda dipindah ke hari terdekat yang tersedia.',
+  'Could not save the PDF.': 'PDF tidak bisa disimpan.', 'Text selected. Press Ctrl+C (or Cmd+C) to copy.': 'Teks dipilih. Tekan Ctrl+C (atau Cmd+C) untuk menyalin.',
+  'That basket is not available right now.': 'Paket itu sedang tidak tersedia.',
+  // aria-labels and placeholders
+  'Search: buah naga, dragon fruit': 'Cari: buah naga, dragon fruit', 'Clear search': 'Hapus pencarian', 'Back to top': 'Kembali ke atas', 'Close': 'Tutup', 'Got it, hide this': 'Mengerti, tutup',
+  'Show how it works': 'Lihat cara pesan', 'Type your area, e.g. Berawa or Ubud': 'Ketik area Anda, mis. Berawa atau Ubud', 'Change area': 'Ganti area', 'Map': 'Peta',
+  'Villa name, street and gate, e.g. Villa Asri, Jl. Batu Bolong 12, green gate': 'Nama villa, jalan dan gerbang, mis. Villa Asri, Jl. Batu Bolong 12, gerbang hijau',
+  'Anything we should know before delivery': 'Hal yang perlu kami tahu sebelum pengantaran', 'Paste the Google Maps link here': 'Tempel link Google Maps di sini', 'How to send': 'Cara kirim', 'Order sent': 'Pesanan terkirim',
+  'All set': 'Lengkap', 'Name': 'Nama', 'Out of stock': 'Stok habis',
+  'Vegetables & herbs': 'Sayur & daun bumbu', 'Fruits': 'Buah', 'Sausages': 'Sosis', 'Processed meat (ham, bacon, salami)': 'Daging olahan (ham, bacon, salami)', 'Minced': 'Daging giling',
+  'Chicken Meat': 'Daging ayam', 'Duck': 'Bebek', 'Lamb': 'Domba', 'French fries': 'Kentang goreng', 'Raw Pork Meat': 'Daging babi mentah', 'Beef': 'Daging sapi',
+  'Fries, wedges, hashbrown & frozen veg': 'Kentang, wedges, hashbrown & sayur beku', 'Frozen snacks': 'Camilan beku', 'Custom frozen snacks': 'Camilan beku khusus', 'Frozen Food': 'Makanan beku',
+  'Frozen Egg': 'Telur beku', 'Butter portions': 'Mentega porsi', 'Cheese': 'Keju', 'Cheddar block': 'Keju cheddar blok', 'Cheddar slices': 'Keju cheddar slice', 'Butter Block': 'Mentega blok',
+  'Groceries': 'Bahan makanan', 'Rice (Beras)': 'Beras', 'HoReCa canned & Italian goods': 'Kalengan HoReCa & produk Italia', 'Korean products': 'Produk Korea', 'Frozen dim sum & dumplings': 'Dim sum & pangsit beku',
+  'Frozen fish & seafood balls (SH)': 'Bakso ikan & seafood beku (SH)', 'Ground spices (Ladaku / Desaku)': 'Bumbu bubuk (Ladaku / Desaku)', 'Ready sauces & basic seasonings': 'Saus siap pakai & bumbu dasar',
+  'Heinz sauces': 'Saus Heinz', 'Flours (Boladeli)': 'Tepung (Boladeli)', 'Cooking oil 18 L (carton)': 'Minyak goreng 18 L (karton)', 'Eggs': 'Telur', 'Quinoa & chia': 'Quinoa & chia',
+  'Search items': 'Cari barang', 'Category': 'Kategori', 'Sections': 'Bagian', 'Country': 'Negara', 'Zoom in': 'Perbesar', 'Zoom out': 'Perkecil'
+};
+const UNIT_IDC = { pcs: 'pcs', pack: 'pak', box: 'kotak', carton: 'karton', can: 'kaleng', bottle: 'botol', jar: 'toples', sachet: 'sachet', hand: 'sisir', sack: 'karung', pax: 'pax' };
+const DAY_ID = { Mon: 'Sen', Tue: 'Sel', Wed: 'Rab', Thu: 'Kam', Fri: 'Jum', Sat: 'Sab', Sun: 'Min' };
+const MON_ID = { Jan: 'Jan', Feb: 'Feb', Mar: 'Mar', Apr: 'Apr', May: 'Mei', Jun: 'Jun', Jul: 'Jul', Aug: 'Agu', Sep: 'Sep', Oct: 'Okt', Nov: 'Nov', Dec: 'Des' };
+const unitId = u => UNIT_IDC[u] || u;
+const ID_RULES = [
+  [/^(\d+) items?$/, (m, n) => n + ' barang'], [/^(\d+) picked$/, (m, n) => n + ' dipilih'], [/^(\d+) lines?$/, (m, n) => n + ' barang'],
+  [/^(\d+) lines? - about (.+)$/, (m, n, w) => n + ' barang - sekitar ' + w], [/^About (.+) where weights are listed\.$/, (m, w) => 'Sekitar ' + w + ' untuk barang yang ada beratnya.'],
+  [/^(\d+) of (\d+) details$/, (m, a, b) => a + ' dari ' + b + ' data'], [/^Unlocked, over (.+)$/, (m, v) => 'Aktif, di atas ' + v],
+  [/^Delivery starting from (.+), depending on your area\.$/, (m, v) => 'Ongkir mulai ' + v + ', tergantung area Anda.'],
+  [/^Order by (.+) for delivery tomorrow morning\.$/, (m, t) => 'Pesan sebelum ' + t + ' untuk diantar besok pagi.'],
+  [/^per (\S+)(.*?) - listed as (.+)$/, (m, u, x, l) => 'per ' + unitId(u) + x + ' - tertera ' + l], [/^(.+) \+ (\d+) more$/, (m, a, n) => a + ' + ' + n + ' lainnya'], [/^per (\S+)$/, (m, u) => 'per ' + unitId(u)],
+  [/^([\d.,]+) (pcs|pack|box|carton|can|bottle|jar|sachet|hand|sack)$/, (m, q, u) => q + ' ' + unitId(u)], [/^(pcs|pack|box|carton|can|bottle|jar|sachet|hand|sack)$/, (m, u) => unitId(u)],
+  [/^Delivery on (.+)$/, (m, d) => 'Diantar ' + idcDate(d)], [/^Thank you, (.+)\.$/, (m, n) => 'Terima kasih, ' + n + '.'], [/^Thank you\.$/, () => 'Terima kasih.'],
+  [/^Welcome back, (.+)\. Order again\?$/, (m, n) => 'Selamat datang kembali, ' + n + '. Pesan lagi?'], [/^Order again\?$/, () => 'Pesan lagi?'],
+  [/^Approximate pin, about ±(\d+) m\.$/, (m, n) => 'Pin perkiraan, sekitar ±' + n + ' m.'], [/^Show (\d+) more$/, (m, n) => 'Tampilkan ' + n + ' lagi'],
+  [/^Basket (\d+) of (\d+)$/, (m, a, b) => 'Paket ' + a + ' dari ' + b], [/^(Less|More|Remove|Quantity of|Add|Favorite) (.+)$/, (m, v, x) => ({ Less: 'Kurangi', More: 'Tambah', Remove: 'Hapus', 'Quantity of': 'Jumlah', Add: 'Tambah', Favorite: 'Favoritkan' })[v] + ' ' + x],
+  [/^(?:(Mon|Tue|Wed|Thu|Fri|Sat|Sun),? )?(\d{1,2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)( \d{4})?(,? .*)?$/, m => idcDate(m)]
+];
+function idcDate(s) { return s.replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/g, d => DAY_ID[d]).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g, x => MON_ID[x]); }
+function idOf(t) { if (Object.prototype.hasOwnProperty.call(ID_TEXT, t)) return ID_TEXT[t]; for (const r of ID_RULES) { const m = t.match(r[0]); if (m) return r[1].apply(null, m); } return null; }
+const I18N_SKIP = 'script,style,textarea,.wm,.maplibregl-ctrl-attrib,.item h4,.item .en,.fcard b,.fcard small,.ln b,.ln .en,.bvn b,#importCard,.staffonly';
+function i18nNode(root) {
+  if (LANG !== 'id' || !cmode || !root) return;
+  if (root.nodeType === 3) { i18nText(root); return; } if (root.nodeType !== 1 || (root.closest && root.closest(I18N_SKIP))) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) i18nText(n);
+  [root].concat([...root.querySelectorAll('[placeholder],[aria-label]')]).forEach(el => ['placeholder', 'aria-label'].forEach(a => { const v = el.getAttribute && el.getAttribute(a); if (v) { const t = idOf(v); if (t !== null && t !== v) el.setAttribute(a, t); } }));
+}
+function i18nText(n) { const p = n.parentElement; if (!p || p.closest(I18N_SKIP)) return; const raw = n.nodeValue, t = raw.trim(); if (!t) return; const v = idOf(t); if (v !== null && v !== t) n.nodeValue = raw.replace(t, v); }
+function i18nStart() {
+  const b = document.getElementById('langBtn'); if (b) { b.hidden = !cmode; b.textContent = LANG === 'id' ? 'EN' : 'ID'; b.setAttribute('aria-label', LANG === 'id' ? 'Switch to English' : 'Ganti ke Bahasa Indonesia'); }
+  if (LANG !== 'id' || !cmode) return; document.documentElement.lang = 'id'; i18nNode(document.body);
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(i18nNode))).observe(document.body, { childList: true, subtree: true });
+}
+i18nStart();
 boot();
 })();
 </script>
