@@ -2076,8 +2076,7 @@ window.addEventListener('resize', () => document.querySelectorAll('.brow').forEa
 function chipsFade() { const c = document.getElementById('supChips'); if (c) c.classList.toggle('at-end', c.scrollLeft + c.clientWidth >= c.scrollWidth - 2); }
 function dlParts() {
   const dl = dlNow(); const fees = dl.zones.map(z => z.fee).filter(x => x != null); const parts = [];
-  if (cmode && dl.zones.length) { if (fees.length) parts.push('Delivery ' + (Math.min(...fees) === Math.max(...fees) ? fmtRp(fees[0]) : 'from ' + fmtRp(Math.min(...fees))) + (fees.length > 1 ? ', depending on your area.' : '.')); if (dl.free) parts.push('<b>Free on orders over ' + fmtRp(dl.free) + '.</b>'); if (dl.min) parts.push('Minimum order ' + fmtRp(dl.min) + '.'); }
-  if (cmode && dl.cutoff) parts.push('<br>Order by <b>' + cutLabel(dl.cutoff) + '</b> for delivery the next morning. Later orders arrive the morning after.');
+  if (cmode && dl.zones.length) { if (fees.length) parts.push('Delivery ' + (Math.min(...fees) === Math.max(...fees) ? fmtRp(fees[0]) : 'starting from ' + fmtRp(Math.min(...fees))) + (fees.length > 1 ? ', depending on your area.' : '.')); if (dl.free) parts.push('<b>Free on orders over ' + fmtRp(dl.free) + '.</b>'); if (dl.min) parts.push('Minimum order ' + fmtRp(dl.min) + '.'); }
   return parts;
 }
 function setListMode(m) {
@@ -2090,7 +2089,7 @@ function renderFilters() {
   const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://wa.me/' + hw + '?text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
   const hw = document.getElementById('howCard'); if (hw) {
     const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
-    if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span>Pick what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().join(' ') + '</p>' : '');
+    if (show) hw.innerHTML = '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span>Pick what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().join(' ') + '</p>' : '') + (cmode && dlNow().cutoff ? '<p class="hownote howcut">Order by <b>' + cutLabel(dlNow().cutoff) + '</b> for delivery the next morning. Later orders arrive the morning after.</p>' : '');
   }
   const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; supVisible().forEach(s => { counts[s] = CATALOG.filter(i => gs(i) === s && !i.hidden).length; });
