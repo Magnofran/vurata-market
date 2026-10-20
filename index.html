@@ -972,7 +972,10 @@ body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiase
 .fcard b, .fcard small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .fcard b { min-height: calc(2em * 1.25); margin-top: 6px; } .fcard small { min-height: calc(2em * 1.2); }
 .fcard .fpr { display: grid; gap: 1px; margin-bottom: 10px; } .fcard .fpr em { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fcard .fstep, .fcard .fadd { margin-top: auto; }
+.fcard .fstep, .fcard .fadd { margin-top: auto; } .fcard .fstep button { margin-top: 0; }
+/* − and + drawn as bars so they sit exactly on the centre line (text glyphs ride low) */
+.stepper button[data-act="dec"], .stepper button[data-act="inc"], .fstep button { font-size: 0 !important; background-image: linear-gradient(currentColor, currentColor) !important; background-repeat: no-repeat !important; background-position: center !important; background-size: 12px 2px !important; }
+.stepper button[data-act="inc"], .fstep button[data-act="featadd"] { background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor) !important; background-size: 12px 2px, 2px 12px !important; }
 /* add-to-basket pulse */
 @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.07); color: var(--gold-text); } 100% { transform: scale(1); } }
 #bbTotal { display: inline-block; transform-origin: left center; } #bbTotal.bump, #nBadge.bump { animation: bump .42s cubic-bezier(.3,.7,.4,1); }
