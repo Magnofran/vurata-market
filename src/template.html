@@ -1113,6 +1113,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .rstep i { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50% !important; border: 1.5px solid var(--line-dark); font-style: normal; font-size: 12px; font-weight: 700; color: var(--muted); }
 .rstep span { display: grid; gap: 1px; min-width: 0; } .rstep b { font-size: 13.5px; } .rstep small { font-size: 12px; color: var(--muted); }
 .rstep.done { opacity: .6; } .rstep.done i { background: var(--fv); border-color: var(--fv); color: #fff; } .rstep.done b { text-decoration: line-through; text-decoration-thickness: 1px; }
+.rstep.idle { opacity: .55; } .rstep.idle i { border-style: dashed; }
 .rstep.urgent { border-color: var(--ink); background: color-mix(in srgb, var(--gold) 10%, var(--surface)); } .rstep.urgent i { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 @media (hover: hover) { .rstep:hover { background: var(--surface-2); } }
 .ccard.compact { padding-bottom: 12px; } .cmeta { margin-top: 6px; font-size: 12.5px; color: var(--muted); line-height: 1.5; } .cmeta .pos { color: var(--fv); font-weight: 600; } .cmeta .neg { color: var(--danger); font-weight: 600; } .cmeta .rdy { color: var(--fv); font-weight: 700; }
@@ -3337,6 +3338,7 @@ const daySet = (k, key) => { const o = dayStore(k); o[key] = Date.now(); try { l
 function moneyLine() { const now = new Date(); const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); const w0 = t0 - ((now.getDay() + 6) % 7) * 864e5;
   let ds = 0, dp = 0, ws = 0, wp = 0; cust.filter(c => !c.demo && c.status !== 'cancelled').forEach(c => { if (!(c.at >= w0)) return; const p = profitOf(custState(c)); ws += p.rev; wp += p.profit; if (c.at >= t0) { ds += p.rev; dp += p.profit; } });
   return '<div class="pmoney"><div><span>Today</span><b class="num">' + fmtRp(ds) + '</b><em class="num">' + fmtRp(dp) + ' profit</em></div><div><span>This week</span><b class="num">' + fmtRp(ws) + '</b><em class="num">' + fmtRp(wp) + ' profit</em></div></div>'; }
+const s1done = rows => rows.some(r => r.indexOf('rstep done') > -1);
 function routineHtml() {
   const day = runToday(); const dl = dlNow(); const stops = runStops(day);
   const toConfirm = cust.filter(c => c.status === 'new' && !c.cf).length, toOrder = cust.filter(c => c.status === 'new' && c.inc !== false).length;
@@ -3344,15 +3346,17 @@ function routineHtml() {
   const groups = drivers.length ? drivers.filter(d => stops.some(c => drvOf(c) === d.id)).map(d => d.id).concat(stops.some(c => !drvOf(c)) ? ['un'] : []) : (stops.length ? ['all'] : []);
   const dsent = dayStore('drvsent'); const drvLeft = groups.filter(g => !dsent[g]).length; const collect = cust.reduce((t, c) => t + dueOf(c), 0);
   let left = ''; if (dl.cutoff && toOrder) { const now = new Date(), cut = new Date(now.getFullYear(), now.getMonth(), now.getDate(), Math.floor(dl.cutoff), Math.round((dl.cutoff % 1) * 60)); const m = Math.round((cut - now) / 6e4); left = m > 0 ? 'by ' + cutLabel(dl.cutoff) + ' · ' + (m >= 60 ? Math.floor(m / 60) + 'h ' : '') + (m % 60) + 'm left' : 'past ' + cutLabel(dl.cutoff) + ': for the day after'; }
-  const step = (i, done, label, detail, attrs, urgent) => '<button type="button" class="rstep' + (done ? ' done' : '') + (urgent ? ' urgent' : '') + '" ' + attrs + '><i>' + (done ? '✓' : i) + '</i><span><b>' + label + '</b><small>' + detail + '</small></span></button>';
+  /* done = there was work and it is finished; idle = nothing to do today (no tick, no strike) */
+  const step = (i, done, label, detail, attrs, urgent) => { const idle = done === 'idle'; return '<button type="button" class="rstep' + (idle ? ' idle' : done ? ' done' : '') + (urgent ? ' urgent' : '') + '" ' + attrs + '><i>' + (idle ? '–' : done ? '✓' : i) + '</i><span><b>' + label + '</b><small>' + detail + '</small></span></button>'; };
+  const live = cust.filter(c => c.status !== 'cancelled'), anyNew = live.some(c => c.status === 'new'), anyOrdered = live.some(c => c.status === 'ordered');
   const firstOpen = [toConfirm, toOrder, stops.length - packed, drvLeft, collect].findIndex(x => x > 0);
   const rows = [
-    step(1, !toConfirm, 'Confirm new orders', toConfirm ? toConfirm + ' waiting for your message' : 'All confirmed', 'data-act="cfil" data-k="new"', firstOpen === 0),
-    step(2, !toOrder, 'Order from suppliers', toOrder ? toOrder + ' order' + (toOrder === 1 ? '' : 's') + (left ? ' · ' + left : '') : 'Suppliers have everything', 'data-act="goto" data-t="#combCard"', firstOpen === 1),
-    step(3, stops.length && packed === stops.length || !stops.length, 'Pack today\'s orders', stops.length ? packed + ' of ' + stops.length + ' packed' : 'Nothing to deliver today', 'data-act="goto" data-t="#driverCard"', firstOpen === 2),
-    step(4, !drvLeft, 'Send drivers their run', groups.length ? (drvLeft ? drvLeft + ' message' + (drvLeft === 1 ? '' : 's') + ' to send' : 'Sent') : 'No run today', 'data-act="goto" data-t="#driverCard"', firstOpen === 3),
-    step(5, !collect, 'Collect payments', collect ? fmtRp(collect) + ' open' : 'All paid', 'data-act="cunpaid"', firstOpen === 4)];
-  return '<div class="routine"><div class="cplab"><span>Today\'s routine</span><em>' + (firstOpen < 0 ? 'All done ✓' : 'Next: step ' + (firstOpen + 1)) + '</em></div>' + rows.join('') + '</div>'; }
+    step(1, !anyNew ? 'idle' : !toConfirm, 'Confirm new orders', toConfirm ? toConfirm + ' waiting for your message' : anyNew ? 'All confirmed' : 'No new orders', 'data-act="cfil" data-k="new"', firstOpen === 0),
+    step(2, !toOrder && !anyOrdered ? 'idle' : !toOrder, 'Order from suppliers', toOrder ? toOrder + ' order' + (toOrder === 1 ? '' : 's') + (left ? ' · ' + left : '') : anyOrdered ? 'Suppliers have everything' : 'Nothing to order', 'data-act="goto" data-t="#combCard"', firstOpen === 1),
+    step(3, !stops.length ? 'idle' : packed === stops.length, 'Pack today\'s orders', stops.length ? packed + ' of ' + stops.length + ' packed' : 'Nothing to deliver today', 'data-act="goto" data-t="#driverCard"', firstOpen === 2),
+    step(4, !groups.length ? 'idle' : !drvLeft, 'Send drivers their run', groups.length ? (drvLeft ? drvLeft + ' message' + (drvLeft === 1 ? '' : 's') + ' to send' : 'Sent') : 'No run today', 'data-act="goto" data-t="#driverCard"', firstOpen === 3),
+    step(5, !collect && !live.length ? 'idle' : !collect, 'Collect payments', collect ? fmtRp(collect) + ' open' : live.length ? 'All paid' : 'Nothing to collect', 'data-act="cunpaid"', firstOpen === 4)];
+  return '<div class="routine"><div class="cplab"><span>Today\'s routine</span><em>' + (firstOpen < 0 ? (s1done(rows) ? 'All done ✓' : 'Nothing today') : 'Next: step ' + (firstOpen + 1)) + '</em></div>' + rows.join('') + '</div>'; }
 
 /* Cancelling keeps the order on record (reason, note, date) but takes it out of buying, packing, delivery and money */
 const CX_REASONS = ['Customer changed their mind', 'Items out of stock', 'No payment received', 'Could not reach the customer', 'Duplicate order', 'Other'];
