@@ -1593,7 +1593,16 @@ body { margin: 0; padding-inline: 8px; }
 .dbtn:not([aria-pressed="true"]):hover { background: var(--surface-2); }
 .dbtn[aria-pressed="true"] { background: color-mix(in srgb, var(--gold) 12%, var(--surface)); box-shadow: inset 0 -2px 0 var(--gold); }
 .dmapbar:has([aria-pressed="true"]) .dbtn:not([aria-pressed="true"]) .dlab { color: var(--muted); }
-.dpaste { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); } .dpaste input { min-height: 40px; } .dtip { grid-column: 1 / -1; margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.dpaste { display: grid; gap: 10px; padding: 12px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--gold) 5%, var(--surface)); }
+.dgo { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 14px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); text-decoration: none; }
+.dgo-pin { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--gold-text); stroke-width: 1.7; stroke-linejoin: round; }
+.dgo-t { display: grid; gap: 2px; flex: 1; min-width: 0; } .dgo-t b { font-size: 14.5px; } .dgo-t small { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.dgo-arr { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s ease, stroke .15s ease; }
+@media (hover: hover) { .dgo:hover { border-color: var(--ink); } .dgo:hover .dgo-arr { stroke: var(--ink); transform: translate(2px, -2px); } }
+.dgo:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.dprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; } .dprow input { min-height: 44px; } .dprow .btn { min-width: 84px; min-height: 44px; }
+#pinGo.ready { animation: detpulse 1.3s ease-out 2; }
+.dtip { margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted); }
 .dpinstat { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); line-height: 1.45; }
 .dpinstat.ok { color: var(--ink); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); } .dpinstat.ok b { font-weight: 600; } .dpinstat.rough { background: color-mix(in srgb, var(--gold) 16%, var(--surface)); }
 .dpinact { display: flex; gap: 12px; align-items: center; } .dpinact a { color: var(--gold-text); text-underline-offset: 3px; font-weight: 600; }
@@ -2032,12 +2041,16 @@ const pinFromLink = t => { const s = String(t || '').trim(); const pats = [/@(-?
 const addrHtml = a => String(a || '').split('\n').filter(l => l.trim()).map(l => { const x = /^Map: (https?:\/\/\S+)$/.exec(l.trim()); return x ? '<a class="maplnk" href="' + esc(x[1]) + '" target="_blank" rel="noopener">Google Maps link</a>' : esc(l); }).join('<br>');
 /* Which of the two pin options is in use, so the chosen one stays highlighted */
 const pinMode = m => ui.pinPaste ? 'link' : ui.pinMode !== undefined ? ui.pinMode : (m.pinacc ? 'gps' : (!m.pin && mapLinkOf(m) ? 'link' : ''));
+/* Opens the Google Maps app on phones (universal link), the website elsewhere, centred on Bali */
+const GMAPS_OPEN = 'https://www.google.com/maps/@-8.65,115.20,11z';
 const mapLinkOf = m => { const x = /(?:^|\n)Map: (https?:\/\/\S+)/.exec(String(m.addr || '')); return x ? x[1] : ''; };
 function delBoxHtml(m, ro) {
   const pin = parsePin(m.pin); const gm = pin ? 'https://maps.google.com/?q=' + m.pin : '';
   return '<div class="delbox"><div class="dmapslot" id="dmapSlot"></div>' +
     (ro ? '' : '<div class="dmapbar"><button type="button" class="dbtn" data-act="getpin" aria-pressed="' + (pinMode(m) === 'gps') + '"><span class="dopt"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>Option 1</span><span class="dlab">Use my location</span></button><button type="button" class="dbtn" data-act="pastepin" aria-pressed="' + (pinMode(m) === 'link') + '"><span class="dopt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Option 2</span><span class="dlab">Paste a Maps link</span></button></div>') +
-    (ui.pinPaste && !ro ? '<div class="dpaste"><input id="m-pinlink" inputmode="url" placeholder="Paste the Google Maps link here" autocomplete="off"><button type="button" class="btn sm" data-act="pinlinkok">Use it</button><p class="dtip">Any Google Maps link works. For an exact pin on this map, press and hold your gate in Google Maps, copy the numbers that appear, and paste them here.</p></div>' : '') +
+    (ui.pinPaste && !ro ? '<div class="dpaste"><a class="dgo" href="' + GMAPS_OPEN + '" target="_blank" rel="noopener" data-act="gmgo"><svg class="dgo-pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span class="dgo-t"><b>Open Google Maps</b><small>Find your place, tap Share, then Copy link</small></span><svg class="dgo-arr" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>' +
+      '<div class="dprow"><input id="m-pinlink" inputmode="url" placeholder="Then paste it here" autocomplete="off"><button type="button" class="btn sm" id="pinGo" data-act="pinlinkok">Paste</button></div>' +
+      '<p class="dtip">For an exact pin, press and hold your gate in Google Maps and copy the numbers instead.</p></div>' : '') +
     '<div class="dpinstat' + (pin ? (pinRough(m) ? ' ok rough' : ' ok') : mapLinkOf(m) ? ' ok' : '') + '">' + (pin ? (pinRough(m) ? '<span><b>Approximate pin, about &plusmn;' + pinRough(m) + ' m.</b> Drag it to your gate so the driver finds you.</span>' : '<span><b>&#10003; Pin set.</b> This is exactly where we deliver.</span>') + '<span class="dpinact"><a href="' + gm + '" target="_blank" rel="noopener">Check in Google Maps</a>' + (ro ? '' : '<button type="button" class="linkbtn" data-act="clrpin">Remove</button>') + '</span>' : (mapLinkOf(m) ? '<span><b>&#10003; Maps link saved.</b> Your host opens it to find you. To see the pin here too, tap your gate on the map.</span><span class="dpinact"><a href="' + esc(mapLinkOf(m)) + '" target="_blank" rel="noopener">Open link</a></span>' : ui.pinFail ? 'We could not read your location. Tap the map at your gate instead, or paste a Maps link.' : 'Tap the map or drag the pin to your gate, so the driver comes straight to you.')) + '</div>' +
     '<textarea id="m-addr" data-meta="addr" rows="2" placeholder="Villa name, street and gate, e.g. Villa Asri, Jl. Batu Bolong 12, green gate"' + ro + '>' + esc(m.addr) + '</textarea></div>';
 }
@@ -4018,7 +4031,10 @@ document.addEventListener('click', e => {
     tm = setTimeout(done, 10000); } }
   else if (act === 'clrpin') { ui.pinMode = ''; patch({ meta: { pin: '', pinacc: '' } }); renderOrder(compute(S)); }
   else if (act === 'pastepin') { ui.pinPaste = !ui.pinPaste; ui.pinMode = ui.pinPaste ? 'link' : ''; renderOrder(compute(S)); const i = document.getElementById('m-pinlink'); if (i) i.focus(); }
-  else if (act === 'pinlinkok') { const i = document.getElementById('m-pinlink'); const raw = i ? i.value.trim() : ''; if (!raw) { toast('Paste the link first.'); return; } const v = pinFromLink(raw);
+  else if (act === 'gmgo') { ui.gmAway = true; }
+  else if (act === 'pinlinkok') { const i = document.getElementById('m-pinlink'); const raw = i ? i.value.trim() : '';
+    if (!raw) { if (i && navigator.clipboard && navigator.clipboard.readText) { navigator.clipboard.readText().then(t => { t = String(t || '').trim(); if (!t) { i.focus(); toast('Nothing copied yet. In Google Maps tap Share, then Copy link.'); return; } i.value = t; b.click(); }).catch(() => { i.focus(); toast('Press and hold the box, then tap Paste.'); }); } else { if (i) i.focus(); toast('Press and hold the box, then tap Paste.'); } return; }
+    const v = pinFromLink(raw);
     if (v === 'far') { toast('That link points outside Bali. Check it and try again.'); return; }
     if (v) { ui.pinPaste = false; ui.pinMode = 'link'; ui.pinFail = false; patch({ meta: { pin: v, pinacc: '' } }); renderOrder(compute(S)); toast('Pin set from your link.'); return; }
     if (/^https?:\/\/\S+$/.test(raw)) { ui.pinPaste = false; ui.pinMode = 'link'; const a = String(S.meta.addr || ''); if (!a.includes(raw)) patch({ meta: { addr: (a ? a + '\n' : '') + 'Map: ' + raw } }); renderOrder(compute(S)); toast('Maps link saved. Your host opens it to find you.'); return; }
@@ -4224,6 +4240,10 @@ document.addEventListener('contextmenu', e => { if (e.target.closest && e.target
 document.addEventListener('input', e => { const t = e.target; if (t && t.id === 'addq') { ui.addQ = t.value; const pos = t.selectionStart; renderCustomers(); const n = document.getElementById('addq'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} } } });
 document.addEventListener('focusin', e => { const t = e.target; if (t.matches && t.matches('input[data-act="qty"]')) setTimeout(() => { try { t.select(); } catch (x) {} }, 0); });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'q') e.target.blur(); if (e.key === 'Enter' && e.target && e.target.id === 'm-code') { const b = document.querySelector('[data-act="codeapply"]'); if (b) b.click(); } if (e.key === 'Enter' && e.target && e.target.id === 'mk-pct') { const b = document.getElementById('mk-apply'); if (b && !b.disabled) b.click(); } });
+/* Back from Google Maps: the paste box is ready and says so */
+document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' || !ui.gmAway || !ui.pinPaste) return; ui.gmAway = false; const i = document.getElementById('m-pinlink'); if (!i || i.value) return; i.scrollIntoView({ block: 'center', behavior: 'smooth' }); const g = document.getElementById('pinGo'); if (g) { g.classList.add('ready'); setTimeout(() => g.classList.remove('ready'), 2600); } });
+document.addEventListener('input', e => { if (e.target.id !== 'm-pinlink') return; const g = document.getElementById('pinGo'); if (g) g.textContent = (LANG === 'id' && ID_TEXT[e.target.value.trim() ? 'Use it' : 'Paste']) || (e.target.value.trim() ? 'Use it' : 'Paste'); });
+document.addEventListener('paste', e => { if (e.target.id !== 'm-pinlink') return; setTimeout(() => { const g = document.getElementById('pinGo'); if (g && e.target.value.trim()) g.click(); }, 0); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.sentPending && cmode) { ui.sentPending = false; showSentBox(); } });
 document.addEventListener('paste', e => { const t = e.target; if (!t || t.id !== 'importTxt' || !canWrite) return; const txt = ((e.clipboardData || window.clipboardData).getData('text')) || ''; if (/(?:VM1|MUMU1):/.test(txt)) { e.preventDefault(); importCodes(txt); } });
 document.addEventListener('click', e => { if (e.target.closest('#staffLink')) { e.preventDefault(); location.hash = '#staff'; location.reload(); return; } if (e.target.closest('#outBtn')) { window.SB.signOut().then(() => { location.hash = ''; location.reload(); }); return; } if (e.target.closest('#themeBtn')) { theme = effectiveTheme() === 'dark' ? 'light' : 'dark'; LS.set('mumu-theme', theme); applyTheme(); } });
@@ -4466,6 +4486,9 @@ const ID_TEXT = {
   'Delivery area': 'Area pengantaran', 'Delivery to your area': 'Ongkir ke area Anda', 'Free': 'Gratis', 'Free delivery': 'Gratis ongkir',
   'Delivery time': 'Jam pengantaran', 'Any time on the day': 'Kapan saja di hari itu', 'Late morning (10:30 to 12)': 'Menjelang siang (10.30 sampai 12)', 'Afternoon (12 to 4)': 'Siang (12 sampai 4)', 'Evening (4 to 7)': 'Sore (4 sampai 7)',
   'Deliver to': 'Antar ke', 'Option 1': 'Pilihan 1', 'Option 2': 'Pilihan 2', 'or': 'atau',
+  'Open Google Maps': 'Buka Google Maps', 'Find your place, tap Share, then Copy link': 'Cari tempat Anda, ketuk Bagikan, lalu Salin link', 'Then paste it here': 'Lalu tempel di sini', 'Paste': 'Tempel',
+  'For an exact pin, press and hold your gate in Google Maps and copy the numbers instead.': 'Untuk pin yang tepat, tekan lama gerbang Anda di Google Maps lalu salin angkanya.',
+  'Nothing copied yet. In Google Maps tap Share, then Copy link.': 'Belum ada yang disalin. Di Google Maps ketuk Bagikan, lalu Salin link.', 'Press and hold the box, then tap Paste.': 'Tekan lama kotaknya, lalu ketuk Tempel.',
   'Use my location': 'Pakai lokasi saya', 'Paste a Maps link': 'Tempel link Maps', 'Use it': 'Pakai',
   '✓ Pin set.': '✓ Pin terpasang.', 'This is exactly where we deliver.': 'Di sinilah kami antar.', 'Check in Google Maps': 'Cek di Google Maps', 'Remove': 'Hapus',
   '✓ Maps link saved.': '✓ Link Maps tersimpan.', 'Your host opens it to find you. To see the pin here too, tap your gate on the map.': 'Host Anda membukanya untuk menemukan Anda. Agar pin juga muncul di sini, ketuk gerbang Anda di peta.', 'Open link': 'Buka link',
