@@ -1393,7 +1393,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .detcard { --dp: 16px; padding: var(--dp); }
 @media (min-width: 700px) { .detcard { --dp: 24px; } }
 .dethead { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px)); z-index: 6; margin: calc(-1 * var(--dp)) calc(-1 * var(--dp)) 14px; padding: var(--dp) var(--dp) 12px; background: var(--surface); border-radius: inherit; }
-.detcard.shut .dethead { position: relative; margin-bottom: 0; }
+.detcard.shut .dethead { position: relative; top: 0; margin-bottom: 0; }
 .dethead .oprog i { position: absolute; left: 0; right: 0; top: auto; bottom: 0; height: 3px; }
 .detcard.shut .dethead .oprog i { top: 0; bottom: auto; }
 .detcard .msg-head { margin-bottom: 6px; } .detsum { margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
