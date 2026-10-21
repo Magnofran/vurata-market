@@ -1479,7 +1479,8 @@ body { margin: 0; padding-inline: 8px; }
 .suptop { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; align-items: center; } .suptop input { font-weight: 600; }
 .sdot { width: 12px; height: 12px; border-radius: 50% !important; background: var(--c, var(--muted)); }
 .supbot { display: grid; gap: 8px; padding-left: 22px; } .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
-.swatches .sw { width: 28px; height: 28px; border: 2px solid transparent; padding: 0; cursor: pointer; border-radius: 50% !important; } .swatches .sw.on { border-color: var(--ink); box-shadow: inset 0 0 0 2px var(--surface); }
+.swatches .sw { width: 28px; height: 28px; border: 2px solid transparent; padding: 0; cursor: pointer; border-radius: 50% !important; } .swsep { width: 1px; align-self: stretch; background: var(--line-dark); margin: 2px 2px; }
+.swatches .sw.on { border-color: var(--ink); box-shadow: inset 0 0 0 2px var(--surface); }
 .supadd { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
 .duprow { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); } .duprow:first-of-type { border-top: 0; }
 .dside { display: grid; gap: 2px; } .dside span { font-size: 12.5px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
@@ -3509,14 +3510,15 @@ function setSell(id, i, val) {
 }
 function avgMargin() { let n = 0, t = 0; CATALOG.forEach(it => { if (it.hidden) return; it.o.forEach(o => { if (o.pr && o.sp) { n++; t += (o.sp - o.pr) / o.sp; } }); }); return n ? Math.round(t / n * 100) : 0; }
 function profitOf(state) { const sl = compute(state, 'sell'), co = compute(state, 'cost'); return { rev: sl.total, cost: co.total, profit: sl.total - co.total }; }
-const supHue = id => { const sx = (ledger.supx || {})[id], d = (ledger.sups || {})[id]; return sx && sx.h != null ? sx.h : d && d.h != null ? d.h : id === 'ot' ? 4 : null; };
+const supHue = id => { const sx = (ledger.supx || {})[id], d = (ledger.sups || {})[id]; return sx && sx.h != null ? sx.h : d && d.h != null ? d.h : id === 'ot' ? 4 : d ? Object.keys(ledger.sups || {}).indexOf(id) % SUP_HUES.length : null; };
+const SUP_ORIG = { fv: [75, 107, 61], mt: [156, 75, 62], gr: [47, 74, 107] };
 const nextHue = () => { const used = SUP_ORDER.map(supHue).filter(h => h != null); return [0, 2, 3, 4, 7, 1, 5, 6].find(h => !used.includes(h)) ?? SUP_ORDER.length % SUP_HUES.length; };
 function supsHtml() {
   const ro = canWrite ? '' : ' disabled';
   const rows = SUP_ORDER.map(id => { const sp = SUPS[id]; const n = CATALOG.filter(i => (i.sOwn || i.s) === id).length; const h = supHue(id);
     return '<div class="suprow"><div class="suptop"><i class="sdot sup-' + id + '"></i><input data-supf="' + id + '|name" value="' + esc(sp._o ? sp._o.name : sp.name) + '" aria-label="Supplier name"' + ro + '><span class="hint num">' + n + ' product' + (n === 1 ? '' : 's') + '</span></div>' +
       '<div class="supbot"><input data-supf="' + id + '|phone" inputmode="tel" value="' + esc(sp.phone || '') + '" placeholder="WhatsApp, e.g. 0812 3456 7890" aria-label="WhatsApp for ' + esc(sp.name) + '"' + ro + '>' +
-      '<div class="swatches" role="group" aria-label="Colour">' + SUP_HUES.map((hu, i) => '<button type="button" class="sw' + (h === i ? ' on' : '') + '" style="background:hsl(' + hu + ' 52% 42%)" data-act="supcol" data-id="' + id + '" data-h="' + i + '" aria-label="Colour ' + (i + 1) + '"' + ro + '></button>').join('') + '</div></div></div>'; }).join('');
+      '<div class="swatches" role="group" aria-label="Colour">' + (SUP_ORIG[id] ? '<button type="button" class="sw' + (h == null ? ' on' : '') + '" style="background:rgb(' + SUP_ORIG[id].join(',') + ')" data-act="supcol" data-id="' + id + '" data-h="-1" aria-label="Original colour" title="Original colour" aria-pressed="' + (h == null) + '"' + ro + '></button><i class="swsep" aria-hidden="true"></i>' : '') + SUP_HUES.map((hu, i) => '<button type="button" class="sw' + (h === i ? ' on' : '') + '" style="background:hsl(' + hu + ' 52% 42%)" data-act="supcol" data-id="' + id + '" data-h="' + i + '" aria-label="Colour ' + (i + 1) + '" aria-pressed="' + (h === i) + '"' + ro + '></button>').join('') + '</div></div></div>'; }).join('');
   return '<section class="lsec"><div class="lsec-h"><b>Your suppliers</b><span>Names, WhatsApp and colours are for you and your team only. Customers never see them.</span></div>' + rows +
     '<div class="supadd"><div class="field"><label for="ns-name">New supplier</label><input id="ns-name" placeholder="e.g. Bali Egg Farm"' + ro + '></div><div class="field"><label for="ns-wa">Their WhatsApp</label><input id="ns-wa" inputmode="tel" placeholder="optional"' + ro + '></div><button type="button" class="btn ghost" data-act="supadd"' + ro + '>Add supplier</button></div></section>';
 }
@@ -3738,7 +3740,7 @@ document.addEventListener('click', e => {
   else if (act === 'lsup') { ui.lsup = b.dataset.k; ui.llimit = 40; renderLedger(); }
   else if (act === 'lfil') { ui.lfil = b.dataset.k; ui.llimit = 40; renderLedger(); }
   else if (act === 'lmore') { ui.llimit += 40; renderLedgerList(); }
-  else if (act === 'supcol') { const id = b.dataset.id, h = +b.dataset.h; if (['fv', 'mt', 'gr', 'ot'].includes(id)) saveLedger({ supx: { [id]: { h } } }); else saveLedger({ sups: { [id]: { h } } }); renderLedger(); }
+  else if (act === 'supcol') { const id = b.dataset.id, h = +b.dataset.h < 0 ? null : +b.dataset.h; if (['fv', 'mt', 'gr', 'ot'].includes(id)) saveLedger({ supx: { [id]: { h } } }); else saveLedger({ sups: { [id]: { h } } }); renderLedger(); }
   else if (act === 'supadd') { const nmv = ((document.getElementById('ns-name') || {}).value || '').trim(); if (!nmv) { toast('Type the supplier name first.'); return; } const id = 's' + Date.now().toString(36); saveLedger({ sups: { [id]: { name: nmv, what: nmv, phone: ((document.getElementById('ns-wa') || {}).value || '').trim(), h: nextHue() } } }); renderLedger(); toast('Added ' + nmv + '. Add their products with New product, or link one under Same product, different supplier.'); }
   else if (act === 'dupyes') { const A = BY_ID[b.dataset.a], B = BY_ID[b.dataset.b]; if (!A || !B) return; const score = x => (/^x-/.test(x.id) ? 0 : 2) + (x.img ? 1 : 0); const main = score(A) >= score(B) ? A : B, alt = main === A ? B : A; saveLedger({ links: { [alt.id]: main.id } }); renderLedger(); toast('Linked. Customers see ' + nm(main).m + ' once.'); }
   else if (act === 'dupno') { saveLedger({ nodup: { [[b.dataset.a, b.dataset.b].sort().join('~')]: 1 } }); renderLedger(); }
