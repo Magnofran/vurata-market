@@ -2862,7 +2862,9 @@ function newOrderAlert(n) { unseenOrders += n; document.title = '(' + unseenOrde
     [[880, 0], [1320, .16]].forEach(([f, d]) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.12, t + d + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d + .5); o.connect(g); g.connect(ac.destination); o.start(t + d); o.stop(t + d + .55); }); } catch (e) {} }
 function seenOrders() { if (!unseenOrders) return; unseenOrders = 0; document.title = BASE_TITLE; }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.view === 'cust') seenOrders(); });
-function showView(v) { if (v === 'cust') setTimeout(seenOrders, 0);
+/* A refresh keeps the tab you were on (this browser tab only); a new visit starts at Pick items */
+const startView = () => { let v = ''; try { v = sessionStorage.getItem('vm-view') || ''; } catch (e) {} return (cmode ? ['pick', 'order', 'share'] : ['pick', 'order', 'share', 'cust', 'ledger']).includes(v) ? v : 'pick'; };
+function showView(v) { if (v === 'cust') setTimeout(seenOrders, 0); try { sessionStorage.setItem('vm-view', v); } catch (e) {}
   ui.view = v; ['pick', 'order', 'share', 'cust', 'ledger'].forEach(n => { document.getElementById('v-' + n).hidden = n !== v; document.getElementById('t-' + n).setAttribute('aria-selected', String(n === v)); });
   const barOn = v === 'pick' || (v === 'order' && cmode); document.getElementById('bottombar').hidden = !barOn; document.body.classList.toggle('has-bar', barOn);
   const goBtn = document.getElementById('bbGo'); if (v === 'order' && cmode) { goBtn.removeAttribute('data-view'); goBtn.dataset.act = 'tosend'; goBtn.textContent = 'Send order'; } else { goBtn.dataset.view = 'order'; delete goBtn.dataset.act; goBtn.textContent = 'Review order'; }
@@ -4397,13 +4399,13 @@ function photoCard() {
 const HAS_INIT = !!(INIT_LEDGER && (INIT_LEDGER.ov || INIT_LEDGER.add));
 async function boot() {
   const early = cmode && HAS_INIT && !/access_token|type=recovery/.test(location.hash);
-  if (early) { restoreUi(); try { hist = JSON.parse(LS.get('mumu-hist') || '[]') || []; } catch (e) { hist = []; } const sv = LS.get('mumu-order'); if (sv) { try { S = deepMerge(blankState(), JSON.parse(sv)); } catch (e) {} } renderFilters(); renderPick(); showView('pick'); renderAll(false); setSync('local', 'Saved on this phone'); }
+  if (early) { restoreUi(); try { hist = JSON.parse(LS.get('mumu-hist') || '[]') || []; } catch (e) { hist = []; } const sv = LS.get('mumu-order'); if (sv) { try { S = deepMerge(blankState(), JSON.parse(sv)); } catch (e) {} } renderFilters(); renderPick(); showView(startView()); renderAll(false); setSync('local', 'Saved on this phone'); }
   const st = await window.SB.ready;
   if (window.SB.recovery) { showLogin('', 'recovery'); return; }
   if (location.hash === '#staff' && !st.admin) { showLogin(st.session ? 'This account does not have staff access.' : ''); return; }
   if (!early) restoreUi(); if (cmode && !HAS_INIT) ui.loading = true;
   
-  renderFilters(); renderPick(); showView('pick'); renderAll(false); if (!early) setSync('local', 'Connecting');
+  renderFilters(); renderPick(); showView(early ? ui.view : startView()); renderAll(false); if (!early) setSync('local', 'Connecting');
   const [dbc, uc, dc, ac] = await Promise.all([cap('db'), cap('user'), cap('downloads'), cap('assets')]);
   userCap = uc; dlCap = dc; assetsCap = ac;
   document.body.classList.toggle('staffmode', !cmode); document.getElementById('staffFoot').hidden = !cmode; document.getElementById('outBtn').hidden = cmode;
