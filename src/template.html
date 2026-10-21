@@ -1088,9 +1088,9 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 /* first-visit trust strip */
 .trust { list-style: none; margin: 12px 0 0; padding: 12px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); }
 .trust[hidden] { display: none; }
-.trust li { display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 12px; line-height: 1.3; color: var(--muted); } .trust li + li { border-left: 1px solid var(--line); } .trust li:first-child { padding-left: 0; }
+.trust li { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 6px; font-size: 12.5px; font-weight: 500; line-height: 1; color: var(--ink); white-space: nowrap; min-width: 0; } .trust li + li { border-left: 1px solid var(--line); }
 .trust svg { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--gold-text); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-@media (max-width: 560px) { .trust li { flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 0 8px; } .trust li:first-child { padding-left: 0; } .trust span { max-width: 13ch; } }
+.trust { padding: 11px 0; } .trust svg { width: 16px; height: 16px; } @media (max-width: 360px) { .trust li { font-size: 11.5px; gap: 5px; } .trust svg { width: 14px; height: 14px; } }
 /* share-the-app invite */
 .warm, #howCard { position: relative; overflow: hidden; background: color-mix(in srgb, var(--gold) 9%, var(--surface)) !important; border-top: 2px solid var(--gold) !important; }
 .warm > :not(.inv-art), #howCard > :not(.inv-art) { position: relative; }
@@ -2452,9 +2452,9 @@ function setListMode(m) {
 function renderFilters() {
   const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + hw + '&text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
   const tr = document.getElementById('trustRow'); if (tr) { const on = cmode && !hist.length; tr.hidden = !on; if (on && !tr.innerHTML) tr.innerHTML = [
-    ['<path d="M12 21c-5-3-8-7-8-11a8 8 0 0 1 16 0c0 4-3 8-8 11z"/><path d="M9 10.5l2 2 4-4"/>', 'Fresh on delivery day'],
-    ['<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/>', 'Pay cash or QRIS'],
-    ['<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>', 'By Vurata Bali Experiences']
+    ['<path d="M12 21c-5-3-8-7-8-11a8 8 0 0 1 16 0c0 4-3 8-8 11z"/><path d="M9 10.5l2 2 4-4"/>', 'Fresh daily'],
+    ['<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/>', 'Cash or QRIS'],
+    ['<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>', 'By Vurata']
   ].map(x => '<li><svg viewBox="0 0 24 24" aria-hidden="true">' + x[0] + '</svg><span>' + x[1] + '</span></li>').join(''); }
   const hw = document.getElementById('howCard'); if (hw) {
     const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
@@ -4291,7 +4291,7 @@ const ID_TEXT = {
   'We deliver on your day, and you pay the way you chose.': 'Kami antar di hari pilihan Anda, dan Anda bayar dengan cara yang Anda pilih.',
   'For friends in Bali': 'Untuk teman di Bali', 'Know someone who’d love this?': 'Punya teman yang pasti suka?',
   'Fresh produce, meat and pantry staples, brought to their villa or home. Nothing to download, and ordering takes a few minutes.': 'Buah, sayur, daging dan bahan pokok segar, diantar ke villa atau rumah mereka. Tanpa unduh aplikasi, pesan hanya beberapa menit.',
-  'Order on WhatsApp': 'Pesan lewat WhatsApp', 'Cash or QRIS': 'Tunai atau QRIS', 'Next-morning delivery': 'Diantar besok pagi', 'Share with a friend': 'Bagikan ke teman', 'Copy link': 'Salin link', 'Copied': 'Tersalin',
+  'Order on WhatsApp': 'Pesan lewat WhatsApp', 'Cash or QRIS': 'Tunai/QRIS', 'Next-morning delivery': 'Diantar besok pagi', 'Share with a friend': 'Bagikan ke teman', 'Copy link': 'Salin link', 'Copied': 'Tersalin',
   'Done with this order?': 'Pesanan ini sudah selesai?', 'Save it to history and start a fresh one. You can order the same thing again later and change it first.': 'Simpan ke riwayat dan mulai pesanan baru. Nanti Anda bisa memesan yang sama lagi dan mengubahnya dulu.',
   'Save to history and start new': 'Simpan ke riwayat dan mulai baru', 'Order summary': 'Ringkasan pesanan',
   'Your basket': 'Keranjang Anda', 'Nothing in this order yet': 'Pesanan ini masih kosong', 'Pick items and they appear here with your total worked out.': 'Pilih barang, dan barang itu muncul di sini lengkap dengan totalnya.',
@@ -4349,6 +4349,7 @@ const ID_TEXT = {
   'Scan our QR code in any banking or e-wallet app. Pay before or when your order arrives. We hand it over once it\'s paid.': 'Scan kode QR kami di aplikasi bank atau e-wallet apa pun. Bayar sebelum atau saat pesanan sampai. Pesanan kami serahkan setelah dibayar.',
   'On your phone, press and hold the code to save it, then choose it from your gallery in your banking app.': 'Di HP, tekan lama kode untuk menyimpannya, lalu pilih dari galeri di aplikasi bank Anda.', 'Save the QR code': 'Simpan kode QR',
   'To be confirmed': 'Dikonfirmasi nanti', 'Items': 'Barang',
+  'Fresh daily': 'Selalu segar', 'By Vurata': 'Oleh Vurata',
   'Search items': 'Cari barang', 'Category': 'Kategori', 'Sections': 'Bagian', 'Country': 'Negara', 'Zoom in': 'Perbesar', 'Zoom out': 'Perkecil'
 };
 const UNIT_IDC = { pcs: 'pcs', pack: 'pak', box: 'kotak', carton: 'karton', can: 'kaleng', bottle: 'botol', jar: 'toples', sachet: 'sachet', hand: 'sisir', sack: 'karung', pax: 'pax' };
