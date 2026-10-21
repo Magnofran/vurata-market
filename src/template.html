@@ -79,7 +79,7 @@ h1, h2, h3, h4, p { margin: 0; }
 
 /* layout */
 .cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; margin-top: 16px; align-items: start; }
-@media (min-width: 1000px) { .cols.two { grid-template-columns: minmax(0, 1fr) 340px; } .side { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px) + 12px); } }
+@media (min-width: 1000px) { .cols.two { grid-template-columns: minmax(0, 1fr) 340px; } .side { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px) + 16px); } }
 .side { display: none; }
 @media (min-width: 1000px) { .side { display: block; } .bottombar { display: none !important; } }
 
@@ -366,9 +366,9 @@ body { font-size: 15px; letter-spacing: -.003em; }
 .chips:not(.at-end) { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
 @media (min-width: 521px) { .chips { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none !important; mask-image: none !important; } }
 @media (min-width: 1000px) {
-  .sidecol { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px) + 12px); }
+  .sidecol { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px) + 16px); }
   /* Side panels: one rule for every tab. Sit just under the header, never stretch to the column height (that stops sticking), scroll inside if taller than the screen */
-  .side, .sidecol, .sidep { align-self: start; max-height: calc(100dvh - var(--barh, 92px) - env(safe-area-inset-top, 0px) - 24px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .side, .sidecol, .sidep { align-self: start; max-height: calc(100dvh - var(--barh, 92px) - env(safe-area-inset-top, 0px) - 32px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
   .sidecol .actions.tri { grid-template-columns: 1fr 1fr; }
   .sidecol .actions.tri > .btn:first-child { grid-column: 1 / -1; }
 }
@@ -780,6 +780,8 @@ body.has-bar .toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
 .cadv { width: 100%; justify-content: center; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline-offset: 0; }
+/* Tabs: keyboard focus shown as a soft gold inset ring, not a heavy black box */
+.tab:focus-visible { outline: 1.5px solid color-mix(in srgb, var(--gold) 70%, transparent); outline-offset: -6px; }
 
 /* ---- saved orders, private note, quick dates and note chips ---- */
 .htop { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
@@ -800,6 +802,8 @@ body.has-bar .toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
 /* ---- calm view transitions, saved-chip pulse, rename field ---- */
 @keyframes vin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 section[id^="v-"]:not([hidden]) { animation: vin .2s ease both; }
+/* Every tab starts its content the same distance under the header; side panels pin at that same line */
+section[id^="v-"] { padding-top: 16px; } section[id^="v-"] > :first-child, section[id^="v-"] > .stack > .cols:first-child { margin-top: 0; }
 @keyframes chippulse { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 40% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--fv) 45%, transparent); } }
 .saved-chip.pulse { animation: chippulse 1.1s ease 2; }
 @media (prefers-reduced-motion: reduce) { section[id^="v-"]:not([hidden]), .saved-chip.pulse { animation: none; } }
@@ -1088,7 +1092,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .dnot { justify-self: center; font-size: 13px; color: var(--muted); }
 @media (hover: hover) { .dpick:hover { background: color-mix(in srgb, var(--gold) 16%, var(--surface)); color: var(--ink); border-color: var(--gold); } }
 /* staff side panels */
-@media (min-width: 1000px) { .sidecols { grid-template-columns: minmax(0, 1fr) 340px; margin-top: 0; } .sidep { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px) + 12px); } }
+@media (min-width: 1000px) { .sidecols { grid-template-columns: minmax(0, 1fr) 340px; margin-top: 0; } .sidep { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px) + 16px); } }
 @media (max-width: 999px) { .sidecols .sidep { order: -1; } .sidep .pjump { display: flex; flex-wrap: wrap; gap: 2px 16px; } }
 .sidecols { margin-top: 0; }
 .sidecard { border-top: 2px solid var(--gold) !important; display: grid; gap: 10px; }
@@ -1718,10 +1722,10 @@ body { margin: 0; padding-inline: 8px; }
       <aside class="side" id="side" aria-label="Order so far"></aside>
     </div>
   </section>
-  <section id="v-order" hidden aria-labelledby="t-order"><div class="stack" id="orderBody" style="margin-top:16px"></div></section>
-  <section id="v-share" hidden aria-labelledby="t-share"><div class="stack" id="shareBody" style="margin-top:16px"></div></section>
-  <section id="v-cust" hidden aria-labelledby="t-cust"><div class="stack" id="custBody" style="margin-top:16px"></div></section>
-  <section id="v-ledger" hidden aria-labelledby="t-ledger"><div class="stack" id="ledgerBody" style="margin-top:16px"></div></section>
+  <section id="v-order" hidden aria-labelledby="t-order"><div class="stack" id="orderBody"></div></section>
+  <section id="v-share" hidden aria-labelledby="t-share"><div class="stack" id="shareBody"></div></section>
+  <section id="v-cust" hidden aria-labelledby="t-cust"><div class="stack" id="custBody"></div></section>
+  <section id="v-ledger" hidden aria-labelledby="t-ledger"><div class="stack" id="ledgerBody"></div></section>
 </div>
 
 <div class="helpfoot" id="helpFoot" hidden></div>
