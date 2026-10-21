@@ -2893,6 +2893,7 @@ function saveFavs() {
   if (favRef) { favChain = favChain.then(() => favRef.set({ fav: favs })).catch(() => {}); }
 }
 function histHtml() {
+  if (!hist.length) return ''; /* the card appears once something is saved */
   const rows = hist.map(h => {
     const open = !!ui.histOpen[h.id]; const date = new Date(h.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + new Date(h.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     let det = '';
