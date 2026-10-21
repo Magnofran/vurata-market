@@ -3283,7 +3283,7 @@ function decodeCode(code) {
 function customerMessage(state, comp) {
   /* one language only: the one the customer is browsing in */
   const m = state.meta; const id = typeof LANG !== 'undefined' && LANG === 'id'; const tr = t => (id && ID_TEXT[t]) || t; const L = (en, ix) => id ? ix : en;
-  const out = [L('Hi! New order from Vurata Market.', 'Halo! Pesanan baru dari Vurata Market.')];
+  const out = [L('Hi! New order from Vurata Market.', 'Halo! Pesanan baru dari Vurata Market.'), ''];
   /* bold labels (WhatsApp *bold*) so both sides can scan it; one fact per line */
   const row = (en, ix, v) => { if (v) out.push('*' + L(en, ix) + ':* ' + v); };
   const txt = addrText(m.addr).trim(), link = mapLinkOf(m);
