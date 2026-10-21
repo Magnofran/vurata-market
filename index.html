@@ -3083,7 +3083,7 @@ function overviewHtml() {
   return nx.replace(/<button type="button" class="btn pastebtn"[^>]*>Paste order from clipboard<\/button>/, '') + (dayRows.length || areaRows.length ? '<div class="card"><h3>Deliveries</h3>' + brkHtml(dayRows, areaRows) + '</div>' : ''); /* counts and Paste live in the Today panel */
 }
 function packState(c, comp) { let n = 0, done = 0; comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st === 'x') return; n++; if (c.pk && c.pk[ln.key]) done++; })); return { n, done }; }
-const ID_SLOT = { 'Late morning (10:30 to 12)': 'Siang (10.30-12.00)', 'Late morning (10:30 to 12)': 'Pagi (08.00-12.00)', 'Afternoon (12 to 4)': 'Siang (12.00-16.00)', 'Evening (4 to 7)': 'Sore (16.00-19.00)' };
+const ID_SLOT = { 'Late morning (10:30 to 12)': 'Menjelang siang (10.30-12.00)', 'Afternoon (12 to 4)': 'Siang (12.00-16.00)', 'Evening (4 to 7)': 'Sore (16.00-19.00)' };
 const idDate = iso => new Date(iso + 'T12:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 /* Delivery run: pick a day, give each stop a driver, send each driver one clear WhatsApp message. Drivers never need the app. */
 let drivers = []; try { drivers = JSON.parse(localStorage.getItem('mumu-drivers') || '[]') || []; } catch (e) { drivers = []; }
@@ -3243,12 +3243,20 @@ function decodeCode(code) {
   } catch (e) { return null; }
 }
 function customerMessage(state, comp) {
-  const m = state.meta; const out = ['Hi! New order from Vurata Market.'];
-  out.push('Name: ' + (m.who || '(please add your name)') + (m.phone ? '  |  WhatsApp: ' + m.phone : ''));
-  if (m.pin) out.push('Pin: https://maps.google.com/?q=' + m.pin + (pinRough(m) ? ' (approximate, about ' + pinRough(m) + ' m)' : '')); if (m.need) out.push('Needed by: ' + fmtDate(m.need)); if (m.slot) out.push('Delivery time: ' + m.slot); if (m.zone) out.push('Area: ' + zoneLabel(m.zone)); if (m.addr) out.push('Deliver to: ' + m.addr); if (m.pay) out.push('Payment: ' + m.pay); if (m.notes) out.push('Notes: ' + m.notes);
-  comp.groups.forEach(g => { out.push('', '*' + SUPS[g.sid].name.toUpperCase() + '*'); g.lines.forEach((ln, i) => { out.push((i + 1) + '. ' + lineText(ln)); if (ln.note) out.push('   Note: ' + ln.note); }); out.push('Subtotal: ' + fmtRp(g.subtotal)); });
-  if (hasDel(comp)) out.push('', 'Delivery: ' + delLine(comp) + (comp.codeUsed ? ' (code ' + comp.codeUsed + ': ' + comp.codeText + ')' : (state.meta.dcode ? ' (code ' + state.meta.dcode + ' entered)' : '')));
-  out.push('', '*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? ' + delivery' : ''), '', 'Order code (your host pastes this into the app):', makeCode(state));
+  /* one language only: the one the customer is browsing in */
+  const m = state.meta; const id = typeof LANG !== 'undefined' && LANG === 'id'; const tr = t => (id && ID_TEXT[t]) || t; const L = (en, ix) => id ? ix : en;
+  const out = [L('Hi! New order from Vurata Market.', 'Halo! Pesanan baru dari Vurata Market.')];
+  out.push(L('Name: ', 'Nama: ') + (m.who || L('(please add your name)', '(mohon tulis nama Anda)')) + (m.phone ? '  |  WhatsApp: ' + m.phone : ''));
+  if (m.pin) out.push(L('Pin: ', 'Lokasi: ') + 'https://maps.google.com/?q=' + m.pin + (pinRough(m) ? L(' (approximate, about ', ' (perkiraan, sekitar ') + pinRough(m) + ' m)' : ''));
+  if (m.need) out.push(L('Needed by: ', 'Dibutuhkan: ') + (id ? fmtDate(m.need, 'id') : fmtDate(m.need)));
+  if (m.slot) out.push(L('Delivery time: ', 'Waktu antar: ') + (id ? (ID_SLOT[m.slot] || m.slot) : m.slot));
+  if (m.zone) out.push('Area: ' + (id && m.zone === '__other' ? 'Area lain' : zoneLabel(m.zone))); if (m.addr) out.push(L('Deliver to: ', 'Alamat: ') + m.addr);
+  if (m.pay) out.push(L('Payment: ', 'Pembayaran: ') + tr(m.pay)); if (m.notes) out.push(L('Notes: ', 'Catatan: ') + m.notes);
+  const many = comp.groups.length > 1;
+  comp.groups.forEach(g => { out.push('', '*' + tr(SUPS[g.sid].name).toUpperCase() + '*'); g.lines.forEach((ln, i) => { out.push((i + 1) + '. ' + lineText(ln, true, id ? 'id' : 'en')); if (ln.note) out.push('   ' + L('Note: ', 'Catatan: ') + ln.note); }); if (many) out.push('Subtotal: ' + fmtRp(g.subtotal)); });
+  out.push('');
+  if (hasDel(comp)) out.push(L('Delivery: ', 'Ongkir: ') + tr(delLine(comp)) + (comp.codeUsed ? ' (' + L('code ', 'kode ') + comp.codeUsed + ')' : (m.dcode ? ' (' + L('code ', 'kode ') + m.dcode + ')' : '')));
+  out.push('*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? L(' + delivery', ' + ongkir') : ''), '', L('Order code for our team (please leave as is):', 'Kode pesanan untuk tim kami (mohon jangan diubah):'), makeCode(state));
   return out.join('\n');
 }
 function renderShareC(comp) {
@@ -4456,7 +4464,7 @@ const ID_TEXT = {
   'Payment': 'Pembayaran', 'Your WhatsApp, so your host can reach you': 'WhatsApp Anda, agar host bisa menghubungi Anda',
   'Pick your country, then type your number. No need for a + or the first 0.': 'Pilih negara, lalu ketik nomor Anda. Tidak perlu + atau angka 0 di depan.',
   'Delivery area': 'Area pengantaran', 'Delivery to your area': 'Ongkir ke area Anda', 'Free': 'Gratis', 'Free delivery': 'Gratis ongkir',
-  'Delivery time': 'Jam pengantaran', 'Any time on the day': 'Kapan saja di hari itu', 'Late morning (10:30 to 12)': 'Pagi (8 sampai 12)', 'Afternoon (12 to 4)': 'Siang (12 sampai 4)', 'Evening (4 to 7)': 'Sore (4 sampai 7)',
+  'Delivery time': 'Jam pengantaran', 'Any time on the day': 'Kapan saja di hari itu', 'Late morning (10:30 to 12)': 'Menjelang siang (10.30 sampai 12)', 'Afternoon (12 to 4)': 'Siang (12 sampai 4)', 'Evening (4 to 7)': 'Sore (4 sampai 7)',
   'Deliver to': 'Antar ke', 'Option 1': 'Pilihan 1', 'Option 2': 'Pilihan 2', 'or': 'atau',
   'Use my location': 'Pakai lokasi saya', 'Paste a Maps link': 'Tempel link Maps', 'Use it': 'Pakai',
   '✓ Pin set.': '✓ Pin terpasang.', 'This is exactly where we deliver.': 'Di sinilah kami antar.', 'Check in Google Maps': 'Cek di Google Maps', 'Remove': 'Hapus',
