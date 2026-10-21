@@ -1494,7 +1494,8 @@ body { margin: 0; padding-inline: 8px; }
 .suptop { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; align-items: center; } .suptop input { font-weight: 600; }
 .sdot { width: 12px; height: 12px; border-radius: 50% !important; background: var(--c, var(--muted)); }
 .supbot { display: grid; gap: 8px; padding-left: 22px; } .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
-.swatches .sw { width: 28px; height: 28px; border: 2px solid transparent; padding: 0; cursor: pointer; border-radius: 50% !important; } .swsep { width: 1px; align-self: stretch; background: var(--line-dark); margin: 2px 2px; }
+.swatches .sw { width: 28px; height: 28px; border: 2px solid transparent; padding: 0; cursor: pointer; border-radius: 50% !important; } .swo { display: inline-grid; justify-items: center; gap: 2px; } .swo small { font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--muted); }
+.swsep { width: 1px; align-self: stretch; background: var(--line-dark); margin: 2px 2px; }
 .swatches .sw.on { border-color: var(--ink); box-shadow: inset 0 0 0 2px var(--surface); }
 .supadd { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
 .duprow { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); } .duprow:first-of-type { border-top: 0; }
@@ -2183,6 +2184,8 @@ function buildSupplierMsg(state, g, lang) {
 
 /* ================= ledger (one editable list of every product) ================= */
 let ledger = { ov: {}, add: {}, cfg: {}, sups: {}, supx: {}, links: {}, nodup: {}, dl: null };
+/* Rebuild the ledger from saved data keeping every section, so supplier colours, same-product links and dismissals survive a reload */
+const ledgerFrom = d => Object.assign({ ov: {}, add: {}, cfg: {}, sups: {}, supx: {}, links: {}, nodup: {}, dl: null }, d || {});
 const DEFAULT_CFG = { pct: 15, round: 500 };
 const cfgNow = () => Object.assign({}, DEFAULT_CFG, ledger.cfg || {});
 function reindex() {
@@ -3533,7 +3536,7 @@ function supsHtml() {
   const rows = SUP_ORDER.map(id => { const sp = SUPS[id]; const n = CATALOG.filter(i => (i.sOwn || i.s) === id).length; const h = supHue(id);
     return '<div class="suprow"><div class="suptop"><i class="sdot sup-' + id + '"></i><input data-supf="' + id + '|name" value="' + esc(sp._o ? sp._o.name : sp.name) + '" aria-label="Supplier name"' + ro + '><span class="hint num">' + n + ' product' + (n === 1 ? '' : 's') + '</span></div>' +
       '<div class="supbot"><input data-supf="' + id + '|phone" inputmode="tel" value="' + esc(sp.phone || '') + '" placeholder="WhatsApp, e.g. 0812 3456 7890" aria-label="WhatsApp for ' + esc(sp.name) + '"' + ro + '>' +
-      '<div class="swatches" role="group" aria-label="Colour">' + (SUP_ORIG[id] ? '<button type="button" class="sw' + (h == null ? ' on' : '') + '" style="background:rgb(' + SUP_ORIG[id].join(',') + ')" data-act="supcol" data-id="' + id + '" data-h="-1" aria-label="Original colour" title="Original colour" aria-pressed="' + (h == null) + '"' + ro + '></button><i class="swsep" aria-hidden="true"></i>' : '') + SUP_HUES.map((hu, i) => '<button type="button" class="sw' + (h === i ? ' on' : '') + '" style="background:hsl(' + hu + ' 52% 42%)" data-act="supcol" data-id="' + id + '" data-h="' + i + '" aria-label="Colour ' + (i + 1) + '" aria-pressed="' + (h === i) + '"' + ro + '></button>').join('') + '</div></div></div>'; }).join('');
+      '<div class="swatches" role="group" aria-label="Colour">' + (SUP_ORIG[id] ? '<span class="swo"><button type="button" class="sw' + (h == null ? ' on' : '') + '" style="background:rgb(' + SUP_ORIG[id].join(',') + ')" data-act="supcol" data-id="' + id + '" data-h="-1" aria-label="Original colour" title="Original colour" aria-pressed="' + (h == null) + '"' + ro + '></button><small>Original</small></span><i class="swsep" aria-hidden="true"></i>' : '') + SUP_HUES.map((hu, i) => '<button type="button" class="sw' + (h === i ? ' on' : '') + '" style="background:hsl(' + hu + ' 52% 42%)" data-act="supcol" data-id="' + id + '" data-h="' + i + '" aria-label="Colour ' + (i + 1) + '" aria-pressed="' + (h === i) + '"' + ro + '></button>').join('') + '</div></div></div>'; }).join('');
   return '<section class="lsec"><div class="lsec-h"><b>Your suppliers</b><span>Names, WhatsApp and colours are for you and your team only. Customers never see them.</span></div>' + rows +
     '<div class="supadd"><div class="field"><label for="ns-name">New supplier</label><input id="ns-name" placeholder="e.g. Bali Egg Farm"' + ro + '></div><div class="field"><label for="ns-wa">Their WhatsApp</label><input id="ns-wa" inputmode="tel" placeholder="optional"' + ro + '></div><button type="button" class="btn ghost" data-act="supadd"' + ro + '>Add supplier</button></div></section>';
 }
@@ -4124,7 +4127,7 @@ async function confirmSent() {
 function setBarH() { const b = document.getElementById('bar'); if (b) document.documentElement.style.setProperty('--barh', b.offsetHeight + 'px'); }
 window.addEventListener('resize', setBarH); if (window.ResizeObserver) { try { new ResizeObserver(setBarH).observe(document.getElementById('bar')); } catch (e) {} }
 document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('input[data-act="qty"]')) setTimeout(() => { try { e.target.select(); } catch (er) {} }, 0); });
-function restoreUi() { setBarH(); if (cmode && INIT_LEDGER && (INIT_LEDGER.ov || INIT_LEDGER.add)) ledger = { ov: INIT_LEDGER.ov || {}, add: INIT_LEDGER.add || {}, cfg: INIT_LEDGER.cfg || {}, sups: INIT_LEDGER.sups || {}, dl: INIT_LEDGER.dl || null, baskets: INIT_LEDGER.baskets }; if (!cmode) { try { const l = JSON.parse(LS.get('mumu-ledger') || 'null'); if (l && (l.ov || l.add)) ledger = { ov: l.ov || {}, add: l.add || {}, cfg: l.cfg || {}, sups: l.sups || {}, dl: l.dl || null }; } catch (e) {} } setMode(); applyLedger(); myWA = LS.get('mumu-mywa') || ''; bankTxt = LS.get('mumu-bank') || ''; try { cust = JSON.parse(LS.get('mumu-cust') || '[]') || []; } catch (e) { cust = []; } updateCBadge(); const t = LS.get('mumu-theme'); if (THEMES.includes(t)) theme = t; applyTheme(); try { const j = JSON.parse(LS.get('mumu-ui') || '{}'); if (j.lang) ui.lang = j.lang; } catch (e) {} }
+function restoreUi() { setBarH(); if (cmode && INIT_LEDGER && (INIT_LEDGER.ov || INIT_LEDGER.add)) ledger = ledgerFrom(INIT_LEDGER); if (!cmode) { try { const l = JSON.parse(LS.get('mumu-ledger') || 'null'); if (l && (l.ov || l.add)) ledger = ledgerFrom(l); } catch (e) {} } setMode(); applyLedger(); myWA = LS.get('mumu-mywa') || ''; bankTxt = LS.get('mumu-bank') || ''; try { cust = JSON.parse(LS.get('mumu-cust') || '[]') || []; } catch (e) { cust = []; } updateCBadge(); const t = LS.get('mumu-theme'); if (THEMES.includes(t)) theme = t; applyTheme(); try { const j = JSON.parse(LS.get('mumu-ui') || '{}'); if (j.lang) ui.lang = j.lang; } catch (e) {} }
 async function photoBlob(file) {
   const url = URL.createObjectURL(file);
   try {
@@ -4193,7 +4196,7 @@ async function boot() {
       const lr = dbc.doc(cmode ? 'catalog/ledger' : 'settings/ledger'); if (!cmode) ledgerRef = lr;
       lr.onSnapshot(sn => {
         ledgerExists = sn.exists; if (sn.metadata && sn.metadata.hasPendingWrites) return; ui.loading = false;
-        if (sn.exists) { const d = clone(sn.data()); ledger = { ov: d.ov || {}, add: d.add || {}, cfg: d.cfg || {}, sups: d.sups || {}, dl: d.dl || null, baskets: d.baskets }; applyLedger(); if (!cmode) LS.set('mumu-ledger', JSON.stringify(ledger)); }
+        if (sn.exists) { ledger = ledgerFrom(clone(sn.data())); applyLedger(); if (!cmode) LS.set('mumu-ledger', JSON.stringify(ledger)); }
         if (!cmode && !ui.pubSynced) { ui.pubSynced = true; pubRef.get().then(s => { pubLast = s.exists ? JSON.stringify(s.data()) : ''; schedulePublish(); }).catch(() => {}); }
         renderFilters(); renderPick(); renderAll(false);
         const a = document.activeElement; if (ui.view === 'ledger' && !(a && a.closest && a.closest('#v-ledger') && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) renderLedger();
