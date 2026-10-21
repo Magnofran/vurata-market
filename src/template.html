@@ -1388,7 +1388,14 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .bviewbox { width: min(440px, 100%); } .bviewbox .bhead { padding-right: 36px; } .bvlist { max-height: min(46vh, 380px); overflow: auto; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overscroll-behavior: contain; }
 .bvrow { display: flex; align-items: center; gap: 12px; padding: 9px 10px 9px 0; border-top: 1px solid var(--line); } .bvrow:first-child { border-top: 0; } .bvn { flex: 1; min-width: 0; display: grid; } .bvn b { font-size: 14px; font-weight: 600; } .bvn span { font-size: 12.5px; color: var(--muted); } .bvp { font-size: 14px; font-variant-numeric: tabular-nums; }
 .bvtot { display: flex; justify-content: space-between; align-items: baseline; } .bvtot b { font-size: 20px; font-weight: 600; }
-.detcard .oprog { position: static; height: auto; } .detcard .oprog i { position: absolute; } .detcard .oprog span { position: static; display: block; margin: 0 0 4px; }
+.detcard .oprog { position: static; height: auto; } .detcard .oprog span { position: static; display: block; margin: 0; }
+/* Details header stays under the tabs while the customer fills the card in, progress strip on its bottom edge; it leaves with the card */
+.detcard { --dp: 16px; padding: var(--dp); }
+@media (min-width: 700px) { .detcard { --dp: 24px; } }
+.dethead { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px)); z-index: 6; margin: calc(-1 * var(--dp)) calc(-1 * var(--dp)) 14px; padding: var(--dp) var(--dp) 12px; background: var(--surface); border-radius: inherit; }
+.detcard.shut .dethead { position: relative; margin-bottom: 0; }
+.dethead .oprog i { position: absolute; left: 0; right: 0; top: auto; bottom: 0; height: 3px; }
+.detcard.shut .dethead .oprog i { top: 0; bottom: auto; }
 .detcard .msg-head { margin-bottom: 6px; } .detsum { margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
 .bsact { display: grid; gap: 8px; } .bsact2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .bsact .btn { width: 100%; min-height: 46px; white-space: normal; padding-left: 6px; padding-right: 6px; }
 .bsq { flex: none; display: inline-flex; align-items: center; gap: 4px; } .bsq button { width: 32px; height: 32px; border: 1px solid var(--line-dark); background: var(--surface); font-size: 17px; line-height: 1; color: var(--ink); cursor: pointer; } .bsq span { min-width: 34px; text-align: center; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -2604,7 +2611,7 @@ function chrome(comp) {
 function renderOrder(comp) {
   const host = document.getElementById('orderBody'); const m = S.meta; const ro = canWrite ? '' : ' disabled';
   const detOpen = !cmode || ui.detOpen === true;
-  const meta = '<div class="card detcard' + (detOpen ? '' : ' shut') + '"><div class="msg-head"><h3>Order details' + (cmode ? ' <span class="reqnote"><i class="req">*</i> required</span>' : '') + '</h3>' + (cmode && detOpen ? '<button type="button" class="dethide" data-act="dettog" aria-expanded="true">Hide</button>' : '') + '</div>' + (cmode ? orderProgHtml() : '') + (detOpen ? '' : detSummary(m) + '<button type="button" class="dettogbig' + (orderProg().done < orderProg().total ? ' detnudge' : '') + '" data-act="dettog" aria-expanded="false"><span>Show order details</span>' + LB_CHEV + '</button>') + (detOpen ? '<div class="grid2">' +
+  const meta = '<div class="card detcard' + (detOpen ? '' : ' shut') + '"><div class="dethead"><div class="msg-head"><h3>Order details' + (cmode ? ' <span class="reqnote"><i class="req">*</i> required</span>' : '') + '</h3>' + (cmode && detOpen ? '<button type="button" class="dethide" data-act="dettog" aria-expanded="true">Hide</button>' : '') + '</div>' + (cmode ? orderProgHtml() : '') + '</div>' + (detOpen ? '' : detSummary(m) + '<button type="button" class="dettogbig' + (orderProg().done < orderProg().total ? ' detnudge' : '') + '" data-act="dettog" aria-expanded="false"><span>Show order details</span>' + LB_CHEV + '</button>') + (detOpen ? '<div class="grid2">' +
     (cmode ? '' : orderTypeHtml(m, ro)) +
     '<div class="field' + (cmode ? ' span-all' : '') + (cmode && !String(m.who || '').trim() ? ' miss' : '') + '"><label for="m-who">' + (cmode ? 'Your name <i class="req" aria-hidden="true">*</i>' : 'Requested by') + '</label><input id="m-who" data-meta="who" value="' + esc(m.who) + '" placeholder="Your name"' + ro + '></div>' +
     '<div class="field' + (cmode && !reqOk('need', m) ? ' miss' : '') + '"><label for="m-need">Needed by' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label><input id="m-need" type="date" data-meta="need" min="' + minNeed() + '" value="' + esc(m.need) + '"' + ro + '>' + quickDates() + needHint() + '</div>' +
