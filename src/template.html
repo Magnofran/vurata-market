@@ -1523,7 +1523,7 @@ body { margin: 0; padding-inline: 8px; }
 .qpay .qrisimg { margin: 0; justify-items: center; } .qpay .qrisimg img { width: min(100%, 260px); }
 .qside { display: grid; gap: 12px; align-content: center; }
 .qside .payhint, .qside .qhint { margin: 0; } .qside .actions { margin: 0; }
-.nb { display: inline-block; }
+.nb { display: inline-block; text-wrap: balance; }
 @container (min-width: 520px) {
   .qpay { grid-template-columns: 240px minmax(0, 1fr); gap: 28px; align-items: center; padding: 18px; border: 1px solid var(--line); background: color-mix(in srgb, var(--gold) 4%, var(--surface)); }
   .qpay .qrisimg img { width: 100%; }
@@ -4350,7 +4350,7 @@ function installHtml() {
 /* withQr: on Send, the QRIS code sits inside step 02 so paying reads as part of the sequence */
 function nextStepsHtml(m, withQr) { const qr = withQr && /qris/i.test(m.pay || '');
   const pay = qr ? '<b>Pay with QRIS</b><span>Scan this code in any banking or e-wallet app and enter your total. Then send us a screenshot.</span><div class="qpay"><div class="qrisimg"><img src="assets/qris.jpg" alt="QRIS code for Vurata Market" width="380" height="438" loading="lazy"></div>' +
-    '<div class="qside"><p class="payhint"><span class="nb">Pay before or when your order arrives.</span> <span class="nb">We hand it over once it\'s paid.</span></p><p class="hint qhint">On your phone, press and hold the code to save it, then choose it from your gallery in your banking app.</p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div></div></div>'
+    '<div class="qside"><p class="payhint"><span class="nb">Pay before or when your order arrives.</span> <span class="nb">We hand it over once it\'s paid.</span></p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div></div></div>'
     : '<b>' + payStep(m.pay)[0] + '</b><span>' + payStep(m.pay)[1] + '</span>';
   return '<ol class="nsteps"><li><i>01</i><div><b>Wait for our WhatsApp confirmation</b><span>Your confirmed total and how to pay come in one message. It only changes if an item is out of stock.</span></div></li><li' + (qr ? ' class="nqr"' : '') + '><i>02</i><div>' + pay + '</div></li><li><i>03</i><div><b>Delivery' + (m.need ? ' on ' + esc(fmtDate(m.need)) : '') + '</b><span>' + (m.slot ? esc(m.slot) + '. ' : '') + (m.pin ? 'We bring it to your pin.' : 'We bring it to the address you gave.') + '</span></div></li></ol>'; }
 function payStep(p) { p = String(p || '');
