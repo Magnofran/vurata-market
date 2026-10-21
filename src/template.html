@@ -1511,7 +1511,17 @@ body { margin: 0; padding-inline: 8px; }
 .bdot.on::before { width: 18px; margin-left: -9px; background: var(--gold); }
 @media (prefers-reduced-motion: reduce) { .bdot::before { transition: none; } }
 /* QRIS payment card */
-.nqr .payhint { margin-top: 8px; } .nqr .qrisimg { justify-items: start; margin: 12px 0 6px; } .nqr .qrisimg img { width: min(100%, 260px); } .nqr .qhint { margin: 0 0 8px; } .nqr .actions { margin-top: 0; }
+.nqr > div { container-type: inline-size; }
+/* QR and its instructions: stacked and centred on phones, side by side when the step is wide */
+.qpay { display: grid; gap: 14px; margin-top: 12px; }
+.qpay .qrisimg { margin: 0; justify-items: center; } .qpay .qrisimg img { width: min(100%, 260px); }
+.qside { display: grid; gap: 12px; align-content: center; }
+.qside .payhint, .qside .qhint { margin: 0; } .qside .actions { margin: 0; }
+.nb { display: inline-block; }
+@container (min-width: 520px) {
+  .qpay { grid-template-columns: 240px minmax(0, 1fr); gap: 28px; align-items: center; padding: 18px; border: 1px solid var(--line); background: color-mix(in srgb, var(--gold) 4%, var(--surface)); }
+  .qpay .qrisimg img { width: 100%; }
+}
 .qrisimg { display: grid; place-items: center; margin: 12px 0; } .qrisimg img { display: block; width: min(100%, 340px); height: auto; border: 1px solid var(--line); background: #fff; }
 /* search clear button: always available, on phones too */
 .search input { padding-right: 46px; } .search input::-webkit-search-cancel-button, .search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
@@ -4334,8 +4344,8 @@ function installHtml() {
 }
 /* withQr: on Send, the QRIS code sits inside step 02 so paying reads as part of the sequence */
 function nextStepsHtml(m, withQr) { const qr = withQr && /qris/i.test(m.pay || '');
-  const pay = qr ? '<b>Pay with QRIS</b><span>Scan this code in any banking or e-wallet app and enter your total. Then send us a screenshot.</span><p class="payhint">Pay before or when your order arrives. We hand it over once it\'s paid.</p>' +
-    '<div class="qrisimg"><img src="assets/qris.jpg" alt="QRIS code for Vurata Market" width="380" height="438" loading="lazy"></div><p class="hint qhint">On your phone, press and hold the code to save it, then choose it from your gallery in your banking app.</p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div>'
+  const pay = qr ? '<b>Pay with QRIS</b><span>Scan this code in any banking or e-wallet app and enter your total. Then send us a screenshot.</span><div class="qpay"><div class="qrisimg"><img src="assets/qris.jpg" alt="QRIS code for Vurata Market" width="380" height="438" loading="lazy"></div>' +
+    '<div class="qside"><p class="payhint"><span class="nb">Pay before or when your order arrives.</span> <span class="nb">We hand it over once it\'s paid.</span></p><p class="hint qhint">On your phone, press and hold the code to save it, then choose it from your gallery in your banking app.</p><div class="actions full"><a class="btn ghost" href="assets/qris.jpg" download="Vurata Market QRIS.jpg">Save the QR code</a></div></div></div>'
     : '<b>' + payStep(m.pay)[0] + '</b><span>' + payStep(m.pay)[1] + '</span>';
   return '<ol class="nsteps"><li><i>01</i><div><b>Wait for our WhatsApp confirmation</b><span>Your confirmed total and how to pay come in one message. It only changes if an item is out of stock.</span></div></li><li' + (qr ? ' class="nqr"' : '') + '><i>02</i><div>' + pay + '</div></li><li><i>03</i><div><b>Delivery' + (m.need ? ' on ' + esc(fmtDate(m.need)) : '') + '</b><span>' + (m.slot ? esc(m.slot) + '. ' : '') + (m.pin ? 'We bring it to your pin.' : 'We bring it to the address you gave.') + '</span></div></li></ol>'; }
 function payStep(p) { p = String(p || '');
@@ -4605,7 +4615,7 @@ const ID_TEXT = {
   'Heinz sauces': 'Saus Heinz', 'Flours (Boladeli)': 'Tepung (Boladeli)', 'Cooking oil 18 L (carton)': 'Minyak goreng 18 L (karton)', 'Eggs': 'Telur', 'Quinoa & chia': 'Quinoa & chia',
   'Wait for our WhatsApp confirmation': 'Tunggu konfirmasi WhatsApp dari kami', 'Wait for our WhatsApp confirmation.': 'Tunggu konfirmasi WhatsApp dari kami.',
   'Your confirmed total and how to pay come in one message. It only changes if an item is out of stock.': 'Total yang sudah dikonfirmasi dan cara bayar datang dalam satu pesan. Total hanya berubah jika ada barang yang habis.',
-  'Scan this code in any banking or e-wallet app and enter your total.': 'Scan kode ini di aplikasi bank atau e-wallet apa pun dan masukkan total Anda.', 'Send us a screenshot.': 'Kirim screenshot ke kami.', 'Scan this code in any banking or e-wallet app and enter your total. Then send us a screenshot.': 'Scan kode ini di aplikasi bank atau e-wallet apa pun dan masukkan total Anda. Lalu kirim screenshot ke kami.',
+  'Scan this code in any banking or e-wallet app and enter your total.': 'Scan kode ini di aplikasi bank atau e-wallet apa pun dan masukkan total Anda.', 'Send us a screenshot.': 'Kirim screenshot ke kami.', 'Pay before or when your order arrives.': 'Bayar sebelum atau saat pesanan sampai.', "We hand it over once it's paid.": 'Pesanan kami serahkan setelah dibayar.', 'Scan this code in any banking or e-wallet app and enter your total. Then send us a screenshot.': 'Scan kode ini di aplikasi bank atau e-wallet apa pun dan masukkan total Anda. Lalu kirim screenshot ke kami.',
   'Pay before or when your order arrives. We hand it over once it\'s paid.': 'Bayar sebelum atau saat pesanan sampai. Pesanan kami serahkan setelah dibayar.',
   'Scan our QR code in any banking or e-wallet app. Pay before or when your order arrives. We hand it over once it\'s paid.': 'Scan kode QR kami di aplikasi bank atau e-wallet apa pun. Bayar sebelum atau saat pesanan sampai. Pesanan kami serahkan setelah dibayar.',
   'On your phone, press and hold the code to save it, then choose it from your gallery in your banking app.': 'Di HP, tekan lama kode untuk menyimpannya, lalu pilih dari galeri di aplikasi bank Anda.', 'Save the QR code': 'Simpan kode QR',
