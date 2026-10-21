@@ -1105,6 +1105,22 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .sidecard .pubstat { margin: 0; }
 @media (hover: hover) { .prow2:hover, .pstat:hover { background: color-mix(in srgb, var(--gold) 10%, var(--surface)); } }
 .actions.billacts { display: grid; grid-template-columns: 1fr; gap: 8px; } .actions.billacts .btn { width: 100%; white-space: normal; text-align: center; line-height: 1.3; min-height: 46px; }
+/* owner routine, money, compact cards */
+.pmoney { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .pmoney div { display: grid; gap: 1px; padding: 10px; background: color-mix(in srgb, var(--gold) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--line)); }
+.pmoney span { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); } .pmoney b { font-size: 17px; } .pmoney em { font-style: normal; font-size: 12px; color: var(--fv); }
+.routine { display: grid; gap: 4px; padding-top: 4px; }
+.rstep { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 8px; border: 1px solid transparent; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.rstep i { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50% !important; border: 1.5px solid var(--line-dark); font-style: normal; font-size: 12px; font-weight: 700; color: var(--muted); }
+.rstep span { display: grid; gap: 1px; min-width: 0; } .rstep b { font-size: 13.5px; } .rstep small { font-size: 12px; color: var(--muted); }
+.rstep.done { opacity: .6; } .rstep.done i { background: var(--fv); border-color: var(--fv); color: #fff; } .rstep.done b { text-decoration: line-through; text-decoration-thickness: 1px; }
+.rstep.urgent { border-color: var(--ink); background: color-mix(in srgb, var(--gold) 10%, var(--surface)); } .rstep.urgent i { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+@media (hover: hover) { .rstep:hover { background: var(--surface-2); } }
+.ccard.compact { padding-bottom: 12px; } .cmeta { margin-top: 6px; font-size: 12.5px; color: var(--muted); line-height: 1.5; } .cmeta .pos { color: var(--fv); font-weight: 600; } .cmeta .neg { color: var(--danger); font-weight: 600; } .cmeta .rdy { color: var(--fv); font-weight: 700; }
+.crow3 { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; margin-top: 10px; }
+.stpill { font-size: 12px; font-weight: 700; padding: 5px 9px; border: 1px solid var(--line-dark); white-space: nowrap; } .stpill.st-delivered { color: var(--fv); border-color: var(--fv); }
+.stepmsg.sm { min-height: 40px; padding: 6px 10px; font-size: 13px; } .stepmsg.sm .ct b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.cmore { min-height: 40px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; } .cmore.less { width: 100%; margin-top: 10px; color: var(--muted); }
+@media (max-width: 420px) { .crow3 { grid-template-columns: auto 1fr; } .crow3 .stepmsg { grid-column: 1 / -1; grid-row: 2; } }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2611,7 +2627,7 @@ function shareSide(comp) { const sent = S.meta.sent || {}; const gs2 = comp.grou
 function custSide() { if (!cust.length) return ''; const n = x => cust.filter(c => c.status === x).length; const toCollect = cust.reduce((t, c) => t + dueOf(c), 0);
   const today = runStops(runToday()); const byDrv = drivers.map(d => [d, today.filter(c => drvOf(c) === d.id).length]).filter(x => x[1]); const noDrv = drivers.length ? today.filter(c => !drvOf(c)).length : 0;
   const jumps = [['#custList', 'Orders'], ['#combCard', 'Combined order'], ['#driverCard', 'Delivery run'], ['#importCard', 'Import an order'], ['#salesCard', 'Sales'], ['#inviteCard', 'Invite customers']];
-  return '<div class="card sidecard"><div class="sidehd"><h3>Today</h3><span>' + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + '</span></div>' +
+  return '<div class="card sidecard"><div class="sidehd"><h3>Today</h3><span>' + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + '</span></div>' + moneyLine() + routineHtml() +
     '<div class="pgrid">' + [['new', 'New'], ['ordered', 'Ordered'], ['delivered', 'Delivered']].map(x => '<button type="button" class="pstat' + (ui.cfil === x[0] ? ' on' : '') + '" data-act="cfil" data-k="' + x[0] + '"><b class="num">' + n(x[0]) + '</b><span>' + x[1] + '</span></button>').join('') + '</div>' +
     pRow('To collect', fmtRp(toCollect), 'data-act="cfil" data-k="all"', toCollect > 0 ? 'neg' : '') +
     pRow('Deliveries today', today.length + (today.length === 1 ? ' stop' : ' stops'), 'data-act="goto" data-t="#driverCard"') +
@@ -2787,7 +2803,14 @@ function fixFirst() {
   ui.detOpen = true; showView('order'); toast(missingReq(S.meta).length + ' detail' + (missingReq(S.meta).length > 1 ? 's' : '') + ' still needed. They are marked in red.');
   setTimeout(() => { const f = document.querySelector('#orderBody .field.miss'); if (!f) return; f.classList.add('pulse'); setTimeout(() => f.classList.remove('pulse'), 1900); f.scrollIntoView({ block: 'center', behavior: 'smooth' }); const i = f.querySelector('.phnum') || f.querySelector('input,select'); if (i) setTimeout(() => i.focus({ preventScroll: true }), 350); }, 60);
 }
-function showView(v) {
+/* New orders while the app is open: tab title counts them and a soft two-note chime plays */
+const BASE_TITLE = document.title; let unseenOrders = 0;
+function newOrderAlert(n) { unseenOrders += n; document.title = '(' + unseenOrders + ') New order' + (unseenOrders === 1 ? '' : 's') + ' · Vurata';
+  try { const A = window.AudioContext || window.webkitAudioContext; if (!A) return; const ac = newOrderAlert.ac || (newOrderAlert.ac = new A()); const t = ac.currentTime;
+    [[880, 0], [1320, .16]].forEach(([f, d]) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(.12, t + d + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d + .5); o.connect(g); g.connect(ac.destination); o.start(t + d); o.stop(t + d + .55); }); } catch (e) {} }
+function seenOrders() { if (!unseenOrders) return; unseenOrders = 0; document.title = BASE_TITLE; }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.view === 'cust') seenOrders(); });
+function showView(v) { if (v === 'cust') setTimeout(seenOrders, 0);
   ui.view = v; ['pick', 'order', 'share', 'cust', 'ledger'].forEach(n => { document.getElementById('v-' + n).hidden = n !== v; document.getElementById('t-' + n).setAttribute('aria-selected', String(n === v)); });
   const barOn = v === 'pick' || (v === 'order' && cmode); document.getElementById('bottombar').hidden = !barOn; document.body.classList.toggle('has-bar', barOn);
   const goBtn = document.getElementById('bbGo'); if (v === 'order' && cmode) { goBtn.removeAttribute('data-view'); goBtn.dataset.act = 'tosend'; goBtn.textContent = 'Send order'; } else { goBtn.dataset.view = 'order'; delete goBtn.dataset.act; goBtn.textContent = 'Review order'; }
@@ -2991,7 +3014,7 @@ function msgDef(k) { for (const g of CMSG) for (const x of g.items) if (x[0] ===
 function stepMsgs(c, st) { const ph = digitsOf(c.phone); const unpaid = !c.paid && dueOf(c) > 0;
   const keys = STEP_MSGS[st].filter(k => k !== 'pay' || unpaid); const mo = !!(ui.cmsgOpen && ui.cmsgOpen[c.id]);
   if (!ph) return '<p class="hint stepmsg-none">Add a WhatsApp number in Edit details to message ' + esc((c.name || 'the customer').split(' ')[0]) + '.</p>';
-  const row = (k, i) => { const x = msgDef(k); return '<a class="stepmsg' + (i === 0 ? ' main' : '') + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span><i class="go" aria-hidden="true">' + ICO_MSG + '</i></a>'; };
+  const row = (k, i) => { const x = msgDef(k); return '<a class="stepmsg' + (i === 0 ? ' main' : '') + '" target="_blank" rel="noopener"' + (k === 'bill' ? ' data-confsent="' + esc(c.id) + '"' : '') + ' href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span><i class="go" aria-hidden="true">' + ICO_MSG + '</i></a>'; };
   return '<div class="stepmsgs"><span class="cplab"><span>' + STEP_SEND[st] + '</span>' + langTag(c) + '</span>' + keys.map(row).join('') +
     '<button type="button" class="linkbtn othermsg" data-act="cmsgtog" data-id="' + esc(c.id) + '" aria-expanded="' + mo + '">' + (mo ? 'Hide other messages' : 'Other messages') + '</button>' + (mo ? allMsgsMenu(c) : '') + '</div>'; }
 function statusPanel(c) { const ro = canWrite ? '' : ' disabled'; const order = ['new', 'ordered', 'delivered']; const cur = Math.max(0, order.indexOf(c.status || 'new'));
@@ -3104,7 +3127,7 @@ function driverHtml() {
   const msgCard = (key, drv, list) => { const t = driverMsg(list, drv, day); const sum = list.reduce((s, c) => s + dueOf(c), 0); const tid = 'drvTxt-' + key; const wa = drv && drv.wa ? 'https://api.whatsapp.com/send?phone=' + drv.wa + '&text=' + encodeURIComponent(t) : 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t);
     return '<div class="drvmsg' + (drv ? '' : ' none') + '"><div class="drvmsg-h"><b>' + (drv ? '🛵 ' + esc(drv.n) : drivers.length ? '⚠️ No driver yet' : 'Driver message') + '</b><span>' + list.length + ' stop' + (list.length === 1 ? '' : 's') + (sum > 0 ? ' · collect ' + fmtRp(sum) : '') + '</span></div>' +
       '<details><summary>Preview message</summary><textarea class="pre sm" id="' + tid + '" readonly>' + esc(t) + '</textarea></details>' +
-      '<div class="actions duo"><a class="btn" target="_blank" rel="noopener" href="' + wa + '">' + (drv && drv.wa ? 'Send to ' + esc(drv.n) : 'Send on WhatsApp') + '</a><button type="button" class="btn ghost" data-act="copy" data-id="' + tid + '">Copy</button></div></div>'; };
+      '<div class="actions duo"><a class="btn" data-drvsent="' + key + '" target="_blank" rel="noopener" href="' + wa + '">' + (drv && drv.wa ? 'Send to ' + esc(drv.n) : 'Send on WhatsApp') + '</a><button type="button" class="btn ghost" data-drvsent="' + key + '" data-act="copy" data-id="' + tid + '">Copy</button></div>' + (dayStore('drvsent')[key] ? '<p class="hint pos">✓ Sent today</p>' : '') + '</div>'; };
   let msgs = '';
   if (stops.length) {
     if (!drivers.length) msgs = msgCard('all', null, stops) + '<p class="hint">Add your driver above to send it straight to their WhatsApp.</p>';
@@ -3293,6 +3316,37 @@ function combinedData() {
   Object.keys(lines).forEach(k => { lines[k].n = (notes[k] || []).join('; '); });
   return { state: { meta: S.meta, lines, sup: {} }, who, incl };
 }
+
+/* Owner routine: what's done today is remembered on this device per day */
+const dayStore = k => { try { return JSON.parse(localStorage.getItem('mumu-' + k + '-' + runToday()) || '{}') || {}; } catch (e) { return {}; } };
+const daySet = (k, key) => { const o = dayStore(k); o[key] = Date.now(); try { localStorage.setItem('mumu-' + k + '-' + runToday(), JSON.stringify(o)); } catch (e) {} };
+function moneyLine() { const now = new Date(); const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); const w0 = t0 - ((now.getDay() + 6) % 7) * 864e5;
+  let ds = 0, dp = 0, ws = 0, wp = 0; cust.filter(c => !c.demo).forEach(c => { if (!(c.at >= w0)) return; const p = profitOf(custState(c)); ws += p.rev; wp += p.profit; if (c.at >= t0) { ds += p.rev; dp += p.profit; } });
+  return '<div class="pmoney"><div><span>Today</span><b class="num">' + fmtRp(ds) + '</b><em class="num">' + fmtRp(dp) + ' profit</em></div><div><span>This week</span><b class="num">' + fmtRp(ws) + '</b><em class="num">' + fmtRp(wp) + ' profit</em></div></div>'; }
+function routineHtml() {
+  const day = runToday(); const dl = dlNow(); const stops = runStops(day);
+  const toConfirm = cust.filter(c => c.status === 'new' && !c.cf).length, toOrder = cust.filter(c => c.status === 'new' && c.inc !== false).length;
+  const packed = stops.filter(c => { const ps = packState(c, compute(custState(c), 'sell')); return ps.n > 0 && ps.done === ps.n; }).length;
+  const groups = drivers.length ? drivers.filter(d => stops.some(c => drvOf(c) === d.id)).map(d => d.id).concat(stops.some(c => !drvOf(c)) ? ['un'] : []) : (stops.length ? ['all'] : []);
+  const dsent = dayStore('drvsent'); const drvLeft = groups.filter(g => !dsent[g]).length; const collect = cust.reduce((t, c) => t + dueOf(c), 0);
+  let left = ''; if (dl.cutoff && toOrder) { const now = new Date(), cut = new Date(now.getFullYear(), now.getMonth(), now.getDate(), Math.floor(dl.cutoff), Math.round((dl.cutoff % 1) * 60)); const m = Math.round((cut - now) / 6e4); left = m > 0 ? 'by ' + cutLabel(dl.cutoff) + ' · ' + (m >= 60 ? Math.floor(m / 60) + 'h ' : '') + (m % 60) + 'm left' : 'past ' + cutLabel(dl.cutoff) + ': for the day after'; }
+  const step = (i, done, label, detail, attrs, urgent) => '<button type="button" class="rstep' + (done ? ' done' : '') + (urgent ? ' urgent' : '') + '" ' + attrs + '><i>' + (done ? '✓' : i) + '</i><span><b>' + label + '</b><small>' + detail + '</small></span></button>';
+  const firstOpen = [toConfirm, toOrder, stops.length - packed, drvLeft, collect].findIndex(x => x > 0);
+  const rows = [
+    step(1, !toConfirm, 'Confirm new orders', toConfirm ? toConfirm + ' waiting for your message' : 'All confirmed', 'data-act="cfil" data-k="new"', firstOpen === 0),
+    step(2, !toOrder, 'Order from suppliers', toOrder ? toOrder + ' order' + (toOrder === 1 ? '' : 's') + (left ? ' · ' + left : '') : 'Suppliers have everything', 'data-act="goto" data-t="#combCard"', firstOpen === 1),
+    step(3, stops.length && packed === stops.length || !stops.length, 'Pack today\'s orders', stops.length ? packed + ' of ' + stops.length + ' packed' : 'Nothing to deliver today', 'data-act="goto" data-t="#driverCard"', firstOpen === 2),
+    step(4, !drvLeft, 'Send drivers their run', groups.length ? (drvLeft ? drvLeft + ' message' + (drvLeft === 1 ? '' : 's') + ' to send' : 'Sent') : 'No run today', 'data-act="goto" data-t="#driverCard"', firstOpen === 3),
+    step(5, !collect, 'Collect payments', collect ? fmtRp(collect) + ' open' : 'All paid', 'data-act="cunpaid"', firstOpen === 4)];
+  return '<div class="routine"><div class="cplab"><span>Today\'s routine</span><em>' + (firstOpen < 0 ? 'All done ✓' : 'Next: step ' + (firstOpen + 1)) + '</em></div>' + rows.join('') + '</div>'; }
+function compactCard(c, comp, date) { const st = c.status || 'new'; const order = ['new', 'ordered', 'delivered']; const cur = Math.max(0, order.indexOf(st)); const L = ['① New', '② Ordered', '③ Delivered'];
+  const due = dueOf(c); const ps = packState(c, comp); const ready = st !== 'delivered' && ps.n > 0 && ps.done === ps.n;
+  const ph = digitsOf(c.phone); const keys = STEP_MSGS[st].filter(k => k !== 'pay' || (!c.paid && due > 0)); const k = keys[0]; const x = k && msgDef(k);
+  const meta = [c.zone ? zoneLabel(c.zone) : '', c.need ? shortDate(c.need) : '', c.paid || due <= 0 ? '<span class="pos">Paid</span>' : '<span class="neg">' + fmtRp(due) + ' to collect</span>', ready ? '<span class="rdy">Ready for driver</span>' : '', c.cf && st === 'new' ? '<span class="pos">Confirmed ✓</span>' : ''].filter(Boolean).join(' · ');
+  return '<div class="ccard compact' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(st) + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.lang === 'id' ? '<em class="langtag">ID</em>' : '') + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div>' +
+    '<div class="cmeta">' + meta + '</div><div class="crow3"><span class="stpill st-' + st + '">' + L[cur] + '</span>' +
+    (x && ph ? '<a class="stepmsg main sm" target="_blank" rel="noopener"' + (k === 'bill' ? ' data-confsent="' + esc(c.id) + '"' : '') + ' href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b></span></a>' : '') +
+    '<button type="button" class="cmore" data-act="cexp" data-id="' + esc(c.id) + '" aria-expanded="false">Details</button></div></div>'; }
 function renderCustomers() {
   const host = document.getElementById('custBody'); if (!host) return;
   const prevTxt = (document.getElementById('importTxt') || {}).value || '';
@@ -3319,6 +3373,7 @@ function renderCustomers() {
   const imp = '<div class="card" id="importCard"><div class="msg-head"><h3>Import a customer\'s order</h3><button type="button" class="linkbtn" data-act="imptog" aria-expanded="' + impOpen + '">' + (impOpen ? 'Hide' : 'Show') + '</button></div>' + (impOpen ? '<p class="choose">Pick the way your customer sent it. All three add the same order.</p><div class="lseg three sendseg" role="group" aria-label="How they sent it">' + iseg + '</div><div class="sendpanel">' + ipanel + '</div>' : '<p class="hint">Paste a WhatsApp message, or upload a PDF or a QR picture, to add an order.</p>') + '</div>';
   const rows = custView().map(c => {
     const comp = compute(custState(c), 'sell'); const open = !!ui.custOpen[c.id]; const date = new Date(c.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    if (!(ui.cexp && ui.cexp[c.id]) && !open && !(ui.cedit && ui.cedit[c.id])) return compactCard(c, comp, date);
     let det = '';
     if (open) {
       const gone = removedLines(c); const shown = new Set();
@@ -3330,11 +3385,11 @@ function renderCustomers() {
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
         '<div class="grand"><span>Total</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (() => { const p = profitOf(custState(c)); return '<p class="hint" style="margin-top:6px">Your cost ' + fmtRp(p.cost) + ' - profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b></p>'; })() +
         '<textarea class="pre sm" id="bill-' + esc(c.id) + '" readonly>' + esc(billText(c, comp)) + '</textarea>' +
-        '<div class="actions billacts"><a class="btn" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and ask for payment</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">The same message as under Order status. Send it once stock is checked.</p>' +
+        '<div class="actions billacts"><a class="btn" data-confsent="' + esc(c.id) + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and ask for payment</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">The same message as under Order status. Send it once stock is checked.</p>' +
         '<div class="hdel">' + (ui.custDel[c.id] ? '<span>Remove this order? You can restore it later.</span><button type="button" class="btn danger sm" data-act="cdelyes" data-id="' + esc(c.id) + '">Remove</button><button type="button" class="btn ghost sm" data-act="cdelno" data-id="' + esc(c.id) + '">Keep</button>' : '<button type="button" class="linkbtn" data-act="cdelask" data-id="' + esc(c.id) + '">Remove order</button>') + '</div></div>';
     }
     return ccardHead(c, comp, date) +
-      repeatInfo(c) + statusPanel(c) + cmdBar(c, open) + det + '</div>';
+      repeatInfo(c) + statusPanel(c) + cmdBar(c, open) + det + '<button type="button" class="cmore less" data-act="cexp" data-id="' + esc(c.id) + '" aria-expanded="true">Show less</button></div>';
   }).join('');
   const list = '<div class="card" id="custList"><h3>Customers' + (cust.length ? ' (' + cust.length + ')' : '') + '</h3>' + (cust.length ? '<div class="lseg" role="group" aria-label="Filter customers">' + [['all', 'All'], ['new', 'New'], ['ordered', 'Ordered'], ['delivered', 'Delivered']].map(x => '<button type="button" data-act="cfil" data-k="' + x[0] + '" aria-pressed="' + (ui.cfil === x[0]) + '">' + x[1] + ' <small>' + (x[0] === 'all' ? cust.length : cust.filter(c => c.status === x[0]).length) + '</small></button>').join('') + '</div><div class="search" style="margin-top:12px"><input id="cq" type="search" placeholder="Find by name, phone or VM-1003" value="' + esc(ui.cq || '') + '" autocomplete="off" aria-label="Find a customer"></div><label class="check" style="margin:10px 0 12px"><input type="checkbox" id="unpaidOnly"' + (ui.cunpaid ? ' checked' : '') + '> Unpaid only</label>' + (ui.cfil === 'all' && !String(ui.cq || '').trim() && cust.some(c => c.status === 'delivered') ? '<button type="button" class="linkbtn delrow" data-act="deltog" aria-expanded="' + !!ui.showDel + '">' + (ui.showDel ? 'Hide delivered orders' : 'Show ' + cust.filter(c => c.status === 'delivered').length + ' delivered order' + (cust.filter(c => c.status === 'delivered').length === 1 ? '' : 's')) + '</button>' : '') : '') + (cust.some(c => c.demo) ? '<div class="hdel" style="margin-bottom:10px"><button type="button" class="linkbtn" data-act="rmdemo">' + (ui.demoAsk ? 'Tap again to remove all demo orders' : 'Remove demo orders') + '</button></div>' : '') + (rows ? '<div class="hist custgrid">' + rows + '</div>' : (cust.length ? '<p class="hint">No orders match your search or filter.</p>' : '') + '<p class="hint"' + (cust.length ? ' hidden' : '') + '>Imported orders show up here, each with its own bill you can edit and send back.</p>') + binHtml() + '</div>';
   let comb = '';
@@ -3348,7 +3403,7 @@ function renderCustomers() {
         '<button type="button" class="suptog" data-act="suptog" data-s="' + g.sid + '" aria-expanded="' + so + '"><span>' + (so ? 'Hide' : 'Show') + ' ' + g.lines.length + ' item' + (g.lines.length > 1 ? 's' : '') + '</span><i aria-hidden="true">' + (so ? '&#9652;' : '&#9662;') + '</i></button>' + (so ? '<div class="suplist">' : '') +
         (so ? g.lines : []).map(ln => '<div class="cline"><span><b>' + esc(ln.it.n) + '</b> <em>' + esc((cb.who[ln.key] || []).map(w => w.name + ' ' + fmtQty(w.q)).join(' - ')) + '</em></span><span class="num">' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + '</span></div>').join('') + (so ? '</div>' : '') +
         '<textarea class="pre sm" id="cmsg-' + g.sid + '" readonly style="margin-top:10px">' + esc(text) + '</textarea>' +
-        '<div class="actions duo"><button type="button" class="btn" data-act="copy" data-id="cmsg-' + g.sid + '">Copy message</button><a class="btn ghost" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + s.wa + '&text=' + encodeURIComponent(text) + '">Open in WhatsApp</a></div></div>';
+        '<div class="actions duo"><button type="button" class="btn" data-act="copy" data-combsup="' + g.sid + '" data-id="cmsg-' + g.sid + '">Copy message</button><a class="btn ghost" data-combsup="' + g.sid + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + s.wa + '&text=' + encodeURIComponent(text) + '">Open in WhatsApp</a></div>' + (dayStore('combsent')[g.sid] ? '<p class="hint pos" style="margin-top:6px">✓ Sent today</p>' : '') + '</div>';
     }).join('');
     comb = '<div class="card" id="combCard"><div class="msg-head"><h3>Combined order</h3><span class="seg" role="group" aria-label="Message language"><button data-act="lang" data-l="id" aria-pressed="' + (ui.lang === 'id') + '">Bahasa Indonesia</button><button data-act="lang" data-l="en" aria-pressed="' + (ui.lang === 'en') + '">English</button></span></div>' +
       '<p class="hint" style="margin-bottom:10px">Everything from the customers marked "In combined order" (not yet delivered), added up by supplier. Send each supplier one message.</p>' +
@@ -3962,6 +4017,9 @@ document.addEventListener('click', e => {
     const cur = (c.lines[k] && c.lines[k].q) || 0; const q = cur > 0 ? Math.round((cur + (o.st || 1)) * 100) / 100 : (o.mn || o.st || 1);
     updCust(c.id, { lines: { [k]: { q, n: (c.lines[k] && c.lines[k].n) || '' } } }); toast('Added ' + nm(it).m + ' to ' + orderNo(c) + '.'); const i = document.getElementById('addq'); if (i) i.focus(); }
   else if (act === 'cedit') { ui.cedit = ui.cedit || {}; ui.cedit[b.dataset.id] = !ui.cedit[b.dataset.id]; renderCustomers(); }
+  else if (act === 'cexp') { ui.cexp = ui.cexp || {}; const id = b.dataset.id; ui.cexp[id] = !ui.cexp[id]; if (!ui.cexp[id]) { ui.custOpen[id] = false; if (ui.cedit) ui.cedit[id] = false; } renderCustomers(); const el = document.querySelector('[data-cid="' + id + '"]'); if (el && ui.cexp[id]) el.scrollIntoView({ block: 'nearest' }); }
+  else if (act === 'cfil' && b.closest('.sidep')) { ui.cfil = b.dataset.k; ui.cunpaid = false; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  else if (act === 'cunpaid') { ui.cunpaid = true; ui.cfil = 'all'; ui.showDel = true; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   else if (act === 'cmsgtog') { ui.cmsgOpen = ui.cmsgOpen || {}; ui.cmsgOpen[b.dataset.id] = !ui.cmsgOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'cview') { ui.custOpen[b.dataset.id] = !ui.custOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'cq') { const c = cust.find(x => x.id === b.dataset.id); const key = b.dataset.key; if (c && c.lines[key]) { const o = BY_ID[key.split('|')[0]].o[+key.split('|')[1]]; const L = c.lines[key]; let q = Math.round((L.q + (+b.dataset.d) * (o.st || 1)) * 100) / 100; if (o.mn && q > 0 && q < o.mn) q = +b.dataset.d < 0 ? 0 : o.mn; q = Math.max(0, q); const pl = { q }; if (L.oq == null) pl.oq = L.q; updCust(c.id, { lines: { [key]: pl } }); } }
@@ -4102,6 +4160,11 @@ document.addEventListener('keydown', e => { const t = e.target; if (!t.matches |
 document.addEventListener('pointerdown', e => { if (!e.target.closest || !e.target.closest('.areabox')) areaClose(); });
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#langBtn')) { try { localStorage.setItem('vm-lang', LANG === 'id' ? 'en' : 'id'); } catch (x) {} location.reload(); } });
 document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('[data-sentsup]'); if (!t || cmode) return; const sid = t.dataset.sentsup; setTimeout(() => { patch({ meta: { sent: { [sid]: Date.now() } } }); if (ui.view === 'share') renderShare(compute(S)); }, 60); }, true);
+document.addEventListener('click', e => { if (cmode || !e.target.closest) return;
+  const cf = e.target.closest('[data-confsent]'); if (cf) { const id = cf.dataset.confsent; setTimeout(() => updCust(id, { cf: Date.now() }), 60); return; }
+  const cs = e.target.closest('[data-combsup]'); if (cs) { daySet('combsent', cs.dataset.combsup); setTimeout(() => { renderCustomers(); const sids = combinedData().state ? compute(combinedData().state, 'cost').groups.map(g => g.sid) : []; const sent = dayStore('combsent'); const nNew = cust.filter(c => c.inc !== false && c.status === 'new').length;
+      if (nNew && sids.length && sids.every(x => sent[x])) toast('Every supplier has the combined order. Move ' + nNew + ' new order' + (nNew === 1 ? '' : 's') + ' to Ordered?', { label: 'Move them', fn: () => { const btn = document.querySelector('[data-act="markordered"]'); if (btn) btn.click(); } }); }, 80); return; }
+  const dv = e.target.closest('[data-drvsent]'); if (dv) { daySet('drvsent', dv.dataset.drvsent); setTimeout(renderCustomers, 80); } }, true);
 document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.brand')) e.preventDefault(); });
 document.addEventListener('input', e => { const t = e.target; if (t && t.id === 'addq') { ui.addQ = t.value; const pos = t.selectionStart; renderCustomers(); const n = document.getElementById('addq'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} } } });
 document.addEventListener('focusin', e => { const t = e.target; if (t.matches && t.matches('input[data-act="qty"]')) setTimeout(() => { try { t.select(); } catch (x) {} }, 0); });
@@ -4262,7 +4325,7 @@ async function boot() {
     catch (e) { db = null; }
   }
   if (db) {
-    try { db.collection('customers').orderBy('at', 'desc').limit(100).onSnapshot(sn => { const oldIds = new Set(cust.map(c => c.id)); const all = sn.docs.map(d => Object.assign({ id: d.id }, d.data())); cust = all.filter(c => !c.rm); custBin = all.filter(c => c.rm).sort((a, b) => b.rm - a.rm); if (ui.custLoaded) { const nu = cust.filter(c => !oldIds.has(c.id) && !c.demo); if (nu.length) toast(nu.length === 1 ? 'New order ' + orderNo(nu[0]) + ' from ' + (nu[0].name || 'a customer') : nu.length + ' new orders', { label: 'View', fn: () => showView('cust') }); } ui.custLoaded = true; updateCBadge(); const a = document.activeElement; if (ui.view === 'cust' && !(a && a.closest && a.closest('#v-cust') && /^(INPUT|TEXTAREA)$/.test(a.tagName))) renderCustomers(); }, () => {}); } catch (e) {}
+    try { db.collection('customers').orderBy('at', 'desc').limit(100).onSnapshot(sn => { const oldIds = new Set(cust.map(c => c.id)); const all = sn.docs.map(d => Object.assign({ id: d.id }, d.data())); cust = all.filter(c => !c.rm); custBin = all.filter(c => c.rm).sort((a, b) => b.rm - a.rm); if (ui.custLoaded) { const nu = cust.filter(c => !oldIds.has(c.id) && !c.demo); if (nu.length) { newOrderAlert(nu.length); toast(nu.length === 1 ? 'New order ' + orderNo(nu[0]) + ' from ' + (nu[0].name || 'a customer') : nu.length + ' new orders', { label: 'View', fn: () => showView('cust') }); } } ui.custLoaded = true; updateCBadge(); const a = document.activeElement; if (ui.view === 'cust' && !(a && a.closest && a.closest('#v-cust') && /^(INPUT|TEXTAREA)$/.test(a.tagName))) renderCustomers(); }, () => {}); } catch (e) {}
     try { db.doc('settings/drivers').onSnapshot(sn => { if (sn.exists && Array.isArray((sn.data() || {}).list)) { drivers = sn.data().list; try { localStorage.setItem('mumu-drivers', JSON.stringify(drivers)); } catch (e) {} if (ui.view === 'cust' && !(document.activeElement && /^(drvName|drvWa)$/.test(document.activeElement.id))) renderCustomers(); } }, () => {}); } catch (e) {}
     try { db.doc('settings/host').onSnapshot(sn => { if (sn.exists) { const d = sn.data(); if (d.wa) { myWA = String(d.wa); LS.set('mumu-mywa', myWA); schedulePublish(); } if (typeof d.bank === 'string') { bankTxt = d.bank; LS.set('mumu-bank', bankTxt); } if (ui.view === 'cust' && !(document.activeElement && /^(mywa|bankTxt)$/.test(document.activeElement.id))) renderCustomers(); } }, () => {}); } catch (e) {}
     try { db.collection('orders').orderBy('at', 'desc').limit(40).onSnapshot(sn => { hist = sn.docs.filter(d => d.id.indexOf('h_') === 0).map(d => Object.assign({ id: d.id }, d.data())).slice(0, 30); if (ui.view === 'share') renderShare(compute(S)); renderFilters(); if (ui.saved && ui.view === 'pick') renderPick(); }, () => {}); } catch (e) {}
