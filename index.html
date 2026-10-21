@@ -1616,6 +1616,19 @@ body { margin: 0; padding-inline: 8px; }
 .dbtn:not([aria-pressed="true"]):hover { background: var(--surface-2); }
 .dbtn[aria-pressed="true"] { background: color-mix(in srgb, var(--gold) 12%, var(--surface)); box-shadow: inset 0 -2px 0 var(--gold); }
 .dmapbar:has([aria-pressed="true"]) .dbtn:not([aria-pressed="true"]) .dlab { color: var(--muted); }
+/* One choice style for both "Option 1 or 2" pickers (delivery location, send method): the chosen one is a solid ink button like Send on WhatsApp */
+.sendpick, .dmapbar { border: 1px solid var(--line-dark); background: var(--surface); }
+.sendpick button, .dbtn { min-height: 64px; transition: background-color .15s ease, color .15s ease; }
+.sendpick button + button, .dbtn + .dbtn { border-left: 1px solid var(--line-dark); }
+.sendpick button[aria-pressed="true"], .dbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); box-shadow: none; }
+.sendpick button[aria-pressed="true"] .dlab, .dbtn[aria-pressed="true"] .dlab { color: var(--bg); }
+.sendpick button[aria-pressed="true"] .dopt, .dbtn[aria-pressed="true"] .dopt { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+.sendpick button[aria-pressed="true"] svg, .dbtn[aria-pressed="true"] svg { stroke: var(--gold); }
+.sendpick button[aria-pressed="true"] .dopt::before, .dbtn[aria-pressed="true"] .dopt::before { content: '\2713'; margin-right: -2px; color: var(--gold); font-size: 11px; letter-spacing: 0; }
+.sendpick button:not([aria-pressed="true"]) .dlab, .dbtn:not([aria-pressed="true"]) .dlab { color: var(--ink); }
+.sendpick:has([aria-pressed="true"]) button:not([aria-pressed="true"]) .dlab, .dmapbar:has([aria-pressed="true"]) .dbtn:not([aria-pressed="true"]) .dlab { color: var(--muted); }
+@media (hover: hover) { .sendpick button:not([aria-pressed="true"]):hover, .dbtn:not([aria-pressed="true"]):hover { background: var(--surface-2); } .sendpick button:not([aria-pressed="true"]):hover .dlab, .dbtn:not([aria-pressed="true"]):hover .dlab { color: var(--ink); } }
+.sendpick::after, .dmapbar::after { z-index: 1; border-color: var(--line-dark); color: var(--ink); }
 .dpaste { display: grid; gap: 10px; padding: 12px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--gold) 5%, var(--surface)); }
 .dgo { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 14px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); text-decoration: none; }
 .dgo-pin { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--gold-text); stroke-width: 1.7; stroke-linejoin: round; }
