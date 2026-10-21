@@ -1085,6 +1085,25 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .dcard.cheap .dpick { background: var(--ink); color: var(--bg); }
 .dnot { justify-self: center; font-size: 13px; color: var(--muted); }
 @media (hover: hover) { .dpick:hover { background: color-mix(in srgb, var(--gold) 16%, var(--surface)); color: var(--ink); border-color: var(--gold); } }
+/* staff side panels */
+@media (min-width: 1000px) { .sidecols { grid-template-columns: minmax(0, 1fr) 340px; margin-top: 0; } .sidep { position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px) + 12px); } }
+@media (max-width: 999px) { .sidecols .sidep { order: -1; } .sidep .pjump { display: flex; flex-wrap: wrap; gap: 2px 16px; } }
+.sidecols { margin-top: 0; }
+.sidecard { border-top: 2px solid var(--gold) !important; display: grid; gap: 10px; }
+.sidehd { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; } .sidehd h3 { margin: 0; } .sidehd span { font-size: 12.5px; color: var(--muted); }
+.srun { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); } .srn { display: grid; gap: 1px; min-width: 0; } .srn b { font-size: 14px; } .srn small { font-size: 12px; color: var(--muted); }
+.srun em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; } .srun.done em { color: var(--fv); }
+.sidetot { display: flex; justify-content: space-between; align-items: baseline; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); } .sidetot b { font-size: 18px; color: var(--ink); }
+.sdone { margin: 0; text-align: center; font-weight: 700; color: var(--fv); } .sreset { justify-self: center; font-size: 12.5px; }
+.pgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.pstat { display: grid; gap: 2px; justify-items: start; padding: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; cursor: pointer; text-align: left; } .pstat b { font-size: 22px; line-height: 1; } .pstat span { font-size: 12px; color: var(--muted); }
+.pstat.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.prow2 { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 44px; padding: 0 2px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-size: 13.5px; cursor: pointer; text-align: left; }
+.prow2 b { font-size: 15px; } .prow2.neg b { color: var(--danger); } .prow2.pos b { color: var(--fv); } .prow2.warnr b { color: var(--warn); }
+.pdrv { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); } .pdrv b { color: var(--ink); } .pdrv .neg { color: var(--danger); font-weight: 600; }
+.pjump { display: grid; gap: 2px; padding-top: 8px; border-top: 1px dashed var(--line-dark); } .pjump .linkbtn { justify-self: start; font-size: 13px; padding: 4px 0; }
+.sidecard .pubstat { margin: 0; }
+@media (hover: hover) { .prow2:hover, .pstat:hover { background: color-mix(in srgb, var(--gold) 10%, var(--surface)); } }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2577,6 +2596,35 @@ function renderOrder(comp) {
 }
 
 /* ================= share view ================= */
+
+/* Staff tabs: work on the left, a calm sticky "where things stand" panel on the right (on phones it sits on top) */
+const sideWrap = (main, side) => side ? '<div class="cols two sidecols"><div class="stack">' + main + '</div><aside class="sidep">' + side + '</aside></div>' : main;
+const pRow = (lab, val, attrs, cls) => '<button type="button" class="prow2' + (cls ? ' ' + cls : '') + '" ' + (attrs || '') + '><span>' + lab + '</span><b class="num">' + val + '</b></button>';
+function shareSide(comp) { const sent = S.meta.sent || {}; const gs2 = comp.groups.filter(g => SUPS[g.sid]);
+  const rows = gs2.map(g => { const t = sent[g.sid]; return '<div class="srun' + (t ? ' done' : '') + '"><i class="dot2 sup-' + g.sid + '"></i><span class="srn"><b>' + esc(SUPS[g.sid].name) + '</b><small>' + g.lines.length + ' item' + (g.lines.length === 1 ? '' : 's') + ' · ' + fmtRp(g.subtotal) + '</small></span><em>' + (t ? '✓ Sent ' + new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Not sent') + '</em></div>'; }).join('');
+  const next = gs2.find(g => !sent[g.sid]); const s2 = next && SUPS[next.sid];
+  const cta = next ? (s2.wa ? '<a class="btn" data-sentsup="' + next.sid + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + s2.wa + '&text=' + encodeURIComponent(buildSupplierMsg(S, next, ui.lang)) + '">Send to ' + esc(s2.name) + '</a>' : '<button type="button" class="btn" data-act="goto" data-t="#sup-' + next.sid + '">Open ' + esc(s2.name) + '</button>') : '<p class="sdone">✓ Every supplier has the order.</p>';
+  const nSent = gs2.filter(g => sent[g.sid]).length;
+  return '<div class="card sidecard"><div class="sidehd"><h3>Supplier run</h3><span>' + nSent + ' of ' + gs2.length + ' sent</span></div>' + rows +
+    '<div class="sidetot"><span>Cost of this order</span><b class="num">' + fmtRp(comp.total) + '</b></div><div class="actions full">' + cta + '</div>' + (nSent ? '<button type="button" class="linkbtn sreset" data-act="sentreset">Start the run again</button>' : '') + '</div>'; }
+function custSide() { if (!cust.length) return ''; const n = x => cust.filter(c => c.status === x).length; const toCollect = cust.reduce((t, c) => t + dueOf(c), 0);
+  const today = runStops(runToday()); const byDrv = drivers.map(d => [d, today.filter(c => drvOf(c) === d.id).length]).filter(x => x[1]); const noDrv = drivers.length ? today.filter(c => !drvOf(c)).length : 0;
+  const jumps = [['#custList', 'Orders'], ['#combCard', 'Combined order'], ['#driverCard', 'Delivery run'], ['#importCard', 'Import an order'], ['#salesCard', 'Sales'], ['#inviteCard', 'Invite customers']];
+  return '<div class="card sidecard"><div class="sidehd"><h3>Today</h3><span>' + new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + '</span></div>' +
+    '<div class="pgrid">' + [['new', 'New'], ['ordered', 'Ordered'], ['delivered', 'Delivered']].map(x => '<button type="button" class="pstat' + (ui.cfil === x[0] ? ' on' : '') + '" data-act="cfil" data-k="' + x[0] + '"><b class="num">' + n(x[0]) + '</b><span>' + x[1] + '</span></button>').join('') + '</div>' +
+    pRow('To collect', fmtRp(toCollect), 'data-act="cfil" data-k="all"', toCollect > 0 ? 'neg' : '') +
+    pRow('Deliveries today', today.length + (today.length === 1 ? ' stop' : ' stops'), 'data-act="goto" data-t="#driverCard"') +
+    (byDrv.length ? '<div class="pdrv">' + byDrv.map(x => '<span>🛵 ' + esc(x[0].n) + ' <b>' + x[1] + '</b></span>').join('') + (noDrv ? '<span class="neg">' + noDrv + ' without a driver</span>' : '') + '</div>' : '') +
+    '<div class="pjump">' + jumps.map(x => '<button type="button" class="linkbtn" data-act="goto" data-t="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
+    '<div class="actions full"><button type="button" class="btn" data-act="pasteorder"' + (canWrite ? '' : ' disabled') + '>Paste order from clipboard</button></div></div>'; }
+function ledgerSide() { const nfix = CATALOG.filter(i => fixWhy(i).length).length, nhid = CATALOG.filter(i => i.hidden).length, nso = CATALOG.filter(i => i.so).length, ndup = dupPairs().length;
+  const pct = ledger.cfg && ledger.cfg.pct != null ? ledger.cfg.pct : null; const mx = QTY_MAX({ u: 'kg' });
+  return '<div class="card sidecard"><div class="sidehd"><h3>Catalogue health</h3><span>' + CATALOG.filter(i => !i.hidden).length + ' live</span></div>' + pubHtml() +
+    pRow((nfix ? '<i class="pulse" aria-hidden="true"></i>' : '') + 'Need a price or photo', nfix || '✓', 'data-act="lgo" data-k="fix"', nfix ? 'neg' : 'pos') +
+    pRow('Same product to check', ndup || '✓', 'data-act="lbgo" data-id="lb-dups"', ndup ? 'warnr' : 'pos') +
+    pRow('Hidden', nhid, 'data-act="lgo" data-k="hidden"') + pRow('Sold out', nso, 'data-act="lgo" data-k="so"') +
+    '<div class="pjump">' + [['lb-sups', 'Suppliers'], ['lb-price', 'Prices' + (pct != null ? ' · ' + pct + '%' : '')], ['lb-limit', 'Weight limit · ' + mx + ' kg'], ['lb-bask', 'Baskets']].map(x => '<button type="button" class="linkbtn" data-act="lbgo" data-id="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
+    '<div class="actions full"><button type="button" class="btn" data-act="ladd"' + (canWrite ? '' : ' disabled') + '>Add a new product</button></div></div>'; }
 function renderShare(comp) {
   if (cmode) { renderShareC(comp); return; }
   const host = document.getElementById('shareBody');
@@ -2584,12 +2632,12 @@ function renderShare(comp) {
   const summary = buildSummary(S, comp);
   const msgs = comp.groups.map(g => {
     const s = SUPS[g.sid]; const text = buildSupplierMsg(S, g, ui.lang);
-    return '<div class="card tint s-' + g.sid + '"><div class="msg-head"><h3><i style="background:var(--' + g.sid + ')"></i>' + s.name + '</h3><span class="hint num">' + esc(s.phone) + '</span></div>' +
+    return '<div class="card tint s-' + g.sid + '" id="sup-' + g.sid + '"><div class="msg-head"><h3><i style="background:var(--' + g.sid + ')"></i>' + s.name + '</h3><span class="hint num">' + esc(s.phone) + '</span></div>' +
       '<textarea class="pre sm" id="msg-' + g.sid + '" readonly>' + esc(text) + '</textarea>' +
-      '<div class="actions duo"><button class="btn" data-act="copy" data-id="msg-' + g.sid + '">Copy message</button>' +
-      '<a class="btn ghost" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + s.wa + '&text=' + encodeURIComponent(text) + '">Open in WhatsApp</a></div></div>';
+      '<div class="actions duo"><button class="btn" data-act="copy" data-sentsup="' + g.sid + '" data-id="msg-' + g.sid + '">Copy message</button>' +
+      '<a class="btn ghost" data-sentsup="' + g.sid + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + s.wa + '&text=' + encodeURIComponent(text) + '">Open in WhatsApp</a></div></div>';
   }).join('');
-  host.innerHTML =
+  host.innerHTML = sideWrap(
     '<div class="card"><div class="msg-head"><h3>For the order manager</h3><span class="pill">' + fmtRp(comp.grand) + ' estimated</span></div>' +
     '<p class="hint" style="margin-bottom:10px">The full order with prices, totals, weights, who to call and what to double check. Send the text, or save the PDF.</p>' +
     '<textarea class="pre" id="summaryTxt" readonly>' + esc(summary) + '</textarea>' +
@@ -2597,7 +2645,7 @@ function renderShare(comp) {
     '<div class="card"><div class="msg-head"><h3>Messages to the suppliers</h3><span class="seg" role="group" aria-label="Message language"><button data-act="lang" data-l="id" aria-pressed="' + (ui.lang === 'id') + '">Bahasa Indonesia</button><button data-act="lang" data-l="en" aria-pressed="' + (ui.lang === 'en') + '">English</button></span></div>' +
     '<p class="hint">One ready message per supplier, in the language they read. Copy it, or open WhatsApp with the text filled in.</p></div>' + (msgs ? '<div class="supgrid">' + msgs + '</div>' : '') +
     '<div class="card"><h3>Done with this order?</h3><p class="hint">Placed it with the suppliers? Save it to history and start a fresh one. You can order the same thing again later and change it first.</p><div class="actions full"><button class="btn" data-act="archive"' + (canWrite ? '' : ' disabled') + '>Save to history and start new</button></div></div>' + histHtml() +
-    '<div class="card"><h3>Sharing this page</h3><p class="hint">Anyone with staff access sees the same order live, can mark each supplier as Ordered or Delivered, and can leave notes. Changes show up for everyone within seconds. Staff sign in at market.vurata.com/#staff.</p></div>';
+    '<div class="card"><h3>Sharing this page</h3><p class="hint">Anyone with staff access sees the same order live, can mark each supplier as Ordered or Delivered, and can leave notes. Changes show up for everyone within seconds. Staff sign in at market.vurata.com/#staff.</p></div>', shareSide(comp));
 }
 
 /* ================= PDF receipt ================= */
@@ -2994,7 +3042,7 @@ function overviewHtml() {
   const areaRows = Object.keys(by).sort((a, b) => by[b] - by[a] || a.localeCompare(b)).map(z => [z, by[z], false]);
   const brkCol = (title, rows) => rows.length ? '<div class="brk"><h4>' + title + '</h4><ul>' + rows.map(r => '<li' + (r[2] ? ' class="neg"' : '') + '><span>' + esc(r[0]) + '</span><b class="num">' + r[1] + '</b></li>').join('') + '</ul></div>' : '';
   const brkHtml = (d, a) => (d.length || a.length) ? '<div class="brkgrid">' + brkCol('Deliveries by day', d) + brkCol('Deliveries by area', a) + '</div>' : '';
-  return nx + '<div class="card"><h3>Overview</h3><div class="stats"><div><b class="num">' + n('new') + '</b><span>New orders</span></div><div><b class="num">' + n('ordered') + '</b><span>With suppliers</span></div><div><b class="num">' + fmtRp(toCollect) + '</b><span>To collect</span></div></div>' + brkHtml(dayRows, areaRows) + '</div>';
+  return nx.replace(/<button type="button" class="btn pastebtn"[^>]*>Paste order from clipboard<\/button>/, '') + (dayRows.length || areaRows.length ? '<div class="card"><h3>Deliveries</h3>' + brkHtml(dayRows, areaRows) + '</div>' : ''); /* counts and Paste live in the Today panel */
 }
 function packState(c, comp) { let n = 0, done = 0; comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st === 'x') return; n++; if (c.pk && c.pk[ln.key]) done++; })); return { n, done }; }
 const ID_SLOT = { 'Late morning (10:30 to 12)': 'Siang (10.30-12.00)', 'Late morning (10:30 to 12)': 'Pagi (08.00-12.00)', 'Afternoon (12 to 4)': 'Siang (12.00-16.00)', 'Evening (4 to 7)': 'Sore (16.00-19.00)' };
@@ -3295,7 +3343,7 @@ function renderCustomers() {
     const sups = cc.groups.map(g => {
       const s = SUPS[g.sid]; const text = buildSupplierMsg(cb.state, g, ui.lang);
       ui.suppOpen = ui.suppOpen || {}; const so = !!ui.suppOpen[g.sid];
-      return '<div class="card tint s-' + g.sid + '"><div class="msg-head"><h3><i style="background:var(--' + g.sid + ')"></i>' + s.name + '</h3><span class="num">' + fmtRp(g.subtotal) + '</span></div>' +
+      return '<div class="card tint s-' + g.sid + '" id="sup-' + g.sid + '"><div class="msg-head"><h3><i style="background:var(--' + g.sid + ')"></i>' + s.name + '</h3><span class="num">' + fmtRp(g.subtotal) + '</span></div>' +
         '<button type="button" class="suptog" data-act="suptog" data-s="' + g.sid + '" aria-expanded="' + so + '"><span>' + (so ? 'Hide' : 'Show') + ' ' + g.lines.length + ' item' + (g.lines.length > 1 ? 's' : '') + '</span><i aria-hidden="true">' + (so ? '&#9652;' : '&#9662;') + '</i></button>' + (so ? '<div class="suplist">' : '') +
         (so ? g.lines : []).map(ln => '<div class="cline"><span><b>' + esc(ln.it.n) + '</b> <em>' + esc((cb.who[ln.key] || []).map(w => w.name + ' ' + fmtQty(w.q)).join(' - ')) + '</em></span><span class="num">' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + '</span></div>').join('') + (so ? '</div>' : '') +
         '<textarea class="pre sm" id="cmsg-' + g.sid + '" readonly style="margin-top:10px">' + esc(text) + '</textarea>' +
@@ -3308,7 +3356,7 @@ function renderCustomers() {
       (people.length ? '<div class="who">' + people.map(p => '<div class="sumrow"><span>' + esc(p.name) + '</span><span class="num">' + fmtRp(p.total) + '</span></div>').join('') + '<div class="grand"><span>Everyone</span><b class="num">' + fmtRp(cc.total) + '</b></div></div>' : '<p class="hint">Nothing selected yet.</p>') + '</div>' + (sups ? '<div class="supgrid">' + sups + '</div>' : '');
   }
   const invOpen = cardOpen('inviteCard'); const pIx = invite.indexOf('<div class="card"><h3>Payment details</h3>'); const inviteFinal = invOpen ? invite.replace('<h3>Invite customers</h3>', cardHead('inviteCard', 'Invite customers', true).replace(/^<div class="msg-head">|<\/div>$/g, '')) : '<div class="card" id="inviteCard">' + cardHead('inviteCard', 'Invite customers', false) + '<p class="hint">Your customer link, QR code and WhatsApp message.</p></div>' + invite.slice(pIx);
-  host.innerHTML = overviewHtml() + (cust.length ? '<div class="cjump" role="navigation" aria-label="Jump to">' + [['#custList', 'Orders'], ['#combCard', 'Combined'], ['#driverCard', 'Delivery run'], ['#importCard', 'Import'], ['#salesCard', 'Sales'], ['#inviteCard', 'Invite']].map(x => '<button type="button" class="chip" data-act="goto" data-t="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' : '') + imp + list + comb + driverHtml() + salesHtml() + inviteFinal;
+  host.innerHTML = sideWrap(overviewHtml() + '' + imp + list + comb + driverHtml() + salesHtml() + inviteFinal, custSide());
   const ta = document.getElementById('importTxt'); if (ta && prevTxt) ta.value = prevTxt;
 }
 async function pasteOrder() {
@@ -3662,8 +3710,8 @@ function renderLedger() {
     '<div class="cdpanel">' + (dlc.codes.length || ui.cdNew ? '' : '<p class="cdempty">No codes yet. Try a first-order code like WELCOME for free delivery.</p>') + dlc.codes.map(cdRow).join('') + (ui.cdNew ? cdRow({ c: '', t: 'free', v: 0, min: 0, until: '', on: true }, dlc.codes.length) : '') +
     '<button type="button" class="cdadd" data-act="cdadd"' + (canWrite ? '' : ' disabled') + '>+ ' + (dlc.codes.length ? 'Add another code' : 'Add a code') + '</button></div>' +
     '<p class="hint" style="margin-top:8px">Customers enter a code in their order, under the delivery fee. It is added to the WhatsApp message so you can confirm it. Anyone with technical skills can read the codes, so use them for campaigns such as a flyer or a partner, not as secret vouchers.</p></section>' + '</div>';
-  host.innerHTML = '<div class="card" id="ledCard"><div class="msg-head"><h3>Ledger</h3><span class="hint num">' + CATALOG.filter(i => !i.hidden).length + ' products</span></div>' +
-    '<p class="hint lsub">All products with the supplier price, the sell price and your profit.</p>' + pubHtml() +
+  host.innerHTML = sideWrap('<div class="card" id="ledCard"><div class="msg-head"><h3>Ledger</h3><span class="hint num">' + CATALOG.filter(i => !i.hidden).length + ' products</span></div>' +
+    '<p class="hint lsub">All products with the supplier price, the sell price and your profit.</p>' +
     lbOpen('lb-sups', 'Suppliers', SUP_ORDER.length + ' suppliers') + (cardOpen('lb-sups') ? supsHtml() : '') + lbClose('lb-sups') +
     lbOpen('lb-dups', 'Same product, different supplier', (() => { const n = dupPairs().length; return n ? n + ' to check' : 'Nothing to check'; })()) + (cardOpen('lb-dups') ? dupsHtml() : '') + lbClose('lb-dups') +
     lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%')) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' +
@@ -3679,7 +3727,7 @@ function renderLedger() {
     '<div class="search"><input id="lq" type="search" placeholder="Search by product name" value="' + esc(ui.lq) + '" autocomplete="off" aria-label="Search the ledger"></div>' +
     '<span class="lgl">Supplier</span><div class="chips lchips">' + chip('lsup', 'all', ui.lsup, 'All suppliers', 'data-k="all"') + SUP_ORDER.map(x => '<button class="chip" data-act="lsup" data-s="' + x + '" data-k="' + x + '" aria-pressed="' + (ui.lsup === x) + '"><span class="dot"></span>' + esc(SUPS[x].name) + '</button>').join('') + '</div>' +
     '<span class="lgl">Show</span><div class="lseg five" role="group" aria-label="Show products">' + [['all', 'All', CATALOG.filter(i => !i.hidden).length], ['edited', 'Changed', editedN], ['added', 'New', CATALOG.filter(i => /^x-/.test(i.id)).length], ['hidden', 'Hidden', CATALOG.filter(i => i.hidden).length], ['so', 'Sold out', CATALOG.filter(i => i.so).length]].concat(CATALOG.some(i => fixWhy(i).length) ? [['fix', 'Fix now', CATALOG.filter(i => fixWhy(i).length).length]] : []).map(x => '<button type="button" data-act="lfil" data-k="' + x[0] + '" aria-pressed="' + (ui.lfil === x[0]) + '"' + (x[0] === 'fix' ? ' class="fixchip"' : '') + '>' + (x[0] === 'fix' ? '<i class="pulse" aria-hidden="true"></i>' : '') + x[1] + ' <small>' + x[2] + '</small></button>').join('') + '</div>' +
-    '<div class="actions full" style="margin-top:16px"><button class="btn" data-act="ladd"' + (canWrite ? '' : ' disabled') + '>' + (ui.ladd ? 'Close form' : 'Add a new product') + '</button></div></section></div>' + photoCardHtml + importCard() + (dlOpen ? dlCardOpen : '<div class="card" id="dlCard">' + cardHead('dlCard', 'Delivery', false) + '<p class="hint">' + esc(dlSum) + '</p></div>') + form + '<div id="ledList"></div>';
+    '<div class="actions full" style="margin-top:16px"><button class="btn" data-act="ladd"' + (canWrite ? '' : ' disabled') + '>' + (ui.ladd ? 'Close form' : 'Add a new product') + '</button></div></section></div>' + photoCardHtml + importCard() + (dlOpen ? dlCardOpen : '<div class="card" id="dlCard">' + cardHead('dlCard', 'Delivery', false) + '<p class="hint">' + esc(dlSum) + '</p></div>') + form + '<div id="ledList"></div>', ledgerSide());
   const lc = host.querySelector('.lchips'); if (lc) { const upd = () => lc.classList.toggle('at-end', lc.scrollLeft + lc.clientWidth >= lc.scrollWidth - 2); lc.addEventListener('scroll', upd, { passive: true }); upd(); }
   renderLedgerList();
 }
@@ -3761,6 +3809,9 @@ document.addEventListener('click', e => {
   else if (act === 'again') { orderAgain(b.dataset.id, b.dataset.edit === '1'); }
   else if (act === 'savedraft') { saveDraft(); }
   else if (act === 'savedf') { setListMode(ui.saved ? 'browse' : 'saved'); }
+  else if (act === 'lgo') { ui.lfil = b.dataset.k; ui.llimit = 40; renderLedger(); const el = document.getElementById('ledList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  else if (act === 'lbgo') { ui.cardOpen = ui.cardOpen || {}; ui.cardOpen[b.dataset.id] = true; renderLedger(); const el = document.getElementById(b.dataset.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  else if (act === 'sentreset') { patch({ meta: { sent: null } }); renderShare(compute(S)); }
   else if (act === 'ladd') { ui.ladd = !ui.ladd; renderLedger(); }
   else if (act === 'lsave') { addProduct(); }
   else if (act === 'lsup') { ui.lsup = b.dataset.k; ui.llimit = 40; renderLedger(); }
@@ -4049,6 +4100,7 @@ document.addEventListener('keydown', e => { const t = e.target; if (!t.matches |
   if (e.key === 'ArrowDown') { e.preventDefault(); (opts[i + 1] || t).focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); (opts[i - 1] || document.getElementById('m-zone')).focus(); } else if (e.key === 'Escape') { areaClose(); document.getElementById('m-zone').focus(); } });
 document.addEventListener('pointerdown', e => { if (!e.target.closest || !e.target.closest('.areabox')) areaClose(); });
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#langBtn')) { try { localStorage.setItem('vm-lang', LANG === 'id' ? 'en' : 'id'); } catch (x) {} location.reload(); } });
+document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('[data-sentsup]'); if (!t || cmode) return; const sid = t.dataset.sentsup; setTimeout(() => { patch({ meta: { sent: { [sid]: Date.now() } } }); if (ui.view === 'share') renderShare(compute(S)); }, 60); }, true);
 document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.brand')) e.preventDefault(); });
 document.addEventListener('input', e => { const t = e.target; if (t && t.id === 'addq') { ui.addQ = t.value; const pos = t.selectionStart; renderCustomers(); const n = document.getElementById('addq'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} } } });
 document.addEventListener('focusin', e => { const t = e.target; if (t.matches && t.matches('input[data-act="qty"]')) setTimeout(() => { try { t.select(); } catch (x) {} }, 0); });
