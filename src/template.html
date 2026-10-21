@@ -3284,12 +3284,18 @@ function customerMessage(state, comp) {
   /* one language only: the one the customer is browsing in */
   const m = state.meta; const id = typeof LANG !== 'undefined' && LANG === 'id'; const tr = t => (id && ID_TEXT[t]) || t; const L = (en, ix) => id ? ix : en;
   const out = [L('Hi! New order from Vurata Market.', 'Halo! Pesanan baru dari Vurata Market.')];
-  out.push(L('Name: ', 'Nama: ') + (m.who || L('(please add your name)', '(mohon tulis nama Anda)')) + (m.phone ? '  |  WhatsApp: ' + m.phone : ''));
-  if (m.pin) out.push(L('Pin: ', 'Lokasi: ') + 'https://maps.google.com/?q=' + m.pin + (pinRough(m) ? L(' (approximate, about ', ' (perkiraan, sekitar ') + pinRough(m) + ' m)' : ''));
-  if (m.need) out.push(L('Needed by: ', 'Dibutuhkan: ') + (id ? fmtDate(m.need, 'id') : fmtDate(m.need)));
-  if (m.slot) out.push(L('Delivery time: ', 'Waktu antar: ') + (id ? (ID_SLOT[m.slot] || m.slot) : m.slot));
-  if (m.zone) out.push('Area: ' + (id && m.zone === '__other' ? 'Area lain' : zoneLabel(m.zone))); if (m.addr) out.push(L('Deliver to: ', 'Alamat: ') + m.addr);
-  if (m.pay) out.push(L('Payment: ', 'Pembayaran: ') + tr(m.pay)); if (m.notes) out.push(L('Notes: ', 'Catatan: ') + m.notes);
+  /* bold labels (WhatsApp *bold*) so both sides can scan it; one fact per line */
+  const row = (en, ix, v) => { if (v) out.push('*' + L(en, ix) + ':* ' + v); };
+  const txt = addrText(m.addr).trim(), link = mapLinkOf(m);
+  row('Name', 'Nama', m.who || L('(please add your name)', '(mohon tulis nama Anda)'));
+  row('WhatsApp', 'WhatsApp', m.phone);
+  row('Needed by', 'Dibutuhkan', m.need ? (id ? fmtDate(m.need, 'id') : fmtDate(m.need)) : '');
+  row('Delivery time', 'Waktu antar', m.slot ? (id ? (ID_SLOT[m.slot] || m.slot) : m.slot) : '');
+  row('Area', 'Area', m.zone ? (id && m.zone === '__other' ? 'Area lain' : zoneLabel(m.zone)) : '');
+  row('Address', 'Alamat', txt.replace(/\n+/g, ', '));
+  row('Location', 'Lokasi', m.pin ? 'https://maps.google.com/?q=' + m.pin + (pinRough(m) ? L(' (approximate, about ', ' (perkiraan, sekitar ') + pinRough(m) + ' m)' : '') : link);
+  row('Payment', 'Pembayaran', m.pay ? tr(m.pay) : '');
+  row('Notes', 'Catatan', m.notes);
   const many = comp.groups.length > 1;
   comp.groups.forEach(g => { out.push('', '*' + tr(SUPS[g.sid].name).toUpperCase() + '*'); g.lines.forEach((ln, i) => { out.push((i + 1) + '. ' + lineText(ln, true, id ? 'id' : 'en')); if (ln.note) out.push('   ' + L('Note: ', 'Catatan: ') + ln.note); }); if (many) out.push('Subtotal: ' + fmtRp(g.subtotal)); });
   out.push('');
