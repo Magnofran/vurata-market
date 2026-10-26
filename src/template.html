@@ -1144,6 +1144,9 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .pxh { font-size: 15px; line-height: 1.35; } .pxn { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
 .pxex { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; padding: 8px 10px; background: var(--surface-2); font-size: 13.5px; } .pxex span:first-child { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); } .pxex .num { margin-left: auto; font-weight: 700; }
 .pxbtns { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.pxact { display: grid; gap: 3px; padding: 11px 12px; } .pxact b { font-size: 13.5px; } .pxact span { font-size: 14px; } .pxact em { font-style: normal; font-weight: 800; color: var(--danger); } .pxact small { font-size: 12px; color: var(--muted); }
+.pxhist { margin: -4px 0 14px; font-size: 13px; } .pxhist summary { cursor: pointer; color: var(--muted); font-weight: 600; padding: 4px 0; } .pxhist summary small { margin-left: 4px; font-weight: 500; }
+.pxhist ol { list-style: none; margin: 6px 0 0; padding: 0; display: grid; } .pxhist li { display: grid; grid-template-columns: 9.5em 1fr; gap: 0 12px; padding: 7px 0; border-top: 1px solid var(--line); } .pxhist li > span:first-child { grid-row: span 2; color: var(--muted); font-size: 12px; } .pxhist li b { font-size: 13px; } .pxhist li > span:last-child { color: var(--muted); font-size: 12px; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3897,7 +3900,7 @@ function renderLedger() {
     '<p class="hint lsub">All products with the supplier price, the sell price and your profit.</p>' +
     lbOpen('lb-sups', 'Suppliers', SUP_ORDER.length + ' suppliers') + (cardOpen('lb-sups') ? supsHtml() : '') + lbClose('lb-sups') +
     lbOpen('lb-dups', 'Same product, different supplier', (() => { const n = dupPairs().length; return n ? n + ' to check' : 'Nothing to check'; })()) + (cardOpen('lb-dups') ? dupsHtml() : '') + lbClose('lb-dups') +
-    lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%')) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' + pxStatusHtml() +
+    lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%') + (() => { if (!resetCandidates('all').n) return ''; const a = pxActive(); return a.length === 1 ? ' · supplier costs ' + pxPct(a[0].pct) + ' active' : a.length ? ' · supplier cost changes active' : ' · costs edited by hand'; })()) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' + pxStatusHtml() +
     '<div class="grid2"><div class="field"><label for="bk-sup">Which supplier</label><select id="bk-sup"><option value="all">All suppliers</option>' + SUP_ORDER.map(x => '<option value="' + x + '">' + esc(SUPS[x].name) + '</option>').join('') + '</select></div><div class="field"><label for="bk-pct">Change by (%)</label><input id="bk-pct" inputmode="decimal" placeholder="5 or -3"><p class="hint">5 = 5% higher. -3 = 3% lower.</p></div></div>' +
     '<div class="lact2"><div><button class="btn ghost" data-act="bulk"' + (canWrite ? '' : ' disabled') + '>Apply change</button><p class="hint">Changes the supplier prices by the % above.</p></div><div><button class="btn ghost" data-act="resetprices"' + (canWrite ? '' : ' disabled') + '>Reset to uploaded</button><p class="hint">Goes back to the prices in your uploaded list.</p></div></div>' + pxConfirmHtml() + '</section>' +
     '<section class="lsec"><div class="lsec-h"><b>Your markup</b><span>What you add on top. This sets what customers pay.</span></div>' +
@@ -3961,7 +3964,30 @@ function pxConfirmHtml() {
   const note = a.k === 'bulk' ? 'Only for when a supplier changed their prices (' + who + '). Customer prices move with it. To change your profit, use Your markup below instead.' : 'Every cost you changed by hand for ' + who + ' goes back to the supplier list. Customer prices update to match.';
   return '<div class="pxask' + (a.k === 'bulk' ? ' warn' : '') + '" role="alertdialog" aria-label="Confirm price change"><b class="pxh">' + head + '</b>' + ex + '<p class="pxn">' + note + '</p><div class="pxbtns"><button type="button" class="btn" data-act="pxyes">' + (a.k === 'bulk' ? 'Change ' + a.n + ' costs' : 'Reset ' + a.n + ' prices') + '</button><button type="button" class="btn ghost" data-act="pxno">Cancel</button></div></div>';
 }
-function pxStatusHtml() { const n = resetCandidates('all').n; return n ? '<p class="pxstat diff"><i class="blinkdot" aria-hidden="true"></i><b>' + n + ' cost' + (n > 1 ? 's' : '') + ' differ from the uploaded supplier lists.</b> Reset below if that is not on purpose.</p>' : '<p class="pxstat ok">&#10003; All costs match the uploaded supplier lists.</p>'; }
+/* Price change history: every supplier-wide change and reset, newest last, kept to 30 entries */
+const pxLog = () => (Array.isArray(ledger.pxlog) ? ledger.pxlog : []);
+function pxLogAdd(e) { const log = pxLog().concat([Object.assign({ at: Date.now() }, e)]).slice(-30); saveLedger({ pxlog: log }); return log[log.length - 1].at; }
+function pxLogDrop(at) { saveLedger({ pxlog: pxLog().filter(e => e.at !== at) }); }
+const pxWho = sid => sid === 'all' ? 'all suppliers' : (SUPS[sid] ? SUPS[sid].name : sid);
+const pxWhen = t => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const pxPct = v => (v > 0 ? '+' : '') + fmtQty(Math.round(v * 10) / 10) + '%';
+/* What is still in effect: changes since the last reset, compounded per supplier */
+function pxActive() {
+  const f = {}, since = {}; const ids = SUP_ORDER.filter(sid => CATALOG.some(it => it.s === sid && it.o.some(o => o.pr > 0)));
+  pxLog().forEach(e => { const tg = e.sid === 'all' ? ids : [e.sid];
+    tg.filter(sid => ids.includes(sid)).forEach(sid => { if (e.k === 'reset') { delete f[sid]; delete since[sid]; } else if (e.k === 'bulk') { f[sid] = (f[sid] || 1) * (1 + e.pct / 100); since[sid] = since[sid] || e.at; } }); });
+  const rows = Object.keys(f).filter(sid => Math.abs(f[sid] - 1) > 0.0005).map(sid => ({ sid, pct: (f[sid] - 1) * 100, at: since[sid] }));
+  const same = rows.length === ids.length && rows.every(r => Math.abs(r.pct - rows[0].pct) < 0.05 && r.at === rows[0].at);
+  return same ? [{ sid: 'all', pct: rows[0].pct, at: rows[0].at }] : rows;
+}
+function pxStatusHtml() {
+  const n = resetCandidates('all').n, act = n ? pxActive() : [], log = pxLog();
+  const head = !n ? '<p class="pxstat ok">&#10003; All costs match the uploaded supplier lists.</p>'
+    : act.length ? '<div class="pxstat diff pxact"><b>Price adjustment active</b>' + act.map(a => '<span><em class="num">' + pxPct(a.pct) + '</em> on ' + esc(pxWho(a.sid)) + ' since ' + pxWhen(a.at) + '</span>').join('') + '<small>' + n + ' cost' + (n > 1 ? 's' : '') + ' differ from the supplier lists. Use Reset below to undo it.</small></div>'
+    : '<p class="pxstat diff"><i class="blinkdot" aria-hidden="true"></i><b>' + n + ' cost' + (n > 1 ? 's' : '') + ' differ from the uploaded supplier lists.</b> Edited by hand. Reset below if that is not on purpose.</p>';
+  const hist = log.length ? '<details class="pxhist"><summary>Price change history <small>' + log.length + '</small></summary><ol>' + log.slice().reverse().map(e => '<li><span class="num">' + pxWhen(e.at) + ', ' + new Date(e.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</span><b>' + (e.k === 'bulk' ? pxPct(e.pct) : 'Reset to supplier lists') + '</b><span>' + esc(pxWho(e.sid)) + ' · ' + e.n + ' product' + (e.n > 1 ? 's' : '') + '</span></li>').join('') + '</ol></details>' : '';
+  return head + hist;
+}
 function addProduct() {
   const v = id => (document.getElementById(id) || {}).value || ''; const name = v('la-name').trim();
   if (!name) { toast('Give the product a name first.'); return; }
@@ -4145,8 +4171,8 @@ document.addEventListener('click', e => {
   else if (act === 'resetprices') { askResetPrices(document.getElementById('bk-sup').value); }
   else if (act === 'pxno') { ui.pxAsk = null; renderLedger(); }
   else if (act === 'pxyes') { const a = ui.pxAsk; ui.pxAsk = null; if (!a) return;
-    if (a.k === 'bulk') { const c = bulkCompute(a.sid, a.pct); if (c.n) { saveLedger({ ov: c.ov }); toast('Changed ' + c.n + ' cost' + (c.n > 1 ? 's' : '') + ' by ' + (a.pct > 0 ? '+' : '') + a.pct + '%.', { label: 'Undo', fn: () => { saveLedger({ ov: c.prev }); renderLedger(); } }); } }
-    else { const c = resetCandidates(a.sid); if (c.n) { saveLedger({ ov: c.ov }); toast(c.n + ' price' + (c.n > 1 ? 's' : '') + ' reset to the supplier lists.', { label: 'Undo', fn: () => { saveLedger({ ov: c.prev }); renderLedger(); } }); } }
+    if (a.k === 'bulk') { const c = bulkCompute(a.sid, a.pct); if (c.n) { saveLedger({ ov: c.ov }); const at = pxLogAdd({ k: 'bulk', sid: a.sid, pct: a.pct, n: c.n }); toast('Changed ' + c.n + ' cost' + (c.n > 1 ? 's' : '') + ' by ' + (a.pct > 0 ? '+' : '') + a.pct + '%.', { label: 'Undo', fn: () => { saveLedger({ ov: c.prev }); pxLogDrop(at); renderLedger(); } }); } }
+    else { const c = resetCandidates(a.sid); if (c.n) { saveLedger({ ov: c.ov }); const at = pxLogAdd({ k: 'reset', sid: a.sid, n: c.n }); toast(c.n + ' price' + (c.n > 1 ? 's' : '') + ' reset to the supplier lists.', { label: 'Undo', fn: () => { saveLedger({ ov: c.prev }); pxLogDrop(at); renderLedger(); } }); } }
     renderLedger(); }
   else if (act === 'codeopen') { ui.codeOpen = true; ui.codeMsg = ''; renderOrder(compute(S)); const ci = document.getElementById('m-code'); if (ci) ci.focus(); }
   else if (act === 'codeclear') { patch({ meta: { dcode: '' } }); ui.codeMsg = ''; ui.codeOpen = false; renderOrder(compute(S)); chrome(compute(S)); }
