@@ -3699,11 +3699,18 @@ async function publishPublic(force) {
   try { await pubRef.set(body); pubLast = s; setPub('live'); } catch (e) { setPub('error'); toast('Could not update the customer prices. Try again.'); }
 }
 function schedulePublish() { clearTimeout(pubTimer); pubTimer = setTimeout(() => publishPublic(false), 700); }
+/* Supplier prices (the uploaded lists) are kept live: a tab left open never publishes customer prices from an old list */
+const PUB_BASE = JSON.parse(JSON.stringify(CATALOG)); const PUB_BY = {}; PUB_BASE.forEach(b => { PUB_BY[b.id] = b; });
+function applyPrivate(d) {
+  const items = (d && d.items) || {};
+  BASE.forEach(b => { const p = items[b.id], o0 = PUB_BY[b.id]; b.o.forEach((op, i) => { const v = p && Array.isArray(p.pr) ? p.pr[i] : undefined; if (v !== undefined) op.pr = v; else if (o0 && o0.o[i]) op.pr = o0.o[i].pr; }); if (p && p.x) b.x = p.x; });
+  Object.keys((d && d.sups) || {}).forEach(id => { const s = d.sups[id], t = SUPS[id]; if (!s || !t) return; ['name', 'short', 'phone', 'wa', 'addr', 'list'].forEach(k => { if (s[k] !== undefined) t[k] = s[k]; }); delete t._o; });
+}
+let privSeen = '';
 async function loadPrivate(dbc) {
   try {
-    const sn = await dbc.doc('settings/catalog').get(); if (!sn.exists) return; const d = sn.data() || {}, items = d.items || {};
-    BASE.forEach(b => { const p = items[b.id]; if (!p) return; if (p.x) b.x = p.x; if (Array.isArray(p.pr)) p.pr.forEach((v, i) => { if (b.o[i]) b.o[i].pr = v; }); });
-    Object.keys(d.sups || {}).forEach(id => { const s = d.sups[id], t = SUPS[id]; if (!s || !t) return; ['name', 'short', 'phone', 'wa', 'addr', 'list'].forEach(k => { if (s[k] !== undefined) t[k] = s[k]; }); delete t._o; });
+    const sn = await dbc.doc('settings/catalog').get(); if (!sn.exists) return; const d = sn.data() || {}; privSeen = JSON.stringify(d.items || {}); applyPrivate(d);
+    dbc.doc('settings/catalog').onSnapshot(s2 => { if (!s2.exists) return; const d2 = s2.data() || {}, k = JSON.stringify(d2.items || {}); if (k === privSeen) return; privSeen = k; applyPrivate(d2); applyLedger(); schedulePublish(); afterLedger(); if (ui.view === 'ledger') renderLedger(); }, () => {});
   } catch (e) {}
 }
 function showLogin(msg, mode) {
