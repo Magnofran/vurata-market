@@ -3741,8 +3741,9 @@ function resetCandidates(sid) {
   const ov = {}, prev = {}; let n = 0;
   Object.keys(ledger.ov || {}).forEach(id => {
     const it = BY_ID[id], b = BASE_BY[id]; if (!it || !b || (sid !== 'all' && it.s !== sid)) return;
-    const cur = ledger.ov[id].pr; if (!Array.isArray(cur) || !cur.some((p, i) => p !== null && p !== undefined && b.o[i] && (p > 0 ? p : null) !== b.o[i].pr)) return;
-    ov[id] = { pr: [] }; prev[id] = { pr: cur.slice() }; n++;
+    const cur = ledger.ov[id].pr; if (!Array.isArray(cur) || !cur.some((p, i) => p !== null && p !== undefined && b.o[i] && b.o[i].pr > 0 && (p > 0 ? p : null) !== b.o[i].pr)) return;
+    /* only prices that came from an uploaded list go back; a cost typed for a product with no list price (like eggs) stays */
+    ov[id] = { pr: cur.map((p, i) => (b.o[i] && b.o[i].pr > 0 ? null : p)) }; prev[id] = { pr: cur.slice() }; n++;
   });
   return { ov, prev, n };
 }
@@ -3962,7 +3963,7 @@ function pxConfirmHtml() {
   const ex = a.ex ? '<p class="pxex"><span>For example</span><b>' + esc(a.ex.n) + '</b><span class="num">' + fmtRp(a.ex.a) + ' &rarr; ' + fmtRp(a.ex.b) + '</span></p>' : '';
   const head = a.k === 'bulk' ? 'Change what you pay for ' + a.n + ' product' + (a.n > 1 ? 's' : '') + ' by ' + (a.pct > 0 ? '+' : '') + fmtQty(a.pct) + '%?' : 'Reset ' + a.n + ' product' + (a.n > 1 ? 's' : '') + ' to the uploaded supplier prices?';
   const note = a.k === 'bulk' ? 'Only for when a supplier changed their prices (' + who + '). Customer prices move with it. To change your profit, use Your markup below instead.' : 'Every cost you changed by hand for ' + who + ' goes back to the supplier list. Customer prices update to match.';
-  return '<div class="pxask' + (a.k === 'bulk' ? ' warn' : '') + '" role="alertdialog" aria-label="Confirm price change"><b class="pxh">' + head + '</b>' + ex + '<p class="pxn">' + note + '</p><div class="pxbtns"><button type="button" class="btn" data-act="pxyes">' + (a.k === 'bulk' ? 'Change ' + a.n + ' costs' : 'Reset ' + a.n + ' prices') + '</button><button type="button" class="btn ghost" data-act="pxno">Cancel</button></div></div>';
+  return '<div class="pxask' + (a.k === 'bulk' ? ' warn' : '') + '" role="alertdialog" aria-label="Confirm price change"><b class="pxh">' + head + '</b>' + ex + '<p class="pxn">' + note + '</p><div class="pxbtns"><button type="button" class="btn" data-act="pxyes">' + (a.k === 'bulk' ? 'Change ' + a.n + ' cost' + (a.n > 1 ? 's' : '') : 'Reset ' + a.n + ' price' + (a.n > 1 ? 's' : '')) + '</button><button type="button" class="btn ghost" data-act="pxno">Cancel</button></div></div>';
 }
 /* Price change history: every supplier-wide change and reset, newest last, kept to 30 entries */
 const pxLog = () => (Array.isArray(ledger.pxlog) ? ledger.pxlog : []);
