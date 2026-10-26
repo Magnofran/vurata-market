@@ -1139,6 +1139,11 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .rep { color: var(--gold-text); font-weight: 700; } .cxstat { margin-top: 10px; color: var(--danger); }
 .bknudge { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px dashed var(--gold); background: color-mix(in srgb, var(--gold) 8%, var(--surface)); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .bknudge span { flex: 1; display: grid; gap: 1px; } .bknudge b { font-size: 13.5px; } .bknudge small { font-size: 12px; color: var(--muted); } .bknudge em { font-style: normal; font-weight: 700; color: var(--gold-text); }
+.pxstat { margin: 0 0 12px; padding: 9px 12px; font-size: 13px; line-height: 1.45; } .pxstat.ok { color: var(--fv); background: color-mix(in srgb, var(--fv) 9%, var(--surface)); } .pxstat.diff { color: var(--ink); background: color-mix(in srgb, var(--danger) 8%, var(--surface)); box-shadow: inset 3px 0 0 var(--danger); }
+.pxask { display: grid; gap: 10px; margin-top: 14px; padding: 14px; border: 1.5px solid var(--ink); background: var(--surface); } .pxask.warn { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 5%, var(--surface)); }
+.pxh { font-size: 15px; line-height: 1.35; } .pxn { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.pxex { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; padding: 8px 10px; background: var(--surface-2); font-size: 13.5px; } .pxex span:first-child { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); } .pxex .num { margin-left: auto; font-weight: 700; }
+.pxbtns { display: grid; grid-template-columns: 1fr; gap: 8px; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3892,9 +3897,9 @@ function renderLedger() {
     '<p class="hint lsub">All products with the supplier price, the sell price and your profit.</p>' +
     lbOpen('lb-sups', 'Suppliers', SUP_ORDER.length + ' suppliers') + (cardOpen('lb-sups') ? supsHtml() : '') + lbClose('lb-sups') +
     lbOpen('lb-dups', 'Same product, different supplier', (() => { const n = dupPairs().length; return n ? n + ' to check' : 'Nothing to check'; })()) + (cardOpen('lb-dups') ? dupsHtml() : '') + lbClose('lb-dups') +
-    lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%')) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' +
+    lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%')) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' + pxStatusHtml() +
     '<div class="grid2"><div class="field"><label for="bk-sup">Which supplier</label><select id="bk-sup"><option value="all">All suppliers</option>' + SUP_ORDER.map(x => '<option value="' + x + '">' + esc(SUPS[x].name) + '</option>').join('') + '</select></div><div class="field"><label for="bk-pct">Change by (%)</label><input id="bk-pct" inputmode="decimal" placeholder="5 or -3"><p class="hint">5 = 5% higher. -3 = 3% lower.</p></div></div>' +
-    '<div class="lact2"><div><button class="btn ghost" data-act="bulk"' + (canWrite ? '' : ' disabled') + '>Apply change</button><p class="hint">Changes the supplier prices by the % above.</p></div><div><button class="btn ghost" data-act="resetprices"' + (canWrite ? '' : ' disabled') + '>Reset to uploaded</button><p class="hint">Goes back to the prices in your uploaded list.</p></div></div></section>' +
+    '<div class="lact2"><div><button class="btn ghost" data-act="bulk"' + (canWrite ? '' : ' disabled') + '>Apply change</button><p class="hint">Changes the supplier prices by the % above.</p></div><div><button class="btn ghost" data-act="resetprices"' + (canWrite ? '' : ' disabled') + '>Reset to uploaded</button><p class="hint">Goes back to the prices in your uploaded list.</p></div></div>' + pxConfirmHtml() + '</section>' +
     '<section class="lsec"><div class="lsec-h"><b>Your markup</b><span>What you add on top. This sets what customers pay.</span></div>' +
     '<div class="mkrow grid2"><div class="field"><label for="mk-pct">Markup (%)</label><input id="mk-pct" inputmode="decimal" value="' + cfgNow().pct + '"' + (canWrite ? '' : ' disabled') + '><p class="hint">Added on top of the supplier price.</p></div><div class="field"><label for="mk-round">Round prices up to</label><select id="mk-round"' + (canWrite ? '' : ' disabled') + '>' + [100, 500, 1000].map(r => '<option value="' + r + '"' + (cfgNow().round === r ? ' selected' : '') + '>Rp ' + r + '</option>').join('') + '</select><p class="hint">Customer prices end in a round number.</p></div></div>' +
     '<div class="mkapply"><button type="button" class="btn" id="mk-apply" data-act="applymk" disabled>Apply markup</button><p class="hint">Changes the sell price of all ' + CATALOG.filter(i => !i.hidden).length + ' products. Customers see it right away.</p></div>' +
@@ -3926,20 +3931,37 @@ function saveCodesFromDom() {
   const seen = {}; const dup = codes.find(x => seen[x.c] ? true : (seen[x.c] = 1, false)); if (dup) { toast('Two codes are the same: ' + dup.c + '. Give each its own name.'); return; }
   if (ui.cdNew) { ui.cdOpen = ui.cdOpen || {}; ui.cdOpen[old.length] = true; } ui.cdNew = false; dlSave({ codes }); renderLedger();
 }
-function bulkPrice(sid, pct) {
-  if (!canWrite) { toast('This copy is view-only.'); return; }
-  if (!pct || isNaN(pct)) { toast('Enter a percentage, like 5 or -3.'); return; }
-  const ov = {}, prev = {}; let n = 0;
+/* Supplier cost changes are confirmed on the page (never in a toast), with a real example, because they move every customer price */
+function bulkCompute(sid, pct) {
+  const ov = {}, prev = {}; let n = 0, ex = null;
   CATALOG.forEach(it => {
     if (it.hidden || (sid !== 'all' && it.s !== sid)) return;
     const cur = ((ledger.ov || {})[it.id] || {}).pr || []; const arr = it.o.map((_, j) => (cur[j] === undefined ? null : cur[j])); const old = arr.slice(); let ch = false;
-    it.o.forEach((o, j) => { if (o.pr > 0) { const step = o.pr < 5000 ? 50 : 100; const np = Math.max(step, Math.round(o.pr * (1 + pct / 100) / step) * step); if (np !== o.pr) { arr[j] = np; ch = true; } } });
+    it.o.forEach((o, j) => { if (o.pr > 0) { const step = o.pr < 5000 ? 50 : 100; const np = Math.max(step, Math.round(o.pr * (1 + pct / 100) / step) * step); if (np !== o.pr) { if (!ex) ex = { n: it.n, a: o.pr, b: np }; arr[j] = np; ch = true; } } });
     if (ch) { ov[it.id] = { pr: arr }; prev[it.id] = { pr: old }; n++; }
   });
-  if (!n) { toast('No prices changed.'); return; }
-  saveLedger({ ov }); renderLedger();
-  toast('Changed ' + n + ' product' + (n > 1 ? 's' : '') + ' by ' + (pct > 0 ? '+' : '') + pct + '%', { label: 'Undo', fn: () => { saveLedger({ ov: prev }); renderLedger(); } });
+  return { ov, prev, n, ex };
 }
+function bulkPrice(sid, pct) {
+  if (!canWrite) { toast('This copy is view-only.'); return; }
+  if (!pct || isNaN(pct)) { toast('Enter a percentage, like 5 or -3.'); return; }
+  const c = bulkCompute(sid, pct); if (!c.n) { toast('No prices changed.'); return; }
+  ui.pxAsk = { k: 'bulk', sid, pct, n: c.n, ex: c.ex }; renderLedger();
+}
+function resetExample(c) { const id = Object.keys(c.ov)[0]; const it = id && BY_ID[id], b = id && BASE_BY[id]; if (!it || !b) return null; const i = (c.prev[id].pr || []).findIndex((p, k) => p > 0 && b.o[k] && p !== b.o[k].pr); return i < 0 ? null : { n: it.n, a: c.prev[id].pr[i], b: b.o[i].pr }; }
+function askResetPrices(sid) {
+  if (!canWrite) { toast('This copy is view-only.'); return; }
+  const c = resetCandidates(sid); if (!c.n) { toast('Prices already match the uploaded lists.'); return; }
+  ui.pxAsk = { k: 'reset', sid, n: c.n, ex: resetExample(c) }; renderLedger();
+}
+function pxConfirmHtml() {
+  const a = ui.pxAsk; if (!a) return ''; const who = a.sid === 'all' ? 'all suppliers' : esc(SUPS[a.sid] ? SUPS[a.sid].name : a.sid);
+  const ex = a.ex ? '<p class="pxex"><span>For example</span><b>' + esc(a.ex.n) + '</b><span class="num">' + fmtRp(a.ex.a) + ' &rarr; ' + fmtRp(a.ex.b) + '</span></p>' : '';
+  const head = a.k === 'bulk' ? 'Change what you pay for ' + a.n + ' product' + (a.n > 1 ? 's' : '') + ' by ' + (a.pct > 0 ? '+' : '') + fmtQty(a.pct) + '%?' : 'Reset ' + a.n + ' product' + (a.n > 1 ? 's' : '') + ' to the uploaded supplier prices?';
+  const note = a.k === 'bulk' ? 'Only for when a supplier changed their prices (' + who + '). Customer prices move with it. To change your profit, use Your markup below instead.' : 'Every cost you changed by hand for ' + who + ' goes back to the supplier list. Customer prices update to match.';
+  return '<div class="pxask' + (a.k === 'bulk' ? ' warn' : '') + '" role="alertdialog" aria-label="Confirm price change"><b class="pxh">' + head + '</b>' + ex + '<p class="pxn">' + note + '</p><div class="pxbtns"><button type="button" class="btn" data-act="pxyes">' + (a.k === 'bulk' ? 'Change ' + a.n + ' costs' : 'Reset ' + a.n + ' prices') + '</button><button type="button" class="btn ghost" data-act="pxno">Cancel</button></div></div>';
+}
+function pxStatusHtml() { const n = resetCandidates('all').n; return n ? '<p class="pxstat diff"><i class="blinkdot" aria-hidden="true"></i><b>' + n + ' cost' + (n > 1 ? 's' : '') + ' differ from the uploaded supplier lists.</b> Reset below if that is not on purpose.</p>' : '<p class="pxstat ok">&#10003; All costs match the uploaded supplier lists.</p>'; }
 function addProduct() {
   const v = id => (document.getElementById(id) || {}).value || ''; const name = v('la-name').trim();
   if (!name) { toast('Give the product a name first.'); return; }
@@ -4121,6 +4143,11 @@ document.addEventListener('click', e => {
   else if (act === 'csvsales') { exportSalesCsv(); }
   else if (act === 'csvledger') { exportLedgerCsv(); }
   else if (act === 'resetprices') { askResetPrices(document.getElementById('bk-sup').value); }
+  else if (act === 'pxno') { ui.pxAsk = null; renderLedger(); }
+  else if (act === 'pxyes') { const a = ui.pxAsk; ui.pxAsk = null; if (!a) return;
+    if (a.k === 'bulk') { const c = bulkCompute(a.sid, a.pct); if (c.n) { saveLedger({ ov: c.ov }); toast('Changed ' + c.n + ' cost' + (c.n > 1 ? 's' : '') + ' by ' + (a.pct > 0 ? '+' : '') + a.pct + '%.', { label: 'Undo', fn: () => { saveLedger({ ov: c.prev }); renderLedger(); } }); } }
+    else { const c = resetCandidates(a.sid); if (c.n) { saveLedger({ ov: c.ov }); toast(c.n + ' price' + (c.n > 1 ? 's' : '') + ' reset to the supplier lists.', { label: 'Undo', fn: () => { saveLedger({ ov: c.prev }); renderLedger(); } }); } }
+    renderLedger(); }
   else if (act === 'codeopen') { ui.codeOpen = true; ui.codeMsg = ''; renderOrder(compute(S)); const ci = document.getElementById('m-code'); if (ci) ci.focus(); }
   else if (act === 'codeclear') { patch({ meta: { dcode: '' } }); ui.codeMsg = ''; ui.codeOpen = false; renderOrder(compute(S)); chrome(compute(S)); }
   else if (act === 'codeapply') {
