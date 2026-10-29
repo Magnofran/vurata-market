@@ -1147,6 +1147,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .pxact { display: grid; gap: 3px; padding: 11px 12px; } .pxact b { font-size: 13.5px; } .pxact span { font-size: 14px; } .pxact em { font-style: normal; font-weight: 800; color: var(--danger); } .pxact small { font-size: 12px; color: var(--muted); }
 .pxhist { margin: -4px 0 14px; font-size: 13px; } .pxhist summary { cursor: pointer; color: var(--muted); font-weight: 600; padding: 4px 0; } .pxhist summary small { margin-left: 4px; font-weight: 500; }
 .pxhist ol { list-style: none; margin: 6px 0 0; padding: 0; display: grid; } .pxhist li { display: grid; grid-template-columns: 9.5em 1fr; gap: 0 12px; padding: 7px 0; border-top: 1px solid var(--line); } .pxhist li > span:first-child { grid-row: span 2; color: var(--muted); font-size: 12px; } .pxhist li b { font-size: 13px; } .pxhist li > span:last-child { color: var(--muted); font-size: 12px; }
+.cehint { display: block; margin-top: 4px; font-size: 11.5px; color: var(--muted); font-weight: 400; letter-spacing: 0; text-transform: none; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3265,6 +3266,7 @@ function ceditHtml(c) { const k = f => esc(c.id) + '|' + f; const zs = dlNow().z
     fld('Needed by', '<input type="date" data-ced="' + k('need') + '" value="' + esc(c.need || '') + '">') +
     fld('Delivery time', '<select data-ced="' + k('slot') + '">' + SLOTS.map(o => '<option value="' + o + '"' + (o === (c.slot || '') ? ' selected' : '') + '>' + (o || 'Any time on the day') + '</option>').join('') + '</select>') +
     fld('Delivery area', '<select data-ced="' + k('zone') + '"><option value="">Not set</option>' + zs.map(z => '<option value="' + esc(z) + '"' + (z === c.zone ? ' selected' : '') + '>' + esc(z) + '</option>').join('') + (c.zone && zs.indexOf(c.zone) < 0 ? '<option value="' + esc(c.zone) + '" selected>' + esc(zoneLabel(c.zone)) + '</option>' : '') + '</select>', true) +
+    fld('Delivery fee', '<input data-ced="' + k('fee') + '" inputmode="numeric" value="' + (c.fee === 0 ? '0' : c.fee > 0 ? fmtQty(c.fee).replace(/\D/g, '') : '') + '" placeholder="Area price"><small class="cehint">Type 0 for free delivery. Leave empty to use the area price.</small>') +
     fld('Address', '<textarea data-ced="' + k('addr') + '" rows="2">' + esc(addrOnly(c.addr)) + '</textarea>', true) +
     fld('Map pin or Google Maps link', '<input data-ced="' + k('map') + '" value="' + esc(c.pin || mapLinkOf(c) || '') + '" placeholder="Paste a Maps link or -8.65, 115.13" autocomplete="off">', true) +
     fld('Customer language', '<select data-ced="' + k('lang') + '"><option value="en"' + (c.lang !== 'id' ? ' selected' : '') + '>English</option><option value="id"' + (c.lang === 'id' ? ' selected' : '') + '>Bahasa Indonesia</option></select>') +
@@ -3272,6 +3274,7 @@ function ceditHtml(c) { const k = f => esc(c.id) + '|' + f; const zs = dlNow().z
     '<p class="hint wide">Changes save as you go. The delivery fee updates when you change the area.</p></div>'; }
 function custEdit(id, f, v) { const c = cust.find(x => x.id === id); if (!c) return; const p = { ed: Date.now() }; v = String(v || '').trim();
   if (f === 'phone') { const d = digitsOf(v); p.phone = d ? '+' + d : ''; }
+  else if (f === 'fee') { if (v === '') { const st = custState(c); delete st.meta.fee; const cp = compute(st, 'sell'); p.fee = c.zone && cp.feeKnown ? cp.fee : null; } else { const n = Math.round(+v.replace(/[^\d]/g, '') || 0); p.fee = Math.max(0, Math.min(1e7, n)); } }
   else if (f === 'zone') { p.zone = v; const st = custState(c); st.meta.zone = v; delete st.meta.fee; const cp = compute(st, 'sell'); p.fee = v && cp.feeKnown ? cp.fee : null; }
   else if (f === 'addr') { const ml = mapLinkOf(c); p.addr = v + (ml ? (v ? '\n' : '') + 'Map: ' + ml : ''); }
   else if (f === 'map') { const pin = pinFromLink(v); const a = addrOnly(c.addr).replace(/, /g, ', ');
