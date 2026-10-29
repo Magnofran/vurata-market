@@ -1863,7 +1863,7 @@ function fmtMeasure(w, v) {
 }
 const unitsTxt = n => (n === 1 ? '1 pack, piece or box' : fmtQty(n) + ' packs, pieces or boxes');
 const REQ_FIELDS = { who: 'your name', phone: 'your WhatsApp number', zone: 'your delivery area', addr: 'a delivery address', need: 'the day you need it', pay: 'how you will pay' };
-function reqOk(k, m) { const v = String(m[k] || '').trim(); return k === 'phone' ? v.replace(/\D/g, '').length >= 8 : k === 'need' ? (!!v && !(cmode && isClosed(v))) : !!v; }
+function reqOk(k, m) { const v = String(m[k] || '').trim(); if (k === 'zone' && v === '__other' && cmode) return false; return k === 'phone' ? v.replace(/\D/g, '').length >= 8 : k === 'need' ? (!!v && !(cmode && isClosed(v))) : !!v; }
 const missingReq = m => Object.keys(REQ_FIELDS).filter(k => (k !== 'zone' || (cmode && dlNow().zones.length)) && !reqOk(k, m)).map(k => REQ_FIELDS[k]);
 const baliNow = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Makassar' }));
 /* Order cutoff, in hours (16.5 = 4:30 pm). Orders after it go to suppliers the next day, so delivery moves one day later. */
@@ -2075,8 +2075,9 @@ function areaListHtml(q) {
   const cp = compute(S); const ms = areaMatches(q);
   const row = x => { const fa = freeAt(x.z.n); const fee = x.z.fee == null ? 'fee by message' : x.z.fee === 0 || (fa > 0 && cp.total >= fa) ? 'Free' : fmtRp(x.z.fee);
     return '<button type="button" class="areaopt" role="option" data-act="areapick" data-z="' + esc(x.z.n) + '"><span class="an"><b>' + esc(x.hit || x.z.n) + '</b>' + (x.hit ? '<small>' + esc(x.z.n) + '</small>' : '') + '</span><span class="af num">' + fee + '</span></button>'; };
-  return (ms.length ? ms.map(row).join('') : '<p class="areanone">No area matches that. Choose "Another area in Bali" and we will confirm the fee.</p>') +
-    '<button type="button" class="areaopt other" role="option" data-act="areapick" data-z="__other"><span class="an"><b>Another area in Bali</b><small>We confirm the fee by message</small></span></button>';
+  /* No "another area" choice: every order has a known area and fee. Places not listed go to WhatsApp first. */
+  const hw = hostWA || LS.get('mumu-hostwa') || '';
+  return ms.length ? ms.map(row).join('') : '<p class="areanone">We could not find that place. Try the nearest town or village, like Canggu, Kerobokan or Ubud.' + (hw ? ' Still not listed? <a target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + hw + '&text=' + encodeURIComponent('Hi! Do you deliver to ' + String(q || '').trim() + '?') + '">Ask us on WhatsApp</a>.' : '') + '</p>';
 }
 /* Deliver to: a free map (OpenFreeMap) with a pin the customer drags to their gate, their own location, or a pasted Maps link.
    Everyone downstream gets a plain Google Maps link to that exact spot. */
@@ -4619,6 +4620,7 @@ const ID_TEXT = {
   'Open Google Maps': 'Buka Google Maps', 'Find your place, tap Share, then Copy link': 'Cari tempat Anda, ketuk Bagikan, lalu Salin link', 'Then paste it here': 'Lalu tempel di sini', 'Paste': 'Tempel', 'Location set from your Maps link.': 'Lokasi diambil dari link Maps Anda.', 'This replaces your current location.': 'Ini mengganti lokasi Anda sekarang.', 'Location replaced with your Maps link.': 'Lokasi diganti dengan link Maps Anda.',
   'For an exact pin, press and hold your gate in Google Maps and copy the numbers instead.': 'Untuk pin yang tepat, tekan lama gerbang Anda di Google Maps lalu salin angkanya.',
   'Nothing copied yet. In Google Maps tap Share, then Copy link.': 'Belum ada yang disalin. Di Google Maps ketuk Bagikan, lalu Salin link.', 'Press and hold the box, then tap Paste.': 'Tekan lama kotaknya, lalu ketuk Tempel.',
+  'We could not find that place. Try the nearest town or village, like Canggu, Kerobokan or Ubud. Still not listed?': 'Tempat itu tidak ditemukan. Coba kota atau desa terdekat, misalnya Canggu, Kerobokan atau Ubud. Masih tidak ada?', 'We could not find that place. Try the nearest town or village, like Canggu, Kerobokan or Ubud.': 'Tempat itu tidak ditemukan. Coba kota atau desa terdekat, misalnya Canggu, Kerobokan atau Ubud.', 'Ask us on WhatsApp': 'Tanya kami di WhatsApp',
   'Use my location': 'Pakai lokasi saya', 'Paste a Maps link': 'Tempel link Maps', 'Use it': 'Pakai',
   '✓ Pin set.': '✓ Pin terpasang.', 'This is exactly where we deliver.': 'Di sinilah kami antar.', 'Check in Google Maps': 'Cek di Google Maps', 'Remove': 'Hapus',
   '✓ Maps link saved.': '✓ Link Maps tersimpan.', 'Your host opens it to find you. To see the pin here too, tap your gate on the map.': 'Host Anda membukanya untuk menemukan Anda. Agar pin juga muncul di sini, ketuk gerbang Anda di peta.', 'Open link': 'Buka link',
