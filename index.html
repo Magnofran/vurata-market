@@ -2041,27 +2041,27 @@ const delLine = c => c.feeKnown ? (c.free || c.fee === 0 ? 'Free' : fmtRp(c.fee)
 /* Under the area field: the fee and the free-delivery amount for that area, laid out as two neat rows. */
 /* Places customers type, mapped to our delivery areas. Staff-made areas still match by their own name. */
 const AREA_PLACES = {
-  'Canggu / Berawa / Pererenan': 'Canggu, Berawa, Pererenan, Batu Bolong, Echo Beach, Tibubeneng, Padonan, Babakan, Nelayan, Dalung',
-  'Seminyak / Kerobokan / Umalas': 'Seminyak, Kerobokan, Umalas, Petitenget, Oberoi, Batu Belig, Kayu Aya, Basangkasa',
-  'Kuta / Legian': 'Kuta, Legian, Tuban, Airport',
-  'Denpasar / Sanur': 'Denpasar, Sanur, Renon, Sidakarya, Panjer, Serangan, Padangsambian, Ubung, Teuku Umar',
-  'Jimbaran / Nusa Dua': 'Jimbaran, Nusa Dua, Tanjung Benoa, Benoa, Kedonganan, Sawangan, Bualu, Kampial',
-  'Ubud': 'Ubud, Penestanan, Sayan, Mas, Peliatan, Nyuh Kuning, Lodtunduh, Kedewatan, Payangan',
-  'Uluwatu / Bingin': 'Uluwatu, Bingin, Padang Padang, Pecatu, Ungasan, Balangan, Dreamland, Suluban, Melasti, Nyang Nyang, Green Bowl',
-  'Tabanan town / Kediri': 'Tabanan, Kediri, Nyitdah, Pandak, Abiantuwung, Banjar Anyar, Kaba Kaba',
-  'Tanah Lot / Kerambitan / Beraban': 'Tanah Lot, Kerambitan, Beraban, Nyanyi, Kedungu, Yeh Gangga, Pasut, Tibubiu',
-  'Jatiluwih / Penebel / Baturiti': 'Jatiluwih, Penebel, Baturiti, Marga, Wongaya Gede, Sarinbuana, Batukaru',
-  'Mengwi / Munggu / Abiansemal': 'Mengwi, Munggu, Abiansemal, Seseh, Cemagi, Kapal, Sempidi, Lukluk, Blahkiuh, Sading',
-  'Munduk / Pupuan / Belimbing': 'Munduk, Pupuan, Belimbing, Gobleg, Antosari',
-  'Bedugul / Candikuning': 'Bedugul, Candikuning, Pancasari, Wanagiri, Bratan',
-  'Gianyar / Sukawati / Tegalalang': 'Gianyar, Sukawati, Tegalalang, Celuk, Batubulan, Keramas, Ketewel, Saba, Blahbatuh, Kemenuh, Tampaksiring, Taro',
-  'Medewi / Negara / Jembrana': 'Medewi, Negara, Jembrana, Balian, Soka, Selemadeg, Pekutatan, Lalang Linggah',
-  'Klungkung / Semarapura / Padang Bai': 'Klungkung, Semarapura, Padang Bai, Kusamba, Goa Lawah',
-  'Bangli / Kintamani': 'Bangli, Kintamani, Batur, Penelokan, Toya Bungkah, Sukawana',
-  'Singaraja / Lovina / Buleleng': 'Singaraja, Lovina, Buleleng, Kalibukbuk, Anturan, Tejakula, Banjar',
+  'Canggu / Berawa / Pererenan': 'Canggu, Berawa, Pererenan, Batu Bolong, Echo Beach, Tibubeneng, Padonan, Babakan, Nelayan, Dalung, Brawa, Kayu Tulang, Batu Mejan, Tegal Gundul, Kuta Utara, Pantai Lima, Batu Bolong Beach',
+  'Seminyak / Kerobokan / Umalas': 'Seminyak, Kerobokan, Umalas, Petitenget, Oberoi, Batu Belig, Kayu Aya, Basangkasa, Kerobokan Kelod, Kerobokan Kaja, Umalas Kauh, Banjar Taman, Drupadi, Kunti, Sunset Road, Laksmana, Eat Street',
+  'Kuta / Legian': 'Kuta, Legian, Tuban, Airport, Kuta Beach, Poppies, Waterbom, Ngurah Rai, Kuta Square, Patih Jelantik',
+  'Denpasar / Sanur': 'Denpasar, Sanur, Renon, Sidakarya, Panjer, Serangan, Padangsambian, Ubung, Teuku Umar, Kesiman, Sesetan, Pemogan, Pedungan, Sumerta, Penatih, Tohpati, Dauh Puri, Pemecutan, Mertasari, Sindhu, Semawang, Pemelisan, Gatot Subroto',
+  'Jimbaran / Nusa Dua': 'Jimbaran, Nusa Dua, Tanjung Benoa, Benoa, Kedonganan, Sawangan, Bualu, Kampial, Kutuh, Peminge, Mumbul, Taman Griya, Geger, Puri Gading, Goa Gong',
+  'Ubud': 'Ubud, Penestanan, Sayan, Mas, Peliatan, Nyuh Kuning, Lodtunduh, Kedewatan, Payangan, Tebesaya, Junjungan, Kelusa, Singakerta, Pejeng, Bedulu, Keliki, Petulu, Campuhan, Bentuyung, Sanggingan, Kenderan, Monkey Forest',
+  'Uluwatu / Bingin': 'Uluwatu, Bingin, Padang Padang, Pecatu, Ungasan, Balangan, Dreamland, Suluban, Melasti, Nyang Nyang, Green Bowl, Labuan Sait, Thomas Beach, Gunung Payung, Kandara',
+  'Tabanan town / Kediri': 'Tabanan, Kediri, Nyitdah, Pandak, Abiantuwung, Banjar Anyar, Kaba Kaba, Dauh Peken, Delod Peken, Bongan, Wanasari, Sudimara, Cepaka, Buwit',
+  'Tanah Lot / Kerambitan / Beraban': 'Tanah Lot, Kerambitan, Beraban, Nyanyi, Kedungu, Yeh Gangga, Pasut, Tibubiu, Kelating, Tegal Mengkeb, Bonian, Belalang',
+  'Jatiluwih / Penebel / Baturiti': 'Jatiluwih, Penebel, Baturiti, Marga, Wongaya Gede, Sarinbuana, Batukaru, Mangesta, Sangketan, Pacung, Luwus, Apuan',
+  'Mengwi / Munggu / Abiansemal': 'Mengwi, Munggu, Abiansemal, Seseh, Cemagi, Kapal, Sempidi, Lukluk, Blahkiuh, Sading, Buduk, Abianbase, Werdi Bhuana, Sobangan, Penarungan, Baha, Gulingan, Mambal, Sibang, Darmasaba, Angantaka, Kekeran, Mengwitani',
+  'Munduk / Pupuan / Belimbing': 'Munduk, Pupuan, Belimbing, Gobleg, Antosari, Tamblingan, Buyan, Gesing, Asah Gobleg, Batungsel',
+  'Bedugul / Candikuning': 'Bedugul, Candikuning, Pancasari, Wanagiri, Bratan, Beratan, Lake Bratan',
+  'Gianyar / Sukawati / Tegalalang': 'Gianyar, Sukawati, Tegalalang, Celuk, Batubulan, Keramas, Ketewel, Saba, Blahbatuh, Kemenuh, Tampaksiring, Taro, Singapadu, Guwang, Lebih, Medahan, Bona, Siangan, Pering, Kenderan',
+  'Medewi / Negara / Jembrana': 'Medewi, Negara, Jembrana, Balian, Soka, Selemadeg, Pekutatan, Lalang Linggah, Yeh Embang, Mendoyo, Pengambengan',
+  'Klungkung / Semarapura / Padang Bai': 'Klungkung, Semarapura, Padang Bai, Kusamba, Goa Lawah, Gelgel, Dawan, Kertha Gosa',
+  'Bangli / Kintamani': 'Bangli, Kintamani, Batur, Penelokan, Toya Bungkah, Sukawana, Susut, Tembuku, Penglipuran',
+  'Singaraja / Lovina / Buleleng': 'Singaraja, Lovina, Buleleng, Kalibukbuk, Anturan, Tejakula, Banjar, Sambangan, Sukasada, Kubutambahan, Air Sanih',
   'Gilimanuk / Melaya': 'Gilimanuk, Melaya, Belimbingsari',
-  'Candidasa / Amed / Karangasem': 'Candidasa, Amed, Karangasem, Amlapura, Tulamben, Sidemen, Manggis, Jasri, Tirta Gangga, Bunutan',
-  'Seririt / Pemuteran / Menjangan': 'Seririt, Pemuteran, Menjangan, Banyuwedang, Pulaki, Gerokgak'
+  'Candidasa / Amed / Karangasem': 'Candidasa, Amed, Karangasem, Amlapura, Tulamben, Sidemen, Manggis, Jasri, Tirta Gangga, Bunutan, Ujung, Bugbug, Selat, Rendang, Besakih, Muncan, Lipah, Jemeluk, Bebandem',
+  'Seririt / Pemuteran / Menjangan': 'Seririt, Pemuteran, Menjangan, Banyuwedang, Pulaki, Gerokgak, Kalisada, Umeanyar, Sumberkima, Pejarakan'
 };
 const areaNorm = t => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 function areaMatches(q) {
