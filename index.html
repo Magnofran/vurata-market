@@ -1870,7 +1870,15 @@ const baliNow = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'A
 const cutLabel = h => { const hh = Math.floor(h), mm = Math.round((h - hh) * 60), h12 = hh > 12 ? hh - 12 : hh; return h12 + (mm ? ':' + String(mm).padStart(2, '0') : '') + (hh >= 12 ? ' pm' : ' am'); };
 const pastCutoff = () => { const dl = dlNow(); if (!dl.cutoff) return false; const n = baliNow(); return n.getHours() + n.getMinutes() / 60 >= dl.cutoff; };
 const dayLabel = iso => new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
-function minNeed() { const now = baliNow(); const d = new Date(now.getTime() + 24 * 3600 * 1000); if (cmode && pastCutoff()) d.setDate(d.getDate() + 1); return isoOf(d); }
+function minNeed() { const now = baliNow(); const d = new Date(now.getTime() + 24 * 3600 * 1000); return isoOf(d); }
+/* Delivery windows: 10 AM to 10 PM in three 4-hour windows, so there is always time to collect from every supplier.
+   Orders placed before 12 PM can have any window tomorrow; later orders get tomorrow from 2 PM. */
+const SLOT_M = 'Morning (10 AM to 2 PM)', SLOT_A = 'Afternoon (2 to 6 PM)', SLOT_E = 'Evening (6 to 10 PM)';
+const SLOTS = ['', SLOT_M, SLOT_A, SLOT_E];
+const slotName = o => o || 'Any time (10 AM to 10 PM)';
+const pastNoon = () => baliNow().getHours() >= 12;
+const morningShut = need => cmode && pastNoon() && need === isoOf(new Date(baliNow().getTime() + 864e5));
+function fixSlot(quiet) { if (S.meta.slot === SLOT_M && morningShut(S.meta.need)) { patch({ meta: { slot: '' } }); if (!quiet) toast('Ordered after 12 PM, so tomorrow\'s delivery is from 2 PM. Choose the afternoon or evening.'); return true; } return false; }
 function fmtDate(iso, loc) {
   if (!iso) return '';
   const d = new Date(iso + 'T12:00:00');
@@ -2032,7 +2040,7 @@ function quickDates() {
 function needHint() {
   if (!cmode) return ''; const dl = dlNow(); const today = isoOf(baliNow());
   const days = dl.closed.filter(x => x.d >= today).slice(0, 3).map(x => new Date(x.d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (x.n ? ' (' + x.n + ')' : ''));
-  const parts = []; if (dl.cutoff) parts.push(pastCutoff() ? 'It is past ' + cutLabel(dl.cutoff) + ', so the earliest delivery is ' + dayLabel(minNeed()) + '.' : 'Order by ' + cutLabel(dl.cutoff) + ' for delivery tomorrow.'); if (days.length) parts.push('No delivery on ' + days.join(', ') + '.');
+  const parts = [pastNoon() ? 'It is past 12 PM, so tomorrow\'s delivery is from 2 PM.' : 'Order before 12 PM to choose a morning delivery tomorrow.']; if (days.length) parts.push('No delivery on ' + days.join(', ') + '.');
   return parts.length ? '<p class="hint">' + esc(parts.join(' ')) + '</p>' : '';
 }
 const zoneLabel = z => z === '__other' ? 'Another area' : (z || '');
@@ -2602,7 +2610,7 @@ function renderFilters() {
   ].map(x => '<li><svg viewBox="0 0 24 24" aria-hidden="true">' + x[0] + '</svg><span>' + x[1] + '</span></li>').join(''); }
   const hw = document.getElementById('howCard'); if (hw) {
     const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
-    if (show) hw.innerHTML = BASK_ART + '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span><b>Pick</b> what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().map(x => '<span class="snt">' + x + '</span>').join(' ') + '</p>' : '') + (cmode && dlNow().cutoff ? '<p class="hownote howcut"><span class="snt">Order by <b>' + cutLabel(dlNow().cutoff) + '</b> for delivery the next day.</span> <span class="snt">Later orders arrive the day after.</span></p>' : '');
+    if (show) hw.innerHTML = BASK_ART + '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span><b>Pick</b> what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().map(x => '<span class="snt">' + x + '</span>').join(' ') + '</p>' : '') + (cmode ? '<p class="hownote howcut"><span class="snt">We deliver the next day, <b>10 AM to 10 PM</b>.</span> <span class="snt">Order before <b>12 PM</b> for a morning delivery.</span></p>' : '');
   }
   const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; supVisible().forEach(s => { counts[s] = CATALOG.filter(i => gs(i) === s && !i.hidden).length; });
@@ -2658,7 +2666,7 @@ function renderOrder(comp) {
     (cmode ? '<div class="field span-all' + (!reqOk('phone', m) ? ' miss' : '') + '"><label for="m-phone-n">Your WhatsApp, so your host can reach you <i class="req" aria-hidden="true">*</i></label>' + phoneField('m-phone', m.phone, ro) + '</div>' : '') +
     (() => { const dlc = dlNow(); if (!cmode) return ''; const cp = compute(S);
       return (dlc.zones.length ? '<div class="field span-all' + (!reqOk('zone', m) ? ' miss' : '') + '"><label for="m-zone">Delivery area <i class="req" aria-hidden="true">*</i></label><div class="areabox"><div class="areaq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="m-zone" type="search" autocomplete="off" enterkeyhint="search" role="combobox" aria-expanded="false" aria-controls="areaList" data-areaq="1" placeholder="Type your area, e.g. Berawa or Ubud" value="' + esc(m.zone ? zoneLabel(m.zone) : '') + '"' + ro + '>' + (m.zone && canWrite ? '<button type="button" class="areaclr" data-act="areaclr" aria-label="Change area"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' : '') + '</div><div class="arealist" id="areaList" role="listbox" hidden></div>' + dlBreak(cp) + '</div></div>' : '') +
-        '<div class="field span-all"><label for="m-slot">Delivery time</label><select id="m-slot" data-meta="slot"' + ro + '>' + ['', 'Late morning (10:30 to 12)', 'Afternoon (12 to 4)', 'Evening (4 to 7)'].map(o => '<option value="' + o + '"' + (o === (m.slot || '') ? ' selected' : '') + '>' + (o || 'Any time on the day') + '</option>').join('') + '</select></div>'; })() +
+        '<div class="field span-all"><label for="m-slot">Delivery time</label><select id="m-slot" data-meta="slot"' + ro + '>' + SLOTS.map(o => { const shut = o === SLOT_M && morningShut(m.need); return '<option value="' + o + '"' + (o === (m.slot || '') && !shut ? ' selected' : '') + (shut ? ' disabled' : '') + '>' + (!o && morningShut(m.need) ? 'Any time (2 PM to 10 PM)' : slotName(o)) + (shut ? ' (order before 12 PM)' : '') + '</option>'; }).join('') + '</select></div>'; })() +
     '<div class="field span-all delivf' + (cmode && !reqOk('addr', m) ? ' miss' : '') + '"><label for="m-addr">Deliver to' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label>' + delBoxHtml(m, ro) + '</div>' +
     '<div class="field span-all"><label for="m-notes">' + (cmode ? 'Notes for your host' : 'Internal note for the order manager') + '</label><textarea id="m-notes" data-meta="notes" placeholder="' + (cmode ? 'Anything we should know before delivery' : 'For us only, never sent to suppliers. E.g. check stock on the salmon first') + '"' + ro + '>' + esc(m.notes) + '</textarea></div></div>' : '') + '</div>';
   if (!comp.groups.length) {
@@ -3163,7 +3171,7 @@ function overviewHtml() {
   return nx.replace(/<button type="button" class="btn pastebtn"[^>]*>Paste order from clipboard<\/button>/, '') + (dayRows.length || areaRows.length ? '<div class="card"><h3>Deliveries</h3>' + brkHtml(dayRows, areaRows) + '</div>' : ''); /* counts and Paste live in the Today panel */
 }
 function packState(c, comp) { let n = 0, done = 0; comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st === 'x') return; n++; if (c.pk && c.pk[ln.key]) done++; })); return { n, done }; }
-const ID_SLOT = { 'Late morning (10:30 to 12)': 'Menjelang siang (10.30-12.00)', 'Afternoon (12 to 4)': 'Siang (12.00-16.00)', 'Evening (4 to 7)': 'Sore (16.00-19.00)' };
+const ID_SLOT = { 'Morning (10 AM to 2 PM)': 'Pagi (10.00-14.00)', 'Afternoon (2 to 6 PM)': 'Siang (14.00-18.00)', 'Evening (6 to 10 PM)': 'Malam (18.00-22.00)', 'Late morning (10:30 to 12)': 'Menjelang siang (10.30-12.00)', 'Afternoon (12 to 4)': 'Siang (12.00-16.00)', 'Evening (4 to 7)': 'Sore (16.00-19.00)' };
 const idDate = iso => new Date(iso + 'T12:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 /* Delivery run: pick a day, give each stop a driver, send each driver one clear WhatsApp message. Drivers never need the app. */
 let drivers = []; try { drivers = JSON.parse(localStorage.getItem('mumu-drivers') || '[]') || []; } catch (e) { drivers = []; }
@@ -3258,14 +3266,13 @@ function ccardHead(c, comp, date) {
   return '<div class="ccard' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(c.status || 'new') + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono" title="Order number">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.ed ? '<span class="edpill" title="Details changed after the order arrived">Edited</span>' : '') + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div>' + (ui.cedit && ui.cedit[c.id] ? ceditHtml(c) : '<dl class="cinfo">' + rows + '</dl>') + (canWrite ? '<button type="button" class="edbtn" data-act="cedit" data-id="' + esc(c.id) + '" aria-expanded="' + !!(ui.cedit && ui.cedit[c.id]) + '">' + (ui.cedit && ui.cedit[c.id] ? '✓ Done editing' : '✏️ Edit details') + '</button>' : '') + '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label>';
 }
 /* Staff can correct anything the customer typed. Order number and received date stay as they arrived. */
-const SLOTS = ['', 'Late morning (10:30 to 12)', 'Afternoon (12 to 4)', 'Evening (4 to 7)'];
 function ceditHtml(c) { const k = f => esc(c.id) + '|' + f; const zs = dlNow().zones.map(z => z.n);
   const fld = (lb, inner, wide) => '<label class="cefld' + (wide ? ' wide' : '') + '"><span>' + lb + '</span>' + inner + '</label>';
   return '<div class="cedit">' +
     fld('Name', '<input data-ced="' + k('name') + '" value="' + esc(c.name || '') + '" autocomplete="off">') +
     fld('WhatsApp number', '<input data-ced="' + k('phone') + '" inputmode="tel" value="' + esc(c.phone || '') + '" placeholder="+62 812 3456 7890" autocomplete="off">') +
     fld('Needed by', '<input type="date" data-ced="' + k('need') + '" value="' + esc(c.need || '') + '">') +
-    fld('Delivery time', '<select data-ced="' + k('slot') + '">' + SLOTS.map(o => '<option value="' + o + '"' + (o === (c.slot || '') ? ' selected' : '') + '>' + (o || 'Any time on the day') + '</option>').join('') + '</select>') +
+    fld('Delivery time', '<select data-ced="' + k('slot') + '">' + SLOTS.concat(c.slot && SLOTS.indexOf(c.slot) < 0 ? [c.slot] : []).map(o => '<option value="' + o + '"' + (o === (c.slot || '') ? ' selected' : '') + '>' + slotName(o) + '</option>').join('') + '</select>') +
     fld('Delivery area', '<select data-ced="' + k('zone') + '"><option value="">Not set</option>' + zs.map(z => '<option value="' + esc(z) + '"' + (z === c.zone ? ' selected' : '') + '>' + esc(z) + '</option>').join('') + (c.zone && zs.indexOf(c.zone) < 0 ? '<option value="' + esc(c.zone) + '" selected>' + esc(zoneLabel(c.zone)) + '</option>' : '') + '</select>', true) +
     fld('Delivery fee', '<input data-ced="' + k('fee') + '" inputmode="numeric" value="' + (c.fee === 0 ? '0' : c.fee > 0 ? fmtQty(c.fee).replace(/\D/g, '') : '') + '" placeholder="Area price"><small class="cehint">Type 0 for free delivery. Leave empty to use the area price.</small>') +
     fld('Address', '<textarea data-ced="' + k('addr') + '" rows="2">' + esc(addrOnly(c.addr)) + '</textarea>', true) +
@@ -3368,7 +3375,7 @@ function renderShareC(comp) {
     (S.meta.need || S.meta.slot || S.meta.zone || S.meta.addr ? '<dl class="rcap-rows">' + [['Day', S.meta.need ? fmtDate(S.meta.need) : ''], ['Time', S.meta.slot || ''], ['Area', S.meta.zone ? zoneLabel(S.meta.zone) : ''], ['Deliver to', S.meta.addr || '']].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + (r[0] === 'Deliver to' ? addrHtml(r[1]) : esc(r[1])) + '</dd></div>').join('') + '</dl>' : '') + '</div>';
   const sendCard = '<div class="card"><div class="msg-head"><h3>Send your order</h3></div>' +
     (S.meta.who ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Add your name in My order first, so your host knows who it is from.</p>') + (S.meta.pay ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Choose how you will pay in My order: cash on delivery or QRIS.</p>') +
-    (dlNow().cutoff && pastCutoff() ? '<div class="cutnote"><b>Ordering after ' + cutLabel(dlNow().cutoff) + '.</b> Your order is prepared tomorrow, so the earliest delivery is ' + dayLabel(minNeed()) + '.</div>' : '') +
+    (cmode && morningShut(S.meta.need) ? '<div class="cutnote"><b>Ordering after 12 PM.</b> Tomorrow\'s delivery is from 2 PM, so you have the afternoon or evening.</div>' : '') +
     '<div class="recapm">' + recapHtml + '</div>' +
     '<p class="choose">Choose <b>one</b> way to send it. Your host gets the same order whichever you pick.</p>' +
     (cmode ? '<div class="sendpick" role="group" aria-label="How to send">' + pick + '</div>' : '<div class="lseg three sendseg" role="group" aria-label="How to send">' + seg + '</div>') + '<div class="sendpanel">' + panel + '</div>' +
@@ -3896,8 +3903,8 @@ function renderLedger() {
   const dlCardOpen = '<div class="card" id="dlCard">' + cardHead('dlCard', 'Delivery', true) + '<p class="hint" style="margin-bottom:12px">Customers pick their area and see the delivery fee straight away, before they send. Leave a fee empty to confirm it by message. With no areas listed, no delivery fee is shown.</p>' +
     '<section class="lsec"><div class="lsec-h"><b>Order limits</b><span>Smallest order and free delivery</span></div>' +
     '<div class="grid2"><div class="field"><label for="dl-min">Smallest order we accept (Rp)</label><input id="dl-min" inputmode="numeric" value="' + (dlc.min || '') + '" placeholder="e.g. 200.000"' + (canWrite ? '' : ' disabled') + '></div><div class="field"><label for="dl-free">Free delivery over (Rp), default for every area</label><input id="dl-free" inputmode="numeric" value="' + (dlc.free || '') + '" placeholder="e.g. 600.000"' + (canWrite ? '' : ' disabled') + '></div></div><p class="hint" style="margin:-2px 0 14px">Leave a box empty to switch it off: no minimum, or delivery is never free.</p></section>' +
-    '<section class="lsec"><div class="lsec-h"><b>Order cutoff</b><span>The latest time to order for the next day</span></div>' +
-    '<div class="grid2" style="grid-template-columns:minmax(0,1fr)"><div class="field"><label for="dl-cut">Orders accepted until</label><select id="dl-cut"' + (canWrite ? '' : ' disabled') + '><option value="0">No cutoff</option>' + [12, 14, 15, 16, 16.5, 17, 18, 19, 20, 21].map(h => '<option value="' + h + '"' + (dlc.cutoff === h ? ' selected' : '') + '>Before ' + cutLabel(h) + '</option>').join('') + '</select></div></div><p class="hint" style="margin:-2px 0 14px">Orders placed after the cutoff are delivered from the day after tomorrow.</p></section>' +
+    '<section class="lsec"><div class="lsec-h"><b>Supplier order deadline</b><span>When you place each day\'s orders with suppliers. Customers always get next-day delivery, 10 AM to 10 PM; orders after 12 PM start from 2 PM.</span></div>' +
+    '<div class="grid2" style="grid-template-columns:minmax(0,1fr)"><div class="field"><label for="dl-cut">Order from suppliers by</label><select id="dl-cut"' + (canWrite ? '' : ' disabled') + '><option value="0">No cutoff</option>' + [12, 14, 15, 16, 16.5, 17, 18, 19, 20, 21].map(h => '<option value="' + h + '"' + (dlc.cutoff === h ? ' selected' : '') + '>Before ' + cutLabel(h) + '</option>').join('') + '</select></div></div><p class="hint" style="margin:-2px 0 14px">Orders placed after the cutoff are delivered from the day after tomorrow.</p></section>' +
     '<section class="lsec"><div class="lsec-h"><b>Days off</b><span>Days when we do not deliver</span></div>' + dlc.closed.map(dayRow).join('') + (ui.ddNew ? dayRow({ d: '', n: '' }, dlc.closed.length) : '') + '<div class="actions full" style="margin:2px 0 0"><button type="button" class="btn ghost" data-act="dadd"' + (canWrite ? '' : ' disabled') + '>Add a day off</button></div></section>' +
     '<section class="lsec"><div class="lsec-h"><b>Delivery areas</b><span>Where we deliver and the fee for each area</span></div>' +
     (dlc.zones.length || ui.dzNew ? '<div class="dzhead"><span>Area</span><span>Fee</span></div>' : '') + dlc.zones.slice(0, (ui.dzAll || ui.dzNew) ? 9999 : 5).map(dzRow).join('') + (dlc.zones.length > 5 && !ui.dzNew ? '<button type="button" class="linkbtn dzmore" data-act="dzall" aria-expanded="' + !!ui.dzAll + '">' + (ui.dzAll ? 'Show fewer areas' : 'Show ' + (dlc.zones.length - 5) + ' more areas') + '</button>' : '') + (ui.dzNew ? dzRow({ n: '', fee: null }, dlc.zones.length) : '') +
@@ -4067,7 +4074,7 @@ document.addEventListener('click', e => {
   else if (act === 'sendopt') { ui.sendOpt = b.dataset.k; renderShare(compute(S)); }
   else if (act === 'tosend') { const cp = compute(S); if (missingReq(S.meta).length) fixFirst(); else if (minGap(cp) > 0) { toast('Minimum order is ' + fmtRp(dlNow().min) + '. Add ' + fmtRp(minGap(cp)) + ' more.'); showView('pick'); } else showView('share'); }
   else if (act === 'fix') { fixFirst(); }
-  else if (act === 'setneed') { patch({ meta: { need: b.dataset.d } }); renderOrder(compute(S)); }
+  else if (act === 'setneed') { patch({ meta: { need: b.dataset.d } }); fixSlot(); renderOrder(compute(S)); }
   else if (act === 'noteadd') { const inp = b.closest('.ln').querySelector('input.note'); if (inp && !inp.value.toLowerCase().includes(b.dataset.t.toLowerCase())) { inp.value = (inp.value ? inp.value + ', ' : '') + b.dataset.t; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); } }
   else if (act === 'hrename') { ui.renameId = b.dataset.id; refreshHist(); const el = document.querySelector('input[data-hren]'); if (el) { el.focus(); el.select(); } }
   else if (act === 'markordered') { const list = cust.filter(c => c.inc !== false && c.status === 'new'); list.forEach(c => updCust(c.id, { status: 'ordered', dat: 0 })); toast('Marked ' + list.length + ' order' + (list.length > 1 ? 's' : '') + ' as ordered.', { label: 'Undo', fn: () => list.forEach(c => updCust(c.id, { status: 'new' })) }); }
@@ -4281,7 +4288,7 @@ document.addEventListener('change', e => {
   else if (t.matches('[data-meta]')) {
     if (t.dataset.meta === 'need' && t.value && t.value < minNeed()) { t.value = minNeed(); toast('Orders need 24 hours notice, so your date moved to the earliest available day.'); }
     if (cmode && t.dataset.meta === 'need' && t.value && isClosed(t.value)) { const cd = dlNow().closed.find(x => x.d === t.value); const nx = nextOpen(t.value); toast('No delivery on ' + fmtDate(t.value) + (cd && cd.n ? ' (' + cd.n + ')' : '') + '. Moved to ' + fmtDate(nx) + '.'); t.value = nx; }
-    patch({ meta: { [t.dataset.meta]: t.value } });
+    patch({ meta: { [t.dataset.meta]: t.value } }); if (t.dataset.meta === 'need' && fixSlot()) renderOrder(compute(S));
     if (t.dataset.meta === 'zone') { const cz = compute(S); renderOrder(cz); chrome(cz); }
     if (cmode && REQ_FIELDS[t.dataset.meta]) { const fd = t.closest('.field'); if (fd) fd.classList.toggle('miss', !reqOk(t.dataset.meta, { [t.dataset.meta]: t.value })); }
   }
@@ -4376,7 +4383,7 @@ document.addEventListener('click', e => { if (e.target.closest('#staffLink')) { 
 function sentBox() { let el = document.getElementById('sentWrap'); if (!el) { el = document.createElement('div'); el.id = 'sentWrap'; el.className = 'sentwrap'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Order sent'); document.body.appendChild(el); } return el; }
 function termsHtml() {
   const dl = dlNow(), hw = hostWA || LS.get('mumu-hostwa') || '';
-  const cutoff = dl.cutoff ? ' Order by ' + cutLabel(dl.cutoff) + ' for delivery the next day. Orders placed later are delivered the day after.' : '';
+  const cutoff = ' We deliver 10 AM to 10 PM. Order before 12 PM to choose a morning delivery the next day; later orders arrive the next day from 2 PM.';
   const money = (dl.min ? ' The minimum order is ' + fmtRp(dl.min) + '.' : '') + (freeCopy() ? ' Delivery is f' + freeCopy().slice(1) : '');
   const sec = (h, b) => '<div class="tsec"><b>' + h + '</b><span>' + b + '</span></div>';
   return '<div class="sentbox termsbox"><button type="button" class="sentx" data-act="sentx" aria-label="Close">&times;</button><h3>Privacy and order terms</h3><p class="hint">The short version, in plain words.</p><div class="tlist">' +
@@ -4621,6 +4628,11 @@ const ID_TEXT = {
   'For an exact pin, press and hold your gate in Google Maps and copy the numbers instead.': 'Untuk pin yang tepat, tekan lama gerbang Anda di Google Maps lalu salin angkanya.',
   'Nothing copied yet. In Google Maps tap Share, then Copy link.': 'Belum ada yang disalin. Di Google Maps ketuk Bagikan, lalu Salin link.', 'Press and hold the box, then tap Paste.': 'Tekan lama kotaknya, lalu ketuk Tempel.',
   'We could not find that place. Try the nearest town or village, like Canggu, Kerobokan or Ubud. Still not listed?': 'Tempat itu tidak ditemukan. Coba kota atau desa terdekat, misalnya Canggu, Kerobokan atau Ubud. Masih tidak ada?', 'We could not find that place. Try the nearest town or village, like Canggu, Kerobokan or Ubud.': 'Tempat itu tidak ditemukan. Coba kota atau desa terdekat, misalnya Canggu, Kerobokan atau Ubud.', 'Ask us on WhatsApp': 'Tanya kami di WhatsApp',
+  'Morning (10 AM to 2 PM)': 'Pagi (10.00 sampai 14.00)', 'Afternoon (2 to 6 PM)': 'Siang (14.00 sampai 18.00)', 'Evening (6 to 10 PM)': 'Malam (18.00 sampai 22.00)', 'Any time (10 AM to 10 PM)': 'Kapan saja (10.00 sampai 22.00)', 'Any time (2 PM to 10 PM)': 'Kapan saja (14.00 sampai 22.00)', 'Morning (10 AM to 2 PM) (order before 12 PM)': 'Pagi (10.00 sampai 14.00) (pesan sebelum 12.00)',
+  'It is past 12 PM, so tomorrow\'s delivery is from 2 PM.': 'Sudah lewat pukul 12.00, jadi pengantaran besok mulai pukul 14.00.', 'Order before 12 PM to choose a morning delivery tomorrow.': 'Pesan sebelum pukul 12.00 untuk memilih pengantaran pagi besok.',
+  'We deliver the next day,': 'Kami antar keesokan harinya,', '10 AM to 10 PM': '10.00 sampai 22.00', 'Order before': 'Pesan sebelum', '12 PM': '12.00', 'for a morning delivery.': 'untuk pengantaran pagi.',
+  'Ordering after 12 PM.': 'Pesan setelah pukul 12.00.', 'Tomorrow\'s delivery is from 2 PM, so you have the afternoon or evening.': 'Pengantaran besok mulai pukul 14.00, jadi pilih siang atau malam.',
+  'Ordered after 12 PM, so tomorrow\'s delivery is from 2 PM. Choose the afternoon or evening.': 'Dipesan setelah pukul 12.00, jadi pengantaran besok mulai pukul 14.00. Pilih siang atau malam.',
   'Use my location': 'Pakai lokasi saya', 'Paste a Maps link': 'Tempel link Maps', 'Use it': 'Pakai',
   '✓ Pin set.': '✓ Pin terpasang.', 'This is exactly where we deliver.': 'Di sinilah kami antar.', 'Check in Google Maps': 'Cek di Google Maps', 'Remove': 'Hapus',
   '✓ Maps link saved.': '✓ Link Maps tersimpan.', 'Your host opens it to find you. To see the pin here too, tap your gate on the map.': 'Host Anda membukanya untuk menemukan Anda. Agar pin juga muncul di sini, ketuk gerbang Anda di peta.', 'Open link': 'Buka link',
