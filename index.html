@@ -1331,6 +1331,9 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .kcard .lbbody { background: var(--surface-2); } @media (hover: hover) { .kcard .lblock .lbhead:hover { background: var(--surface-2); } .kcard .lblock:not(.open):hover { border-color: var(--line); } }
 #ledCard, .kcard.rows { padding-bottom: 0; } #ledCard .kband, .kcard.rows .kband { margin-bottom: 0; } #ledCard .lblock:last-child, .kcard.rows .lblock:last-child { border-bottom: 0; } .kcard .lbt .neg { color: var(--danger); }
 #prodCard .pfind { margin-top: 0; padding-top: 0; background: none; }
+#prodCard .lchips { display: flex !important; flex-wrap: wrap; overflow: visible; gap: 8px; -webkit-mask-image: none !important; mask-image: none !important; } #prodCard .lchips .chip { flex: 0 1 auto; width: auto; max-width: 100%; padding-inline: 14px; overflow: hidden; text-overflow: ellipsis; }
+/* the product list scrolls in its own box, so filters stay in reach */
+#prodCard { padding-bottom: 0; } #prodCard #ledList { max-height: min(72vh, 780px); overflow-y: auto; overscroll-behavior: contain; margin: 14px -16px 0; padding: 12px 16px 16px; border-top: 1px solid var(--line); background: var(--surface-2); } #prodCard #ledList:empty { display: none; }
 .bkrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); } .bkw { display: grid; gap: 2px; min-width: 0; } .bkw b { font-size: 14px; } .bkw small { font-size: 12.5px; color: var(--muted); } .bkacts { display: flex; gap: 14px; flex: none; }
 .bkconf { display: grid; gap: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--danger); background: color-mix(in srgb, var(--danger) 6%, var(--surface)); } .bkconf p { margin: 0; font-size: 13.5px; line-height: 1.45; }
 .lsec .osub.filebtn { min-height: 42px; width: 100%; }
@@ -4359,7 +4362,7 @@ function renderLedgerList() {
   const nheld = CATALOG.filter(i => i.hidden && fixWhy(i).length).length, nlive = nfix - nheld;
   const alert = nfix && ui.lfil !== 'fix' ? '<button type="button" class="fixalert" data-act="lfil" data-k="fix"><i class="blinkdot" aria-hidden="true"></i><span><b>' + nfix + ' product' + (nfix === 1 ? '' : 's') + ' need a price or photo.</b> ' + (nlive ? nlive + ' still visible to customers' + (nheld ? ', ' + nheld + ' hidden until fixed.' : '.') : 'All hidden from customers until fixed.') + '</span><em>Fix now</em></button>' : '';
   box.innerHTML = alert + (shown.length ? shown.map(ledgerRowHtml).join('') : '<p class="hint">Nothing matches.</p>') + (items.length > shown.length ? '<button type="button" class="btn ghost more" data-act="lmore">Show ' + Math.min(40, items.length - shown.length) + ' more</button>' : '');
-  const lcn = document.getElementById('lcount'); if (lcn) lcn.textContent = items.length;
+  const lcn = document.getElementById('lcount'); if (lcn) lcn.textContent = items.length; const key = [ui.lq, ui.lsup, ui.lfil].join('|'); if (box.dataset.k !== key) { box.dataset.k = key; box.scrollTop = 0; }
   if (keep) { const el = box.querySelector('[' + keep[0] + '="' + CSS.escape(keep[1]) + '"]'); if (el) el.focus({ preventScroll: true }); }
 }
 function renderLedger() { bkLoad();
@@ -4423,7 +4426,7 @@ function renderLedger() { bkLoad();
     form + photoCardHtml + '<div class="card kcard" id="prodCard">' + kband('Products', '<span id="lcount">' + ledgerItems().length + '</span>', 'Search or filter, then tap a product to change it') +
     '<section class="lsec pfind">' +
     '<div class="search"><input id="lq" type="search" placeholder="Search by product name" value="' + esc(ui.lq) + '" autocomplete="off" aria-label="Search the ledger"></div>' +
-    '<span class="lgl">Supplier</span><div class="chips lchips">' + chip('lsup', 'all', ui.lsup, 'All suppliers', 'data-k="all"') + SUP_ORDER.map(x => '<button class="chip" data-act="lsup" data-s="' + x + '" data-k="' + x + '" aria-pressed="' + (ui.lsup === x) + '"><span class="dot"></span>' + esc(SUPS[x].name) + '</button>').join('') + '</div>' +
+    '<span class="lgl">Supplier</span><div class="chips lchips">' + chip('lsup', 'all', ui.lsup, 'All suppliers', 'data-k="all"') + SUP_ORDER.map(x => '<button class="chip" data-act="lsup" data-s="' + x + '" data-k="' + x + '" title="' + esc(SUPS[x].name) + '" aria-pressed="' + (ui.lsup === x) + '"><span class="dot"></span>' + esc(SUPS[x].short || SUPS[x].name) + '</button>').join('') + '</div>' +
     '<span class="lgl">Show</span><div class="lseg five" role="group" aria-label="Show products">' + [['all', 'All', CATALOG.filter(i => !i.hidden).length], ['edited', 'Changed', editedN], ['added', 'New', CATALOG.filter(i => /^x-/.test(i.id)).length], ['hidden', 'Hidden', CATALOG.filter(i => i.hidden).length], ['so', 'Sold out', CATALOG.filter(i => i.so).length]].concat(CATALOG.some(i => fixWhy(i).length) ? [['fix', 'Fix now', CATALOG.filter(i => fixWhy(i).length).length]] : []).map(x => '<button type="button" data-act="lfil" data-k="' + x[0] + '" aria-pressed="' + (ui.lfil === x[0]) + '"' + (x[0] === 'fix' ? ' class="fixchip"' : '') + '>' + (x[0] === 'fix' ? '<i class="blinkdot" aria-hidden="true"></i>' : '') + x[1] + ' <small>' + x[2] + '</small></button>').join('') + '</div>' +
     '</section><div id="ledList"></div></div>', ledgerSide());
   const lc = host.querySelector('.lchips'); if (lc) { const upd = () => lc.classList.toggle('at-end', lc.scrollLeft + lc.clientWidth >= lc.scrollWidth - 2); lc.addEventListener('scroll', upd, { passive: true }); upd(); }
