@@ -1160,7 +1160,9 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .cstp i { border-color: currentColor; color: currentColor; }
 .cstp.now { background: var(--sc); border-color: var(--sc) !important; color: var(--on-sup); } .cstp.now i { background: var(--on-sup); border-color: var(--on-sup); color: var(--sc); }
 .cstp.done { background: color-mix(in srgb, var(--sc) 12%, var(--surface)); color: var(--sc); } .cstp.done i { background: var(--sc); border-color: var(--sc); color: var(--on-sup); }
-.cstp.next { border-color: var(--sc) !important; border-style: dashed !important; background: var(--surface); }
+.cstp.next { border-color: var(--sc) !important; background: var(--surface); overflow: visible; }
+.nexttag { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); padding: 2px 8px; background: var(--sc); color: var(--on-sup); font-style: normal; font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; line-height: 1.3; border-radius: 999px !important; white-space: nowrap; pointer-events: none; }
+.cstps { padding-top: 6px; }
 @media (hover: hover) { .cstp:not(.now):hover { background: color-mix(in srgb, var(--sc) 16%, var(--surface)) !important; color: var(--sc) !important; border-style: solid !important; } }
 /* the same colours on the filters and the today panel */
 [data-act="cfil"][data-k="new"] { --sc: var(--warn); } [data-act="cfil"][data-k="ordered"] { --sc: var(--gr); } [data-act="cfil"][data-k="delivered"] { --sc: var(--fv); }
@@ -3224,7 +3226,7 @@ function stepMsgs(c, st) { const ph = digitsOf(c.phone); const unpaid = !c.paid 
     '<button type="button" class="linkbtn othermsg" data-act="cmsgtog" data-id="' + esc(c.id) + '" aria-expanded="' + mo + '">' + (mo ? 'Hide other messages' : 'Other messages') + '</button>' + (mo ? allMsgsMenu(c) : '') + '</div>'; }
 function statusPanel(c) { const ro = canWrite ? '' : ' disabled'; const order = ['new', 'ordered', 'delivered']; const cur = Math.max(0, order.indexOf(c.status || 'new'));
   const L = { new: 'New', ordered: 'Ordered', delivered: 'Delivered' }; const H = { new: 'Waiting for your confirmation', ordered: 'Confirmed, being packed', delivered: 'With the customer' };
-  const steps = order.map((st, i) => '<button type="button" class="cstp s-' + st + (i < cur ? ' done' : i === cur ? ' now' : i === cur + 1 ? ' next' : '') + '" data-act="cstat" data-id="' + esc(c.id) + '" data-v="' + st + '" aria-pressed="' + (i === cur) + '"' + ro + '><i>' + (i < cur ? '✓' : i + 1) + '</i><span>' + L[st] + (i === cur + 1 ? '<small>Next step</small>' : '') + '</span></button>').join('');
+  const steps = order.map((st, i) => '<button type="button" class="cstp s-' + st + (i < cur ? ' done' : i === cur ? ' now' : i === cur + 1 ? ' next' : '') + '" data-act="cstat" data-id="' + esc(c.id) + '" data-v="' + st + '" aria-pressed="' + (i === cur) + '"' + ro + '><i>' + (i < cur ? '✓' : i + 1) + '</i><span>' + L[st] + '</span>' + (i === cur + 1 ? '<em class="nexttag">Next</em>' : '') + '</button>').join('');
   const due = dueOf(c);
   return '<div class="cpanel"><div class="cpsec stsec s-' + order[cur] + '"><div class="cplab"><span>Order status</span><em>' + H[order[cur]] + '</em></div><div class="cstps" role="group" aria-label="Order status">' + steps + '</div>' + stepMsgs(c, order[cur]) + '</div>' +
     '<div class="cpsec"><div class="cplab"><span>Payment</span><em class="' + (c.paid || due <= 0 ? 'pos' : 'neg') + '">' + (c.paid ? 'Paid in full' : 'To collect ' + fmtRp(due)) + '</em></div>' +
