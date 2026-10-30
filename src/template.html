@@ -1369,6 +1369,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .restnote { margin: 4px 0 0; font-size: 12.5px; font-weight: 600; color: var(--gr); }
 .pinfo { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-left: 6px; padding: 0; border: 1.5px solid currentColor; border-radius: 50%; background: none; color: var(--muted); font: 700 11px/1 var(--f-body, inherit); font-style: italic; vertical-align: 2px; cursor: pointer; } .pinfo[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-style: normal; }
 .item .pnote { grid-column: 1 / -1; } .pnote { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--gold); background: color-mix(in srgb, var(--gold) 9%, var(--surface)); font-size: 13px; line-height: 1.5; color: var(--ink); }
+.coldnote { display: flex; align-items: center; gap: 5px; margin: 4px 0 0; font-size: 12px; font-weight: 600; color: var(--gr); } .coldnote span { font-size: 12px; line-height: 1; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2266,6 +2267,12 @@ const restSay = (sids, day) => LID() ? (sids.length > 1 ? 'Pemasok daging dan pr
 const dayName = iso => new Date(iso + 'T12:00:00').toLocaleDateString(LID() ? 'id-ID' : 'en-GB', { weekday: 'long' });
 const isClosed = iso => dlNow().closed.some(x => x.d === iso) || (cmode && restSids(iso, basketSids()).length > 0);
 /* first day this item can arrive, counted from the earliest delivery day */
+/* ===== Cold chain: fresh meat and seafood travel chilled, frozen goods frozen, both in a cooler with ice packs.
+   Worked out from the category and name; staff can set it per product (Temperature in Edit details). ===== */
+const FZ_RX = /frozen|beku|prozen|fries|dim sum|dumpling|nugget/i;
+function tempOf(it) { if (it.tz) return it.tz === 'rt' ? '' : it.tz; if (FZ_RX.test(it.n + ' ' + (it.e || '') + ' ' + it.c)) return 'fz'; return it.s === 'mt' || (it.s === 'gr' && /seafood/i.test(it.c)) ? 'ch' : ''; }
+const coldKinds = lines => { const k = {}; lines.forEach(ln => { const t = tempOf(ln.it); if (t) k[t] = 1; }); return k; };
+const coldHtml = it => { const t = tempOf(it); if (!t) return ''; const id = LID(); return '<p class="coldnote ' + t + '"><span aria-hidden="true">❄</span>' + (t === 'fz' ? (id ? 'Beku · dikirim dalam cooler dengan ice pack' : 'Frozen · delivered in a cooler with ice packs') : (id ? 'Dingin · dikirim dalam cooler dengan ice pack' : 'Chilled · delivered in a cooler with ice packs')) + '</p>'; };
 function itemFrom(it) { let d = minNeed(); for (let i = 0; i < 7 && restSids(d, [it.s]).length; i++) d = isoOf(new Date(new Date(d + 'T12:00:00').getTime() + 864e5)); return d; }
 function restCheck() { if (!cmode || !S.meta.need || !isClosed(S.meta.need)) return; const was = S.meta.need, why = restSids(was, basketSids()); const nx = nextOpen(was);
   patch({ meta: { need: nx } }); fixSlot();
@@ -2574,7 +2581,7 @@ function applyLedger() {
     if (o) {
       if (Array.isArray(o.pr)) o.pr.forEach((p, i) => { if (p !== null && p !== undefined && it.o[i]) it.o[i].pr = p > 0 ? p : null; });
       if (o.d && DEPTS.includes(o.d)) it.d = o.d; if (o.s && SUPS[o.s]) it.s = o.s;
-      if (o.n) it.n = o.n; if (o.e !== undefined && o.e !== null) it.e = o.e; if (o.c) it.c = o.c; if (o.hid) it.hidden = true; if (o.so) it.so = true; if (o.ft) it.ft = true; if (o.pn) it.pn = String(o.pn); if (o.pi) it.pi = String(o.pi); if (o.img !== undefined && o.img !== null) it.img = o.img ? String(o.img) : '';
+      if (o.n) it.n = o.n; if (o.e !== undefined && o.e !== null) it.e = o.e; if (o.c) it.c = o.c; if (o.hid) it.hidden = true; if (o.so) it.so = true; if (o.ft) it.ft = true; if (o.tz) it.tz = String(o.tz); if (o.pn) it.pn = String(o.pn); if (o.pi) it.pi = String(o.pi); if (o.img !== undefined && o.img !== null) it.img = o.img ? String(o.img) : '';
     }
     
     if (it.n) it.n = it.n.charAt(0).toUpperCase() + it.n.slice(1);
@@ -2747,7 +2754,7 @@ function askLink(it, o) {
 }
 function itemHtml(it, showSup) {
   const from = cmode ? itemFrom(it) : ''; const later = cmode && from !== minNeed();
-  const note = (later ? '<p class="restnote">' + (LID() ? 'Tiba ' + dayName(from) + ', dikemas segar' : 'Arrives ' + dayName(from) + ', freshly packed') + '</p>' : '');
+  const note = coldHtml(it) + (later ? '<p class="restnote">' + (LID() ? 'Tiba ' + dayName(from) + ', dikemas segar' : 'Arrives ' + dayName(from) + ', freshly packed') + '</p>' : '');
   const pnote = (cmode && (it.pn || it.pi) ? '<p class="pnote" id="pn-' + it.id + '" hidden>' + esc(LID() && it.pi ? it.pi : it.pn || it.pi) + '</p>' : '');
   const flags = (it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : '') + note;
   const pk = it.k && it.k.length < 70 && it.o.length > 1 ? '<p class="meta">Listed as: ' + esc(it.k) + '</p>' : '';
@@ -3652,15 +3659,16 @@ function driverMsg(stops, drv, day) {
     : { title: 'Vurata Market delivery run', stops: n => n + ' stop' + (n === 1 ? '' : 's'), collect: 'Collect', total: 'Total to collect', paid: 'Already paid', items: 'items', ready: 'ready', packed: 'packed', note: 'Note', done: 'After each drop-off, reply:', doneW: 'done', qrisHold: '*QRIS not paid yet.* Hand over only once it is paid.', foot: 'Weights are estimates until weighed.', cash: 'cash', qris: 'QRIS' };
   const dayTxt = id ? new Date(day + 'T12:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }) : new Date(day + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   const payW = p => /cash/i.test(p || '') ? T.cash : /qris/i.test(p || '') ? T.qris : '';
-  let sum = 0; const rows = stops.map((c, i) => { const due = dueOf(c); sum += due; const comp = compute(custState(c), 'sell'); const ps = packState(c, comp); const a = addrOnly(c.addr);
+  let sum = 0, cold = 0; const rows = stops.map((c, i) => { const due = dueOf(c); sum += due; const comp = compute(custState(c), 'sell'); const ps = packState(c, comp); const a = addrOnly(c.addr);
     const L = ['*' + (KEYCAP[i] || (i + 1) + '.') + '  ' + orderNo(c) + ' · ' + (c.name || 'Customer') + '*'];
     if (c.zone) L.push('📍 ' + zoneLabel(c.zone)); if (a) L.push('🏠 ' + a); if (c.pin || c.addr) L.push('🗺️ ' + mapUrl(c));
     if (c.phone) L.push('📞 ' + c.phone); if (c.slot) L.push('🕗 ' + (id ? (ID_SLOT[c.slot] || c.slot) : c.slot));
     L.push('📦 ' + ps.n + ' ' + T.items + ' · ' + (ps.n && ps.done === ps.n ? '✅ ' + T.ready : '⏳ ' + ps.done + '/' + ps.n + ' ' + T.packed));
     L.push(due > 0 ? '💵 *' + T.collect + ' ' + fmtRp(due) + '*' + (payW(c.pay) ? ' · ' + payW(c.pay) : '') : '✅ ' + T.paid); if (due > 0 && /qris/i.test(c.pay || '')) L.push('⚠️ ' + T.qrisHold);
+    const ck = coldKinds([].concat(...comp.groups.map(g => g.lines))); if (ck.ch || ck.fz) { cold++; L.push('🧊 ' + (id ? 'Ada daging/beku: tetap di cooler dengan ice pack' : 'Meat/frozen: keep in the cooler with ice packs')); }
     if (c.notes) L.push('📝 ' + T.note + ': ' + c.notes); if (c.hn) L.push('ℹ️ ' + c.hn);
     return L.join('\n'); });
-  const head = ['🛵 *' + T.title + '*', (drv ? '👤 ' + drv.n + ' · ' : '') + '📅 ' + dayTxt, '📦 ' + T.stops(stops.length) + (sum > 0 ? ' · 💵 ' + T.total + ' *' + fmtRp(sum) + '*' : ''), '✅ ' + T.done + ' *' + T.doneW + ' VM-…*'].join('\n');
+  const head = ['🛵 *' + T.title + '*', (drv ? '👤 ' + drv.n + ' · ' : '') + '📅 ' + dayTxt, '📦 ' + T.stops(stops.length) + (sum > 0 ? ' · 💵 ' + T.total + ' *' + fmtRp(sum) + '*' : ''), '✅ ' + T.done + ' *' + T.doneW + ' VM-…*'].concat(cold ? ['🧊 *' + (id ? cold + ' titik dengan daging/beku: antar duluan, cooler tetap tertutup' : cold + (cold === 1 ? ' stop' : ' stops') + ' with meat/frozen: deliver first, keep the cooler shut') + '*'] : []).join('\n');
   const line = '━━━━━━━━━━━━';
   return [head, line, rows.join('\n' + line + '\n'), line, '_' + T.foot + '_'].join('\n');
 }
@@ -3926,6 +3934,8 @@ function billText(c, comp) {
   out.push('*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? (id ? ' + ongkir' : ' + delivery') : '') + (comp.unpriced ? (id ? ' (+ ' + comp.unpriced + ' barang belum ada harga)' : ' (+ ' + comp.unpriced + ' item(s) still to be priced)') : ''));
   if (+c.dep > 0 && due > 0) out.push(id ? 'Sudah diterima: ' + fmtRp(c.dep) + '. Sisa: ' + amt + '.' : 'Received so far: ' + fmtRp(c.dep) + '. Left to pay: ' + amt + '.');
   if (fin) out.push(id ? '_Barang segar memakai berat saat dikemas di atas._' : '_Fresh items use the packed weights above._');
+  const ck = coldKinds([].concat(...comp.groups.map(g => g.lines)));
+  if (ck.ch || ck.fz) out.push('', '❄️ ' + (id ? (ck.ch ? 'Daging segar dikirim dingin dalam cooler dengan ice pack. Mohon langsung simpan di kulkas dan gunakan dalam 2 hari, atau bekukan.' : '') + (ck.fz ? (ck.ch ? ' ' : '') + 'Produk beku langsung masukkan ke freezer.' : '') : (ck.ch ? 'Fresh meat comes chilled in a cooler with ice packs. Please refrigerate it on arrival and use it within 2 days, or freeze it.' : '') + (ck.fz ? (ck.ch ? ' ' : '') + 'Frozen items go straight into the freezer.' : '')));
   out.push('', id ? 'Kami akan kabari saat pesanan Anda dalam perjalanan. Terima kasih! 🙏' : 'We will message you when your order is on its way. Thank you! 🙏'); return out.join('\n');
 }
 function combinedData() {
@@ -4208,7 +4218,7 @@ function publicLedger() {
   const ov = {}, srcOv = ledger.ov || {};
   CATALOG.forEach(it => {
     const s = srcOv[it.id] || {}, o = {}; const sp = it.o.map(op => (op.sp > 0 ? op.sp : null)); if (sp.some(v => v)) o.sp = sp;
-    ['n', 'c', 'e', 'hid', 'so', 'ft', 'img', 'd', 'pn', 'pi'].forEach(k => { if (s[k] !== undefined && s[k] !== null && s[k] !== '' && s[k] !== false) o[k] = s[k]; }); if (it.alt) o.hid = true;
+    ['n', 'c', 'e', 'hid', 'so', 'ft', 'img', 'd', 'pn', 'pi', 'tz'].forEach(k => { if (s[k] !== undefined && s[k] !== null && s[k] !== '' && s[k] !== false) o[k] = s[k]; }); if (it.alt) o.hid = true;
     if (Object.keys(o).length) ov[it.id] = o;
   });
   const add = {}; Object.keys(ledger.add || {}).forEach(id => { const a = clone(ledger.add[id]); (a.o || []).forEach(op => { delete op.pr; delete op.sp; }); delete a.x; add[id] = a; });
@@ -4391,6 +4401,7 @@ function ledgerRowHtml(it) {
       (priceChanged(it, i) ? '<div class="lwas">supplier price was ' + (BASE_BY[it.id].o[i].pr ? fmtRp(BASE_BY[it.id].o[i].pr) : 'not listed') + ' <button type="button" class="linkbtn" data-act="lreset" data-id="' + esc(it.id) + '" data-i="' + i + '">reset</button></div>' : '') + '</div>';
   }).join('');
   const det = ed ? '<div class="ldet grid2 s-' + it.s + '"><div class="ldet-h span-all">Edit details</div><div class="field span-all"><label>Name</label><input data-ld="' + esc(it.id) + '|n" value="' + esc(it.n) + '"' + ro + '></div><div class="field"><label>English name</label><input data-ld="' + esc(it.id) + '|e" value="' + esc(it.e || '') + '"' + ro + '></div><div class="field"><label>Category</label><input data-ld="' + esc(it.id) + '|c" value="' + esc(it.c) + '"' + ro + '></div><div class="field"><label>Customers find it under</label><select data-lds="' + esc(it.id) + '|d"' + (canWrite ? '' : ' disabled') + '>' + DEPTS.map(x => '<option value="' + x + '"' + (it.d === x ? ' selected' : '') + '>' + esc(SUPS[x].tag) + '</option>').join('') + '</select></div>' +
+    '<div class="field span-all"><label>Temperature</label><select data-lds="' + esc(it.id) + '|tz"' + (canWrite ? '' : ' disabled') + '>' + [['', 'Automatic (' + ({ ch: 'chilled', fz: 'frozen' }[(() => { const t = it.tz; it.tz = ''; const v = tempOf(it); it.tz = t; return v; })()] || 'room temperature') + ')'], ['ch', 'Chilled, cooler with ice packs'], ['fz', 'Frozen, cooler with ice packs'], ['rt', 'Room temperature']].map(x => '<option value="' + x[0] + '"' + ((it.tz || '') === x[0] ? ' selected' : '') + '>' + x[1] + '</option>').join('') + '</select></div>' +
     '<div class="field span-all"><label>Price note for customers (English)</label><input data-ld="' + esc(it.id) + '|pn" value="' + esc(it.pn || '') + '" placeholder="Optional. Shows as an i next to the price, e.g. why it went up"' + ro + '></div><div class="field span-all"><label>Price note (Bahasa)</label><input data-ld="' + esc(it.id) + '|pi" value="' + esc(it.pi || '') + '" placeholder="Opsional"' + ro + '></div></div>' : '';
   const why = fixWhy(it);
   return '<div class="lrow' + (it.hidden ? ' hid' : '') + (why.length ? ' needfix' : '') + '">' + (why.length ? '<div class="fixbar' + (it.hidden ? ' held' : '') + '"><i class="blinkdot" aria-hidden="true"></i><b>' + (it.hidden ? 'Hidden until fixed:' : 'Fix before customers see it:') + '</b> ' + why.join(' · ') + '</div>' : '') + '<div class="lhead"><span class="thumb sm s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="lname"><b>' + esc(it.n) + '</b>' + (it.e ? '<span class="en">' + esc(it.e) + '</span>' : '') +
@@ -4901,7 +4912,7 @@ document.addEventListener('change', e => {
   else if (t.matches('[data-cd]')) { saveCodesFromDom(); if (t.dataset.cd.endsWith('|c') && codeKey(t.value)) toast('Code ' + codeKey(t.value) + ' saved.'); }
   else if (t.id === 'mk-round') { saveLedger({ cfg: { round: +t.value } }); renderLedger(); toast('Prices now round up to Rp ' + t.value + '. Live for customers in a moment.'); }
   else if (t.matches('input[data-supf]')) { const k = t.dataset.supf.split('|'); const val = t.value.trim(); if (k[1] === 'name' && !val) { toast('A supplier needs a name.'); renderLedger(); return; } const patch = { [k[1]]: val }; if (k[1] === 'name') patch.what = val; if (['fv', 'mt', 'gr', 'ot'].includes(k[0])) { delete patch.what; saveLedger({ supx: { [k[0]]: patch } }); } else saveLedger({ sups: { [k[0]]: patch } }); renderLedger(); toast('Supplier saved.'); }
-  else if (t.matches('select[data-lds]')) { const k = t.dataset.lds.split('|'); saveLedger({ ov: { [k[0]]: { [k[1]]: t.value } } }); renderLedgerList(); toast(k[1] === 's' ? 'Supplier changed. Customers see no difference.' : 'Customers now find it under ' + SUPS[t.value].tag + '.'); }
+  else if (t.matches('select[data-lds]')) { const k = t.dataset.lds.split('|'); saveLedger({ ov: { [k[0]]: { [k[1]]: t.value } } }); renderLedgerList(); toast(k[1] === 'tz' ? 'Temperature saved.' : k[1] === 's' ? 'Supplier changed. Customers see no difference.' : 'Customers now find it under ' + SUPS[t.value].tag + '.'); }
   else if (t.matches('input[data-ld]')) { const k = t.dataset.ld.split('|'); const val = t.value.trim(); if ((k[1] === 'n' || k[1] === 'c') && !val) { toast('That field cannot be empty.'); renderLedgerList(); return; } saveLedger({ ov: { [k[0]]: { [k[1]]: val } } }); }
   else if (t.id === 'importFile') { importFiles(t.files); t.value = ''; }
   else if (t.id === 'unpaidOnly') { ui.keep = {}; ui.cunpaid = t.checked; renderCustomers(); }
