@@ -923,6 +923,8 @@ html { scroll-padding-top: 96px; } .card[id] { scroll-margin-top: 96px; }
 .ccard > [data-act="cview"] { margin-top: auto; }
 .ccard > .cdet { margin-top: 0; }
 @media (min-width: 640px) { .custgrid { align-items: stretch; } }
+/* an open card sits next to a closed one: closed cards keep their own height instead of stretching into an empty box */
+.custgrid > .ccard.compact { align-self: start; } .custgrid:not(:has(.cfull)) > .ccard.compact { align-self: stretch; }
 .cadv.ghost { color: var(--muted); }
 
 /* ---- product photos ---- */
@@ -1254,6 +1256,37 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .supcard textarea { flex: 1 1 auto; min-height: 150px; resize: none; }
 .supcard .actions { margin-top: auto !important; }
 .msg-head .seg button { padding: 7px 14px !important; min-width: 74px; text-align: center; }
+/* ===== Open order card: band, then sections with one rhythm ===== */
+#custList .ccard.cfull { padding: 0 !important; gap: 0 !important; overflow: hidden; container-type: inline-size; }
+.cband { display: grid; gap: 6px; padding: 14px 16px 12px; background: color-mix(in srgb, var(--sa, var(--line-dark)) 11%, var(--surface)); border-bottom: 1px solid color-mix(in srgb, var(--sa, var(--line-dark)) 35%, var(--line)); }
+.cb1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .cbst { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--sa, var(--muted)); }
+.cb2 { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; } .cb2 .cname { font-size: 18px; line-height: 1.25; overflow-wrap: anywhere; white-space: normal; overflow: visible; } .cb2 .ctot { font-size: 18px; font-weight: 800; white-space: nowrap; }
+.cb3 { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); } .cb3 .cflags { margin: 0; }
+.csec, .ccard.cfull .cpsec { padding: 14px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.csl, .ccard.cfull .cplab > span:first-child, .ccard.cfull .cplab .csum.inl span { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ccard.cfull .cinfo { border-top: 0; padding: 0; gap: 8px; } .ccard.cfull .cinfo > div { grid-template-columns: 84px minmax(0, 1fr); }
+.cbtns { display: flex; gap: 8px; } .ccard.cfull .edbtn { margin: 0; }
+.ccard.cfull .hnote { grid-template-columns: 84px minmax(0, 1fr); }
+.ccard.cfull .cpanel { margin: 0; border: 0; background: none; } .ccard.cfull .cpanel > .cpsec + .cpsec { border-top: 0; }
+.ccard.cfull .stsec { box-shadow: none; padding-top: 14px; }
+.ccard.cfull .cinc { padding: 12px 16px; margin: 0; border-bottom: 1px solid var(--line); }
+.paysec.needs { background: color-mix(in srgb, var(--danger) 7%, var(--surface)); } .paysec.needs .cplab > span:first-child { color: var(--danger); }
+.paysec.done { background: color-mix(in srgb, var(--fv) 6%, var(--surface)); }
+.crow { padding: 0 !important; } .csum { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 0 16px; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.csum .csv { margin-left: auto; font-size: 13px; color: var(--muted); text-align: right; } .csum .csv b.pos { color: var(--fv); } .csum .csv b.neg { color: var(--danger); }
+.csum .chev, .csum.inl .chev { width: 9px; height: 9px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin: -4px 2px 0; flex: none; transition: transform .15s ease; } .csum[aria-expanded="true"] .chev { transform: rotate(-135deg); margin-top: 3px; }
+.csum.inl { min-height: 0; padding: 0; width: auto; gap: 8px; }
+@media (hover: hover) { .csum:hover { background: var(--surface-2); } .csum.inl:hover { background: none; } }
+.ccard.cfull .repcard { margin: 12px 16px 0; } .ccard.cfull .cdet { padding: 14px 16px; border-bottom: 1px solid var(--line); } .ccard.cfull .cxbox, .ccard.cfull .cxban { margin: 12px 16px; }
+.ccard.cfull .cmore.less { width: calc(100% - 32px); margin: 12px 16px 14px; }
+.ccard.cfull .cmdbar { margin: 0; }
+/* narrow cards (two-column list): nothing overlaps or clips */
+@container (max-width: 380px) {
+  .ccard.cfull .cinfo > div, .ccard.cfull .hnote { grid-template-columns: 72px minmax(0, 1fr); }
+  .ccard.cfull .cstp { min-height: 46px; padding: 0 4px; font-size: 12px; gap: 5px; } .ccard.cfull .cstp i { width: 18px; height: 18px; font-size: 10px; }
+  .ccard.cfull .cstps { gap: 4px; }
+  .ccard.cfull .dcbreak > div { font-size: 12.5px; }
+}
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3306,7 +3339,7 @@ function statusPanel(c) { const ro = canWrite ? '' : ' disabled'; const order = 
   const steps = order.map((st, i) => '<button type="button" class="cstp s-' + st + (i < cur ? ' done' : i === cur ? ' now' : i === cur + 1 ? ' next' : '') + '" data-act="cstat" data-id="' + esc(c.id) + '" data-v="' + st + '" aria-pressed="' + (i === cur) + '"' + ro + '><i>' + (i < cur ? '✓' : i + 1) + '</i><span>' + L[st] + '</span>' + (i === cur + 1 ? '<em class="nexttag">Next</em>' : '') + '</button>').join('');
   const due = dueOf(c);
   return '<div class="cpanel"><div class="cpsec stsec s-' + order[cur] + '"><div class="cplab"><span>Order status</span><em>' + H[order[cur]] + '</em></div><div class="cstps" role="group" aria-label="Order status">' + steps + '</div>' + stepMsgs(c, order[cur]) + '</div>' +
-    '<div class="cpsec"><div class="cplab"><span>Payment</span><em class="' + (c.paid || due <= 0 ? 'pos' : 'neg') + '">' + (c.paid ? 'Paid in full' : 'To collect ' + fmtRp(due)) + '</em></div>' +
+    '<div class="cpsec paysec' + (!c.paid && due > 0 && (c.status === 'delivered') ? ' needs' : c.paid || due <= 0 ? ' done' : '') + '"><div class="cplab"><span>Payment</span><em class="' + (c.paid || due <= 0 ? 'pos' : 'neg') + '">' + (c.paid ? 'Paid in full' : 'To collect ' + fmtRp(due)) + '</em></div>' +
       '<div class="cprow">' + paySelect(c) + '<button type="button" class="paidtog" data-act="cpaidtog" data-id="' + esc(c.id) + '" aria-pressed="' + !!c.paid + '"' + ro + '>' + (c.paid ? '✓ Paid' : 'Mark as paid') + '</button></div>' +
       (c.paid ? '' : '<label class="lf dep"><span>Deposit received</span><span class="lpr">Rp <input data-cdep="' + esc(c.id) + '" inputmode="numeric" value="' + (c.dep || '') + '" placeholder="0"' + ro + '></span></label>') + '</div>' +
     dcostHtml(c) + '<label class="check cinc"><input type="checkbox" data-cinc="' + esc(c.id) + '"' + (c.inc !== false ? ' checked' : '') + ro + '> Include in the combined supplier order</label></div>'; }
@@ -3526,16 +3559,22 @@ const mapUrl = c => c.pin ? 'https://maps.google.com/?q=' + c.pin : (mapLinkOf(c
 function ccardHead(c, comp, date) {
   const rows = [
     ['Phone', c.phone ? '<a href="https://wa.me/' + digitsOf(c.phone) + '" target="_blank" rel="noopener">' + esc(c.phone) + '</a>' : '<em>no number</em>'],
-    ['Needed', c.need ? esc(fmtDate(c.need)) + (c.slot ? ' &middot; ' + esc(c.slot) : '') : ''],
-    ['Area', c.zone ? esc(zoneLabel(c.zone)) : ''],
-    ['Address', c.addr ? esc(c.addr) : ''],
-    ['Map', (c.pin || c.addr) ? '<a href="' + mapUrl(c) + '" target="_blank" rel="noopener">' + (c.pin ? 'Open customer pin' : mapLinkOf(c) ? 'Open their Maps link' : 'Search the address') + '</a>' : ''],
+    ['Address', addrOnly(c.addr) ? esc(addrOnly(c.addr)) : ''],
+    ['Map', (c.pin || c.addr) ? '<a href="' + mapUrl(c) + '" target="_blank" rel="noopener">' + (c.pin ? 'Open customer pin' : mapLinkOf(c) ? 'Open their Maps link' : 'Search the address') + '</a>' : '<em>no pin</em>'],
     ['Notes', c.notes ? esc(c.notes) : ''],
-    ['Order', comp.count + ' line' + (comp.count === 1 ? '' : 's') + ' &middot; received ' + esc(date)],
-    ['Profit', (() => { const p = profitOf(custState(c)); return p.rev ? '<b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b> on ' + fmtRp(p.rev) + ' of items (+' + (p.cost > 0 ? Math.round(p.profit / p.cost * 100) : 0) + '% markup), before delivery costs' : ''; })()]
+    ['Received', esc(date)]
   ].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('');
-  const ret = c.phone && cust.filter(x => digitsOf(x.phone) === digitsOf(c.phone)).length > 1;
-  return '<div class="ccard' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(c.status || 'new') + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono" title="Order number">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.ed ? '<span class="edpill" title="Details changed after the order arrived">Edited</span>' : '') + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div>' + (ui.cedit && ui.cedit[c.id] ? ceditHtml(c) : '<dl class="cinfo">' + rows + '</dl>') + (canWrite ? '<button type="button" class="edbtn" data-act="cedit" data-id="' + esc(c.id) + '" aria-expanded="' + !!(ui.cedit && ui.cedit[c.id]) + '">' + (ui.cedit && ui.cedit[c.id] ? '✓ Done editing' : '✏️ Edit details') + '</button>' : '') + '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label>';
+  const st = c.status || 'new'; const due = dueOf(c);
+  const stl = st === 'cancelled' ? 'Cancelled' : ({ new: c.cf ? 'Confirmed, to order' : 'New · waiting for you', ordered: 'Ordered · being packed', delivered: 'Delivered' })[st] + (st !== 'new' && due > 0 ? ' · unpaid' : c.paid ? ' · paid' : '');
+  const when = [c.need ? fmtDate(c.need) : 'No date', c.slot ? WIN[winOf(c.slot)][1] : '', c.zone ? zoneLabel(c.zone).split(' / ')[0] : ''].filter(Boolean).join(' · ');
+  const ed = ui.cedit && ui.cedit[c.id];
+  /* 1. Band: who, how much, when and where, tinted in the status colour */
+  return '<div class="ccard cfull' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(st) + '" data-cid="' + esc(c.id) + '"><div class="cband"><div class="cb1"><span class="ono" title="Order number">' + orderNo(c) + '</span>' + (c.ed ? '<span class="edpill" title="Details changed after the order arrived">Edited</span>' : '') + (c.lang === 'id' ? '<em class="langtag">ID</em>' : '') + '<span class="cbst">' + esc(stl) + '</span></div>' +
+    '<div class="cb2"><b class="cname">' + esc(c.name || 'Customer') + '</b><span class="num ctot">' + fmtRp(comp.grand) + '</span></div><div class="cb3">' + esc(when) + flagsHtml(c, comp) + '</div></div>' +
+    /* 2. Customer */
+    '<div class="csec"><div class="csl">Customer</div>' + (ed ? ceditHtml(c) : '<dl class="cinfo">' + rows + '</dl>') +
+    '<div class="cbtns">' + (canWrite ? '<button type="button" class="edbtn" data-act="cedit" data-id="' + esc(c.id) + '" aria-expanded="' + !!ed + '">' + (ed ? '✓ Done editing' : 'Edit details') + '</button>' : '') + '</div>' +
+    '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label></div>';
 }
 /* Staff can correct anything the customer typed. Order number and received date stay as they arrived. */
 function ceditHtml(c) { const k = f => esc(c.id) + '|' + f; const zs = dlNow().zones.map(z => z.n);
@@ -3908,8 +3947,8 @@ function addItemHtml(c) { if (!canWrite) return ''; const on = ui.addFor === c.i
     '<button type="button" class="linkbtn" data-act="additem" data-id="' + esc(c.id) + '">Done adding</button></div>'; }
 function allMsgsMenu(c) { const ph = digitsOf(c.phone); const nx = nextMsg(c);
   return '<div class="cmsgmenu">' + CMSG.map(g => '<div class="cmsgstep">' + g.step + '</div>' + g.items.map(x => '<a class="cmsgopt' + (x[0] === nx ? ' next' : '') + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span></a>').join('')).join('') + '</div>'; }
-function cmdBar(c, open) {
-  return '<div class="cmdbar"><button type="button" class="cmd" data-act="cview" data-id="' + esc(c.id) + '" aria-expanded="' + open + '">' + ICO_BILL + '<span>' + (open ? 'Hide bill' : 'View &amp; edit bill') + '</span><i class="chev" aria-hidden="true"></i></button></div>'; }
+function cmdBar(c, open) { const comp = compute(custState(c), 'sell'); const p = profitOf(custState(c));
+  return '<div class="csec crow"><button type="button" class="csum" data-act="cview" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"><span class="csl">Bill · ' + comp.count + ' item' + (comp.count === 1 ? '' : 's') + '</span><span class="csv">' + (p.rev ? 'Profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b> · +' + (p.cost > 0 ? Math.round(p.profit / p.cost * 100) : 0) + '%' : 'Edit items') + '</span><i class="chev" aria-hidden="true"></i></button></div>'; }
 function updCust(id, p) { if (!cmode) { ui.keep = ui.keep || {}; ui.keep[id] = 1; }
   const c = cust.find(x => x.id === id); if (!c) return; if (!canWrite) { toast('This copy is view-only.'); return; }
   deepMerge(c, clone(p));
@@ -4067,7 +4106,8 @@ const dcPicks = () => { const seen = []; cust.slice().sort((a, b) => (b.dat || b
 const fmtSigned = v => (v < 0 ? '− ' : '') + fmtRp(Math.abs(v));
 function dcostHtml(c) { if (cmode || c.status === 'cancelled' || (c.status || 'new') === 'new') return ''; const ro = canWrite ? '' : ' disabled'; const has = +c.dc > 0;
   const p = profitOf(custState(c)), fee = feeOf(c), th = p.profit + fee - (+c.dc || 0); const picks = dcPicks(); const other = has && !picks.includes(+c.dc);
-  return '<div class="cpsec dcost"><div class="cplab"><span>Delivery cost</span><em class="' + (has ? (th > 0 ? 'pos' : 'neg') : '') + '">' + (has ? 'Take-home ' + fmtSigned(th) : 'What did delivery cost you?') + '</em></div>' +
+  if (!(ui.dcOpen && ui.dcOpen[c.id])) return '<div class="cpsec crow"><button type="button" class="csum" data-act="dcopen" data-id="' + esc(c.id) + '" aria-expanded="false"><span class="csl">Delivery cost</span><span class="csv">' + (has ? fmtRp(+c.dc) + ' · take-home <b class="' + (th > 0 ? 'pos' : 'neg') + '">' + fmtSigned(th) + '</b>' : 'Add cost') + '</span><i class="chev" aria-hidden="true"></i></button></div>';
+  return '<div class="cpsec dcost"><div class="cplab"><button type="button" class="csum inl" data-act="dcopen" data-id="' + esc(c.id) + '" aria-expanded="true"><span>Delivery cost</span><i class="chev" aria-hidden="true"></i></button><em class="' + (has ? (th > 0 ? 'pos' : 'neg') : '') + '">' + (has ? 'Take-home ' + fmtSigned(th) : 'What did delivery cost you?') + '</em></div>' +
     '<div class="dcpicks">' + picks.map(v => '<button type="button" data-act="dcset" data-id="' + esc(c.id) + '" data-v="' + v + '" aria-pressed="' + (+c.dc === v) + '"' + ro + '>' + fmtRp(v) + '</button>').join('') +
     '<label class="dcother' + (other ? ' on' : '') + '"><span class="sr">Other amount</span>Rp <input data-dcost="' + esc(c.id) + '" inputmode="numeric" placeholder="Other" value="' + (other ? fmtQty(+c.dc).replace(/\D/g, '') : '') + '"' + ro + '></label></div>' +
     (c.dcs ? '<p class="hint dcsplit">Shared run: ' + fmtRp(c.dcs) + ' split over ' + (c.dcn || 1) + ' stops.</p>' : '') +
@@ -4528,6 +4568,7 @@ document.addEventListener('click', e => {
     const id = 's' + Date.now().toString(36); saveLedger({ sups: { [id]: { name: nmv, what: nmv, phone: ((document.getElementById(two ? 'pkns-wa2' : 'pkns-wa') || {}).value || '').trim(), h: nextHue() } } });
     if (!two) { const iid = b.dataset.key.split('|')[0]; saveLedger({ ov: { [iid]: { s: id } } }); toast(supName(BY_ID[iid]) + ' is now bought from ' + nmv + '. Update its price in Ledger if it differs.'); } else toast('Added ' + nmv + '.');
     ui.pkAddSup = false; ui.pkNew = ''; ui.pkMenu = ''; renderCustomers(); }
+  else if (act === 'dcopen') { ui.dcOpen = ui.dcOpen || {}; ui.dcOpen[b.dataset.id] = !ui.dcOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'dcset') { const c = cust.find(x => x.id === b.dataset.id); const v = +b.dataset.v; updCust(b.dataset.id, { dc: c && +c.dc === v ? 0 : v, dcs: 0, dcn: 0 }); }
   else if (act === 'nxopen') { const id = b.dataset.id; ui.cexp = ui.cexp || {}; ui.cexp[id] = true; ui.keep = ui.keep || {}; ui.keep[id] = 1; ui.flash = id; renderCustomers(); const el = document.querySelector('#custList [data-cid="' + id + '"]'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); setTimeout(() => { if (ui.flash === id) ui.flash = ''; }, 2500); }
   else if (act === 'bday') { ui.bday = b.dataset.d; renderCustomers(); }
