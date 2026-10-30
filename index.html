@@ -1333,6 +1333,12 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 #prodCard .pfind { margin-top: 0; padding-top: 0; background: none; }
 .bkrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); } .bkw { display: grid; gap: 2px; min-width: 0; } .bkw b { font-size: 14px; } .bkw small { font-size: 12.5px; color: var(--muted); } .bkacts { display: flex; gap: 14px; flex: none; }
 .bkconf { display: grid; gap: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--danger); background: color-mix(in srgb, var(--danger) 6%, var(--surface)); } .bkconf p { margin: 0; font-size: 13.5px; line-height: 1.45; }
+.plgrp { display: grid; margin-top: 10px; } .plgrp .lgl { margin-bottom: 4px; }
+.plrow { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); cursor: pointer; } .plrow.none { cursor: default; flex-wrap: wrap; } .plrow.none select { flex: 1 1 100%; }
+.plrow input[type=checkbox] { flex: none; width: 20px; height: 20px; } .pln { display: grid; gap: 2px; min-width: 0; flex: 1; } .pln b { font-size: 14px; } .pln small { font-size: 12.5px; color: var(--muted); } .pln em { color: var(--danger); font-style: normal; font-weight: 600; }
+.plp { display: grid; justify-items: end; gap: 1px; flex: none; font-size: 13px; } .plp s { color: var(--muted); } .plp i { color: var(--muted); font-style: normal; } .plp b { font-size: 14.5px; } .plp em { font-style: normal; font-size: 12px; font-weight: 600; } .plp .neg { color: var(--danger); } .plp .pos { color: var(--fv); }
+.plrow.big { background: color-mix(in srgb, var(--warn) 8%, transparent); } .plrev .lsec-h .neg { color: var(--danger); } .plrev .lsec-h .pos { color: var(--fv); }
+.plmiss { margin-top: 12px; font-size: 13px; } .plmiss summary { cursor: pointer; color: var(--gold-text); font-weight: 600; } .plmn { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -4360,7 +4366,7 @@ function renderLedger() { bkLoad();
   host.innerHTML = sideWrap('<div class="card kcard" id="ledCard">' + kband('Ledger', CATALOG.filter(i => !i.hidden).length + ' products', 'Supplier price, sell price and your profit for every product' + (ledger.cfg && ledger.cfg.pct != null ? ' · <b>+' + ledger.cfg.pct + '% markup</b>' : '')) +
     lbOpen('lb-sups', 'Suppliers', SUP_ORDER.length + ' suppliers') + (cardOpen('lb-sups') ? supsHtml() : '') + lbClose('lb-sups') +
     lbOpen('lb-dups', 'Duplicates', (() => { const n = dupPairs().length; return n ? n + ' to check' : 'Nothing to check'; })()) + (cardOpen('lb-dups') ? dupsHtml() : '') + lbClose('lb-dups') +
-    lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%') + (() => { if (!resetCandidates('all').n) return ''; const a = pxActive(); return a.length === 1 ? ' · supplier costs ' + pxPct(a[0].pct) + ' active' : a.length ? ' · supplier cost changes active' : ' · costs edited by hand'; })()) + (cardOpen('lb-price') ? '<section class="lsec"><div class="lsec-h"><b>Supplier changed the prices?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' + pxStatusHtml() +
+    lbOpen('lb-price', 'Prices', ('Markup ' + fmtQty(cfgNow().pct) + '%') + (() => { if (!resetCandidates('all').n) return ''; const a = pxActive(); return a.length === 1 ? ' · supplier costs ' + pxPct(a[0].pct) + ' active' : a.length ? ' · supplier cost changes active' : ' · costs edited by hand'; })()) + (cardOpen('lb-price') ? plHtml() + '<section class="lsec"><div class="lsec-h"><b>Supplier changed every price by the same %?</b><span>What you pay your suppliers. Customer prices update to match.</span></div>' + pxStatusHtml() +
     '<div class="grid2"><div class="field"><label for="bk-sup">Which supplier</label><select id="bk-sup"><option value="all">All suppliers</option>' + SUP_ORDER.map(x => '<option value="' + x + '">' + esc(SUPS[x].name) + '</option>').join('') + '</select></div><div class="field"><label for="bk-pct">Change by (%)</label><input id="bk-pct" inputmode="decimal" placeholder="5 or -3"><p class="hint">5 = 5% higher. -3 = 3% lower.</p></div></div>' +
     '<div class="lact2"><div><button class="btn ghost" data-act="bulk"' + (canWrite ? '' : ' disabled') + '>Apply change</button><p class="hint">Changes the supplier prices by the % above.</p></div><div><button class="btn ghost" data-act="resetprices"' + (canWrite ? '' : ' disabled') + '>Reset to uploaded</button><p class="hint">Goes back to the prices in your uploaded list.</p></div></div>' + pxConfirmHtml() + '</section>' +
     '<section class="lsec"><div class="lsec-h"><b>Your markup</b><span>What you add on top. This sets what customers pay.</span></div>' +
@@ -4428,6 +4434,57 @@ function pxConfirmHtml() {
   const note = a.k === 'bulk' ? 'Only for when a supplier changed their prices (' + who + '). Customer prices move with it. To change your profit, use Your markup below instead.' : 'Every cost you changed by hand for ' + who + ' goes back to the supplier list. Customer prices update to match.';
   return '<div class="pxask' + (a.k === 'bulk' ? ' warn' : '') + '" role="alertdialog" aria-label="Confirm price change"><b class="pxh">' + head + '</b>' + ex + '<p class="pxn">' + note + '</p><div class="pxbtns"><button type="button" class="btn" data-act="pxyes">' + (a.k === 'bulk' ? 'Change ' + a.n + ' cost' + (a.n > 1 ? 's' : '') : 'Reset ' + a.n + ' price' + (a.n > 1 ? 's' : '')) + '</button><button type="button" class="btn ghost" data-act="pxno">Cancel</button></div></div>';
 }
+/* ===== Price list import: paste a supplier's new list, the app matches each line to a product, you review, then one tap updates
+   the costs (customer prices follow). Matches you confirm are remembered per supplier, so the next list matches better. ===== */
+const PL_STOP = new Set(['rp', 'per', 'isi', 'harga', 'price', 'kg', 'gr', 'gram', 'pcs', 'pc', 'pack', 'pak', 'box', 'ctn', 'btl', 'ltr', 'the', 'dan', 'and']);
+const plNorm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+const plToks = t => plNorm(t).split(' ').filter(w => w.length > 1 && !PL_STOP.has(w));
+const PL_UNIT = { kg: 'kg', kilo: 'kg', pcs: 'pcs', pc: 'pcs', biji: 'pcs', ekor: 'pcs', pack: 'pack', pak: 'pack', box: 'box', ctn: 'carton', carton: 'carton', karton: 'carton', btl: 'btl', botol: 'btl', ltr: 'ltr', liter: 'ltr', sisir: 'sisir', ikat: 'pack' };
+function plParse(text) {
+  return String(text || '').split(/\r?\n/).map(raw => { const line = raw.replace(/^[\s\-*•·\d]+[.)]\s+/, '').replace(/^[\s\-*•·]+/, '').trim(); if (!line) return null;
+    let price = 0, cut = null; const k = line.match(/(\d+(?:[.,]\d+)?)\s*k\b/i); const nums = [...line.matchAll(/(\d{1,3}(?:[.,]\d{3})+|\d{4,7})(?:[.,]-|,00)?/g)];
+    if (nums.length) { const m = nums[nums.length - 1]; price = parseInt(m[1].replace(/\D/g, ''), 10); cut = m; } else if (k) { price = Math.round(parseFloat(k[1].replace(',', '.')) * 1000); cut = k; }
+    if (!(price >= 100)) return null;
+    const um = line.match(/(?:\/|\bper\s*|\bse?\s*)(kg|kilo|pcs|pc|biji|ekor|pack|pak|box|ctn|carton|karton|btl|botol|ltr|liter|sisir|ikat)\b/i);
+    const name = (line.slice(0, cut.index) + ' ' + line.slice(cut.index + cut[0].length)).replace(/\brp\.?/ig, ' ').replace(/(?:\/|\bper\s+)(kg|kilo|pcs|pc|biji|ekor|pack|pak|box|ctn|carton|karton|btl|botol|ltr|liter|sisir|ikat)\b/ig, ' ').replace(/[=:@|\t]+/g, ' ').replace(/\s+/g, ' ').replace(/^[\s\-.,]+|[\s\-.,]+$/g, '');
+    return name ? { raw: line, name, price, u: um ? PL_UNIT[um[1].toLowerCase()] : '' } : null; }).filter(Boolean);
+}
+const plGrams = t => { const x = plNorm(t).replace(/ /g, ''), g = []; for (let i = 0; i < x.length - 1; i++) g.push(x.slice(i, i + 2)); return g; };
+const plDice = (a, b) => { const A = plGrams(a), B = plGrams(b); if (!A.length || !B.length) return 0; const m = {}; A.forEach(g => { m[g] = (m[g] || 0) + 1; }); let hit = 0; B.forEach(g => { if (m[g]) { m[g]--; hit++; } }); return 2 * hit / (A.length + B.length); };
+function plScore(a, it) { const na = plNorm(a); let best = 0;
+  [it.n, it.e, supName(it)].filter(Boolean).forEach(b => { const nb = plNorm(b); if (na === nb) { best = 1; return; } const ta = new Set(plToks(a)), tb = new Set(plToks(b)); if (!ta.size || !tb.size) return; let hit = 0; ta.forEach(w => { if (tb.has(w)) hit++; }); let sc = 2 * hit / (ta.size + tb.size); if (hit && (nb.includes(na) || na.includes(nb))) sc = Math.max(sc, .85); best = Math.max(best, sc, plDice(a, b) * .95); });
+  return best; }
+const plOpt = (it, u) => { let j = u ? it.o.findIndex(o => o.u === u) : -1; if (j < 0) j = it.o.findIndex(o => o.pr > 0); return j < 0 ? 0 : j; };
+function plCompute() { const P = ui.pl; if (!P || !P.lines) return null; const sid = P.sid; const prods = CATALOG.filter(it => it.s === sid); const mem = ((ledger.plmap || {})[sid]) || {}; const used = {};
+  const rows = P.lines.map((ln, i) => { const pick = (P.pick || {})[i]; let it = null, sc = 0, how = '';
+    if (pick === 'skip') how = 'skip'; else if (pick && BY_ID[pick]) { it = BY_ID[pick]; sc = 1; how = 'pick'; }
+    else if (mem[plNorm(ln.name)] && BY_ID[mem[plNorm(ln.name)]]) { it = BY_ID[mem[plNorm(ln.name)]]; sc = 1; how = 'mem'; }
+    else { prods.forEach(p => { const v = plScore(ln.name, p); if (v > sc) { sc = v; it = p; } }); if (sc < .55) it = null; else how = 'auto'; }
+    const j = it ? plOpt(it, ln.u) : 0; const key = it ? it.id + '|' + j : ''; if (key && used[key] !== undefined) { it = null; how = 'dup'; } else if (key) used[key] = i;
+    const old = it ? it.o[j].pr || 0 : 0; const pct = old > 0 ? (ln.price - old) / old * 100 : null; const big = pct !== null && Math.abs(pct) >= 40;
+    return { i, ln, it, j, sc, how, old, pct, big, on: !!it && ln.price !== old && !((P.off || {})[i] !== undefined ? P.off[i] : big) }; });
+  const seen = new Set(rows.filter(r => r.it).map(r => r.it.id)); const missing = prods.filter(p => !p.hidden && p.o.some(o => o.pr > 0) && !seen.has(p.id));
+  return { rows, ch: rows.filter(r => r.it && r.ln.price !== r.old), same: rows.filter(r => r.it && r.ln.price === r.old), none: rows.filter(r => !r.it), missing }; }
+function plHtml() { const P = ui.pl || {}; const ro = canWrite ? '' : ' disabled'; const sid = P.sid || SUP_ORDER[0];
+  const sel = '<select id="pl-sup"' + ro + '>' + SUP_ORDER.map(x => '<option value="' + x + '"' + (x === sid ? ' selected' : '') + '>' + esc(SUPS[x].name) + '</option>').join('') + '</select>';
+  if (!P.lines) return '<section class="lsec"><div class="lsec-h"><b>New price list from a supplier?</b><span>Paste it here. You check every change before anything is saved.</span></div>' +
+    '<div class="field"><label for="pl-sup">Which supplier</label>' + sel + '</div><div class="field"><label for="pl-txt">Their price list</label><textarea id="pl-txt" class="pre sm" rows="7" placeholder="Paste the WhatsApp message, or copy the text from their PDF or Excel. One product per line, e.g.&#10;Chicken breast boneless 44.000/kg"' + ro + '>' + esc(P.text || '') + '</textarea></div>' +
+    '<div class="kfoot"><button type="button" class="omain" data-act="plcheck"' + ro + '>Check the list</button></div></section>';
+  const C = plCompute(); const up = C.ch.filter(r => r.ln.price > r.old && r.old > 0).length, dn = C.ch.filter(r => r.ln.price < r.old).length, nw = C.ch.filter(r => !(r.old > 0)).length; const nOn = C.rows.filter(r => r.on).length;
+  const opts = (r) => { const prods = CATALOG.filter(it => it.s === P.sid).map(p => [p, plScore(r.ln.name, p)]).sort((a, b) => b[1] - a[1]).slice(0, 12); return '<select data-plpick="' + r.i + '" aria-label="Which product is ' + esc(r.ln.name) + '"><option value="">Choose the product…</option>' + prods.map(x => '<option value="' + x[0].id + '">' + esc(supName(x[0])) + (x[0].e && x[0].e !== supName(x[0]) ? ' · ' + esc(x[0].e) : '') + '</option>').join('') + '<option value="skip"' + (r.how === 'skip' ? ' selected' : '') + '>Not ours, skip it</option></select>'; };
+  const chRow = r => '<label class="plrow' + (r.big ? ' big' : '') + '"><input type="checkbox" data-plon="' + r.i + '"' + (r.on ? ' checked' : '') + ro + '><span class="pln"><b>' + esc(supName(r.it)) + (r.it.o.length > 1 ? ' <small>' + esc(optLabel(r.it.o[r.j])) + '</small>' : '') + '</b><small>' + (r.how === 'auto' && r.sc < 1 ? 'Their line: ' + esc(r.ln.name) : r.how === 'pick' ? 'You matched this' : r.how === 'mem' ? 'Matched like last time' : 'Exact match') + (r.big ? ' · <em>Big change, check it</em>' : '') + '</small></span><span class="plp num">' + (r.old > 0 ? '<s>' + fmtRp(r.old) + '</s>' : '<i>No price yet</i>') + '<b>' + fmtRp(r.ln.price) + '</b>' + (r.pct !== null ? '<em class="' + (r.pct > 0 ? 'neg' : 'pos') + '">' + pxPct(r.pct) + '</em>' : '') + '</span></label>';
+  const noRow = r => '<div class="plrow none"><span class="pln"><b>' + esc(r.ln.name) + '</b><small>' + fmtRp(r.ln.price) + (r.how === 'dup' ? ' · matched a product already on the list' : '') + '</small></span>' + opts(r) + '</div>';
+  return '<section class="lsec plrev"><div class="lsec-h"><b>' + esc(SUPS[P.sid].name) + ': ' + C.rows.length + ' lines read</b><span><span class="neg">' + up + ' up</span> · <span class="pos">' + dn + ' down</span>' + (nw ? ' · ' + nw + ' new price' + (nw > 1 ? 's' : '') : '') + ' · ' + C.same.length + ' unchanged' + (C.none.length ? ' · <b>' + C.none.length + ' to match</b>' : '') + '</span></div>' +
+    (C.ch.length ? '<div class="plgrp"><span class="lgl">Price changes</span>' + C.ch.map(chRow).join('') + '</div>' : '<p class="hint">No price changes in this list.</p>') +
+    (C.none.length ? '<div class="plgrp"><span class="lgl">Which product is this?</span>' + C.none.map(noRow).join('') + '</div>' : '') +
+    (C.missing.length ? '<details class="plmiss"><summary>' + C.missing.length + ' of their products are not in this list</summary><p class="hint">They keep their current price. If one is no longer sold, mark it sold out in the product list.</p><p class="plmn">' + C.missing.slice(0, 60).map(p => esc(supName(p))).join(' · ') + (C.missing.length > 60 ? ' …' : '') + '</p></details>' : '') +
+    '<div class="kfoot"><button type="button" class="omain" data-act="plapply"' + (nOn ? '' : ' disabled') + ro + '>' + (nOn ? 'Update ' + nOn + ' price' + (nOn > 1 ? 's' : '') : 'Nothing selected') + '</button><div class="osubs"><button type="button" class="osub ghost" data-act="plback">Change the list</button><button type="button" class="osub ghost" data-act="plcancel">Cancel</button></div></div>' +
+    '<p class="hint" style="margin-top:6px">Customer prices update with your ' + fmtQty(cfgNow().pct) + '% markup. You can undo right after.</p></section>'; }
+function plApply() { const C = plCompute(); if (!C) return; const ov = {}, prev = {}, mem = {}; let n = 0;
+  C.rows.filter(r => r.on).forEach(r => { const id = r.it.id; const cur = ((ledger.ov || {})[id] || {}).pr || []; if (!ov[id]) { ov[id] = { pr: r.it.o.map((_, j) => (cur[j] === undefined ? null : cur[j])) }; prev[id] = { pr: ov[id].pr.slice() }; } ov[id].pr[r.j] = r.ln.price; n++; });
+  C.rows.filter(r => r.it && (r.how === 'pick' || r.how === 'auto' && r.sc < 1)).forEach(r => { mem[plNorm(r.ln.name)] = r.it.id; });
+  if (!n) return; const sid = ui.pl.sid; saveLedger(Object.assign({ ov }, Object.keys(mem).length ? { plmap: { [sid]: mem } } : {})); const at = pxLogAdd({ k: 'list', sid, n }); ui.pl = null;
+  toast('Updated ' + n + ' price' + (n > 1 ? 's' : '') + ' from the ' + SUPS[sid].name + ' list.', { label: 'Undo', fn: () => { saveLedger({ ov: prev }); pxLogDrop(at); renderLedger(); } }); renderLedger(); }
 /* Price change history: every supplier-wide change and reset, newest last, kept to 30 entries */
 const pxLog = () => (Array.isArray(ledger.pxlog) ? ledger.pxlog : []);
 function pxLogAdd(e) { const log = pxLog().concat([Object.assign({ at: Date.now() }, e)]).slice(-30); saveLedger({ pxlog: log }); return log[log.length - 1].at; }
@@ -4449,7 +4506,7 @@ function pxStatusHtml() {
   const head = !n ? '<p class="pxstat ok">&#10003; All costs match the uploaded supplier lists.</p>'
     : act.length ? '<div class="pxstat diff pxact"><b>Price adjustment active</b>' + act.map(a => '<span><em class="num">' + pxPct(a.pct) + '</em> on ' + esc(pxWho(a.sid)) + ' since ' + pxWhen(a.at) + '</span>').join('') + '<small>' + n + ' cost' + (n > 1 ? 's' : '') + ' differ from the supplier lists. Use Reset below to undo it.</small></div>'
     : '<p class="pxstat diff"><i class="blinkdot" aria-hidden="true"></i><b>' + n + ' cost' + (n > 1 ? 's' : '') + ' differ from the uploaded supplier lists.</b> Edited by hand. Reset below if that is not on purpose.</p>';
-  const hist = log.length ? '<details class="pxhist"><summary>Price change history <small>' + log.length + '</small></summary><ol>' + log.slice().reverse().map(e => '<li><span class="num">' + pxWhen(e.at) + ', ' + new Date(e.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</span><b>' + (e.k === 'bulk' ? pxPct(e.pct) : 'Reset to supplier lists') + '</b><span>' + esc(pxWho(e.sid)) + ' · ' + e.n + ' product' + (e.n > 1 ? 's' : '') + '</span></li>').join('') + '</ol></details>' : '';
+  const hist = log.length ? '<details class="pxhist"><summary>Price change history <small>' + log.length + '</small></summary><ol>' + log.slice().reverse().map(e => '<li><span class="num">' + pxWhen(e.at) + ', ' + new Date(e.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</span><b>' + (e.k === 'bulk' ? pxPct(e.pct) : e.k === 'list' ? 'New price list, ' + e.n + ' updated' : 'Reset to supplier lists') + '</b><span>' + esc(pxWho(e.sid)) + ' · ' + e.n + ' product' + (e.n > 1 ? 's' : '') + '</span></li>').join('') + '</ol></details>' : '';
   return head + hist;
 }
 function addProduct() {
@@ -4639,6 +4696,10 @@ document.addEventListener('click', e => {
   else if (act === 'csvledger') { exportLedgerCsv(); }
   else if (act === 'resetprices') { askResetPrices(document.getElementById('bk-sup').value); }
   else if (act === 'pxno') { ui.pxAsk = null; renderLedger(); }
+  else if (act === 'plcheck') { const t = (document.getElementById('pl-txt') || {}).value || '', sid = (document.getElementById('pl-sup') || {}).value; const lines = plParse(t); if (!lines.length) { toast('No prices found. Paste lines with a name and a price, like Chicken breast 44.000.'); return; } ui.pl = { sid, text: t, lines, pick: {}, off: {} }; renderLedger(); }
+  else if (act === 'plback') { if (ui.pl) { ui.pl.lines = null; } renderLedger(); }
+  else if (act === 'plcancel') { ui.pl = null; renderLedger(); }
+  else if (act === 'plapply') { plApply(); }
   else if (act === 'pxyes') { const a = ui.pxAsk; ui.pxAsk = null; if (!a) return;
     if (a.k === 'bulk') { const c = bulkCompute(a.sid, a.pct); if (c.n) { saveLedger({ ov: c.ov }); const at = pxLogAdd({ k: 'bulk', sid: a.sid, pct: a.pct, n: c.n }); toast('Changed ' + c.n + ' cost' + (c.n > 1 ? 's' : '') + ' by ' + (a.pct > 0 ? '+' : '') + a.pct + '%.', { label: 'Undo', fn: () => { saveLedger({ ov: c.prev }); pxLogDrop(at); renderLedger(); } }); } }
     else { const c = resetCandidates(a.sid); if (c.n) { saveLedger({ ov: c.ov }); const at = pxLogAdd({ k: 'reset', sid: a.sid, n: c.n }); toast(c.n + ' price' + (c.n > 1 ? 's' : '') + ' reset to the supplier lists.', { label: 'Undo', fn: () => { saveLedger({ ov: c.prev }); pxLogDrop(at); renderLedger(); } }); } }
@@ -4729,6 +4790,8 @@ document.addEventListener('change', e => {
   else if (t.matches && t.matches('select[data-drvfor]')) { updCust(t.dataset.drvfor, { drv: t.value }); }
   else if (t.id === 'bankTxt') { bankTxt = t.value.slice(0, 400); LS.set('mumu-bank', bankTxt); if (db) { custChain = custChain.then(() => db.doc('settings/host').set({ wa: myWA, bank: bankTxt })).catch(() => {}); } toast('Payment details saved.'); renderCustomers(); }
   else if (t.matches('input[data-cfee]')) { const raw = String(t.value).replace(/\D/g, ''); updCust(t.dataset.cfee, { fee: raw === '' ? null : parseInt(raw, 10) }); }
+  else if (t.matches('select[data-plpick]') && ui.pl) { ui.pl.pick[t.dataset.plpick] = t.value; delete ui.pl.off[t.dataset.plpick]; renderLedger(); }
+  else if (t.matches('input[data-plon]') && ui.pl) { ui.pl.off[t.dataset.plon] = !t.checked; renderLedger(); }
   else if (t.matches('input[data-limport]')) { const fl = t.files && t.files[0]; t.value = ''; if (fl) importBundle(fl); }
   else if (t.matches('input[data-lphoto]')) { const fl = t.files && t.files[0]; const pid = t.dataset.lphoto; t.value = ''; if (fl) uploadPhoto(pid, fl); }
   else if (t.matches('select[data-cmsg]')) {
