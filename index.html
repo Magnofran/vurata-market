@@ -940,7 +940,8 @@ a.cdrow, button.cdrow { cursor: pointer; } @media (hover: hover) { a.cdrow:hover
 .cdrow.warn .cdic { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); } .cdrow.warn small { color: var(--warn); }
 .cdrow.bad .cdic { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); } .cdrow.bad b { color: var(--danger); }
 .cdnote { cursor: text; } .cdnote input { border: 0; background: none; padding: 0; min-height: 22px; font: inherit; font-size: 15px; color: var(--ink); width: 100%; min-width: 0; outline: 0; } .cdnote input::placeholder { color: var(--muted); }
-.cdnote input { min-height: 38px; padding: 0 10px; margin-left: -10px; width: calc(100% + 10px); border: 1px solid transparent; border-radius: 8px; transition: border-color .12s, background-color .12s; }
+.cdnote { align-items: start; } .cdnote .cdic { margin-top: 1px; } .cdnote .cdtx { gap: 6px; grid-column: 2 / -1; } .cdnote small { padding-left: 13px; }
+.cdnote input { min-height: 38px; padding: 0 12px; width: 100%; border: 1px solid transparent; border-radius: 8px; transition: border-color .12s, background-color .12s; }
 .cdnote input:placeholder-shown { background: var(--surface); border-color: var(--line-dark); }
 .cdnote input:focus { background: var(--surface); border-color: var(--gold); }
 @media (hover: hover) { .cdnote input:not(:focus):hover { border-color: var(--line-dark); } }
