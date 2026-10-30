@@ -1049,7 +1049,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .cmsgopt { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 8px 14px; color: var(--ink); text-decoration: none; font-size: 14px; }
 .cmsgopt .ce { width: 22px; text-align: center; flex: none; } .cmsgopt .ct { flex: 1; display: grid; gap: 1px; min-width: 0; } .cmsgopt .ct b { font-weight: 600; } .cmsgopt .ct small { font-size: 12px; color: var(--muted); }
 .cmsgopt em { flex: none; font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; background: var(--gold); color: #fff; }
-.cmsgopt.next { background: color-mix(in srgb, var(--gold) 12%, var(--surface)); box-shadow: inset 3px 0 0 var(--gold); }
+.cmsgopt.next { background: color-mix(in srgb, var(--gold) 10%, var(--surface)); } .cmsgopt.next::after { content: 'Next'; margin-left: auto; flex: none; padding: 3px 8px; background: var(--gold); color: #1a1406; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 @media (hover: hover) { .cmsgopt:hover { background: var(--surface-2); } }
 .additem { width: 100%; min-height: 44px; margin: 10px 0 4px; border: 1px dashed var(--line-dark); background: none; color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 @media (hover: hover) { .additem:hover { border-style: solid; background: var(--surface-2); } }
@@ -4137,7 +4137,24 @@ function renderCustomers() {
     lbOpen('payCard', 'Payment details', bankTxt ? 'Added' : 'Not added yet') + (cardOpen('payCard') ? '<section class="lsec">' + invite.slice(pIx).replace('<div class="card"><h3>Payment details</h3>', '').slice(0, -6) + '</section>' : '') + lbClose('payCard') + '</div>';
   host.innerHTML = nextBarHtml() + sideWrap(overviewHtml() + '' + imp + list + comb + driverHtml() + inviteFinal, custSide()); pinOpenRows(host);
   const ta = document.getElementById('importTxt'); if (ta && prevTxt) ta.value = prevTxt;
+  goSpot();
 }
+/* Coming back from WhatsApp can reload the page (the phone drops it while you are away).
+   Open cards, open rows, filters and the scroll spot are kept for this tab, so you land where you left. */
+const SPOT_KEYS = ['custOpen', 'cexp', 'osec', 'cfil', 'cview', 'person', 'showDel', 'keep'];
+function saveSpot() { if (cmode) return;
+  const o = { at: Date.now() }; SPOT_KEYS.forEach(k => { if (ui[k] !== undefined) o[k] = ui[k]; });
+  if (ui.view === 'cust') { const bh = document.getElementById('bar').getBoundingClientRect().height; const el = [...document.querySelectorAll('#custList [data-cid], #custList .orow, #custList .obody')].find(x => x.getBoundingClientRect().bottom > bh + 4);
+    const card = el && el.closest('[data-cid]'); if (card) { o.cid = card.dataset.cid; o.off = card.getBoundingClientRect().top; } }
+  try { sessionStorage.setItem('vm-spot', JSON.stringify(o)); } catch (e) {} }
+function loadSpot() { if (cmode) return; let o = null; try { o = JSON.parse(sessionStorage.getItem('vm-spot') || 'null'); } catch (e) {}
+  if (!o || Date.now() - o.at > 6 * 36e5) return; SPOT_KEYS.forEach(k => { if (o[k] !== undefined) ui[k] = o[k]; }); if (o.cid) ui.spot = { cid: o.cid, off: o.off, until: Date.now() + 4000 }; }
+function goSpot() { const sp = ui.spot; if (!sp || Date.now() > sp.until || ui.view !== 'cust') return; const el = document.querySelector('#custList [data-cid="' + sp.cid + '"]'); if (!el) return;
+  requestAnimationFrame(() => window.scrollTo(0, window.scrollY + el.getBoundingClientRect().top - sp.off)); }
+['touchstart', 'wheel', 'keydown'].forEach(t => addEventListener(t, () => { ui.spot = null; }, { passive: true }));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveSpot(); });
+addEventListener('pagehide', saveSpot);
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('a[target="_blank"]')) saveSpot(); }, true);
 async function pasteOrder() {
   let txt = null; try { txt = await navigator.clipboard.readText(); } catch (e) { txt = null; }
   if (txt === null) { ui.impOpen = true; ui.impOpt = 'wa'; renderCustomers(); toast('Paste the customer message into the box.'); setTimeout(() => { const el = document.getElementById('importTxt'); if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); } }, 80); return; }
@@ -5242,7 +5259,7 @@ async function boot() {
   const st = await window.SB.ready;
   if (window.SB.recovery) { showLogin('', 'recovery'); return; }
   if (location.hash === '#staff' && !st.admin) { showLogin(st.session ? 'This account does not have staff access.' : ''); return; }
-  if (!early) restoreUi(); if (cmode && !HAS_INIT) ui.loading = true;
+  if (!early) { restoreUi(); loadSpot(); } if (cmode && !HAS_INIT) ui.loading = true;
   
   renderFilters(); renderPick(); showView(early ? ui.view : startView()); renderAll(false); if (!early) setSync('local', 'Connecting');
   const [dbc, uc, dc, ac] = await Promise.all([cap('db'), cap('user'), cap('downloads'), cap('assets')]);
