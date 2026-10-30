@@ -1207,6 +1207,34 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .cflags { display: inline-flex; gap: 6px; vertical-align: -3px; margin-right: 8px; } .bs .cflags { margin: 0; }
 .fl { display: inline-grid; place-items: center; width: 22px; height: 22px; } .fl svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .fl.good { color: var(--fv); } .fl.warn { color: var(--warn); } .fl.bad { color: var(--danger); } .fl.soft { color: var(--muted); }
+/* supplier pickup list */
+.pickup { padding-bottom: 12px; } .pkhead { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0; border: 0; background: none; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+.pkhead b { display: block; font-size: 17px; } .pkhead small { font-size: 12.5px; color: var(--muted); } .pkcount { font-size: 15px; font-weight: 700; }
+.pkbar { height: 6px; margin: 10px 0 14px; background: var(--surface-2); overflow: hidden; } .pkbar i { display: block; height: 100%; background: var(--fv); transition: width .25s ease; }
+.pksup { border: 1px solid var(--line-dark); margin-bottom: 10px; background: var(--surface); } .pksup.all { border-color: var(--fv); }
+.pkh { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 10px 14px; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.pkdot { width: 10px; height: 10px; border-radius: 50% !important; background: var(--sc); flex: none; } .pkhn { flex: 1; display: grid; gap: 1px; min-width: 0; } .pkhn b { font-size: 15px; } .pkhn span { font-size: 12.5px; color: var(--muted); } .pksup.all .pkhn span { color: var(--fv); font-weight: 600; }
+.pkok { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50% !important; background: var(--fv); } .pkok svg { width: 15px; height: 15px; fill: none; stroke: var(--on-sup); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; } .pkchev { color: var(--muted); }
+.pkbody { border-top: 1px solid var(--line); }
+.pkrow { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); } .pkrow:last-child { border-bottom: 0; }
+.pkt { flex: 1; display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 8px 14px; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; min-width: 0; }
+.pkbox { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border: 1.5px solid var(--line-dark); border-radius: 7px !important; background: var(--surface); }
+.pkbox svg { width: 17px; height: 17px; fill: none; stroke: transparent; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.pkrow.done .pkbox { background: var(--fv); border-color: var(--fv); } .pkrow.done .pkbox svg { stroke: var(--on-sup); }
+.pkrow.done .pkn b { text-decoration: line-through; text-decoration-thickness: 1px; color: var(--muted); } .pkrow.done .pkq { color: var(--muted); }
+.pkn { flex: 1; display: grid; gap: 2px; min-width: 0; } .pkn b { font-size: 15px; } .pkn b small { font-weight: 500; color: var(--muted); font-size: 12.5px; } .pkn > span { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.pkq { flex: none; font-size: 16px; font-weight: 700; white-space: nowrap; }
+.pkmore { flex: none; width: 44px; border: 0; border-left: 1px solid var(--line); background: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+.pkmenu { display: grid; gap: 8px; padding: 10px 14px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.pkmv { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.pknew { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; } .pknew.solo { margin-top: 6px; } @media (max-width: 520px) { .pknew { grid-template-columns: minmax(0, 1fr); } }
+.pkrow.gone { background: color-mix(in srgb, var(--danger) 6%, var(--surface)); align-items: center; padding-right: 14px; } .pkrow.gone .pkt { cursor: default; } .pkrow.gone .pkn b { text-decoration: line-through; color: var(--danger); } .pkrow.gone .pkn > span { color: var(--danger); }
+.pkbox.na { background: var(--danger); border-color: var(--danger); color: var(--on-sup); font-size: 13px; font-weight: 700; }
+.pkfoot { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid var(--line); } .pkfoot .btn { width: auto; }
+.pkdone { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin-bottom: 10px; background: color-mix(in srgb, var(--fv) 10%, var(--surface)); border: 1px solid var(--fv); font-size: 13.5px; } .pkdone > svg { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--fv); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; } .pkdone span { flex: 1; } .pkdone .btn { width: auto; }
+.pkadd { margin-top: 4px; }
+.pkna { min-height: 42px; border: 1px solid var(--danger); background: var(--surface); color: var(--danger); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; } @media (hover: hover) { .pkna:hover { background: var(--danger); color: var(--on-sup); } }
+@media (hover: hover) { .pkt:hover, .pkh:hover { background: var(--surface-2); } .pkrow.gone .pkt:hover { background: none; } }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3343,6 +3371,40 @@ function boardHtml() {
   return '<div class="card dayboard"><div class="msg-head"><h3>Deliveries</h3><div class="btabs" role="group" aria-label="Delivery day">' + tabs + '</div></div>' +
     (overdue.length ? '<div class="bover"><b>' + overdue.length + ' overdue</b> ' + overdue.map(c => '<button type="button" class="linkbtn" data-act="nxopen" data-id="' + esc(c.id) + '">' + esc(firstName(c)) + ' · ' + shortDate(c.need) + '</button>').join(' ') + '</div>' : '') +
     (days.length ? '<div class="bgrid w' + wins.length + '">' + wins.map(col).join('') + '</div>' : '') + '</div>'; }
+/* ===== Supplier pickup list: one checklist per supplier for the board's delivery day =====
+   Ticking a row marks that item packed in every order of the day; Not available removes it from those orders (bills show it struck through). */
+function boardDay() { const today = isoOf(baliNow()); const days = [...new Set(cust.filter(c => c.status !== 'cancelled' && c.need && c.need >= today && (c.status !== 'delivered')).map(c => c.need))].sort().slice(0, 3); return days.includes(ui.bday) ? ui.bday : days[0] || ''; }
+function pickupData(day) {
+  const orders = cust.filter(c => c.need === day && (c.status || 'new') !== 'cancelled' && c.status !== 'delivered'); const sups = {};
+  orders.forEach(c => { const comp = compute(custState(c), 'cost');
+    comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st === 'x') return; const S1 = sups[g.sid] = sups[g.sid] || { sid: g.sid, rows: {}, gone: [] }; const r = S1.rows[ln.key] = S1.rows[ln.key] || { key: ln.key, it: ln.it, o: ln.o, q: 0, cost: 0, who: [], picked: true };
+      r.q = Math.round((r.q + ln.q) * 100) / 100; r.cost += ln.total || 0; r.who.push({ c, q: ln.q }); if (!(c.pk && c.pk[ln.key])) r.picked = false; }));
+    removedLines(c).forEach(r => { const it = BY_ID[r.key.split('|')[0]]; const sid = it ? it.s : r.sid; const S1 = sups[sid] = sups[sid] || { sid, rows: {}, gone: [] }; const g0 = S1.gone.find(x => x.key === r.key); if (g0) { g0.who.push({ c, q: r.oq }); g0.q += r.oq; } else S1.gone.push({ key: r.key, it, o: r.o, q: r.oq, who: [{ c, q: r.oq }] }); }); });
+  const list = SUP_ORDER.filter(id => sups[id]).concat(Object.keys(sups).filter(id => !SUP_ORDER.includes(id))).map(id => { const S1 = sups[id]; const rows = Object.values(S1.rows).sort((a, b) => (a.picked - b.picked) || (ORDER_IX[a.key.split('|')[0]] - ORDER_IX[b.key.split('|')[0]])); return { sid: id, rows, gone: S1.gone, done: rows.filter(r => r.picked).length, cost: rows.reduce((t, r) => t + r.cost, 0) }; });
+  return { orders, list, total: list.reduce((t, x) => t + x.rows.length, 0), done: list.reduce((t, x) => t + x.done, 0) };
+}
+function pickupHtml() {
+  const day = boardDay(); if (!day) return ''; const P = pickupData(day); if (!P.total && !P.list.some(x => x.gone.length)) return '';
+  const tm = isoOf(new Date(baliNow().getTime() + 864e5)), today = isoOf(baliNow()); const lab = day === today ? 'Today' : day === tm ? 'Tomorrow' : new Date(day + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  const open = ui.pkOpen === undefined ? true : ui.pkOpen; const pct = P.total ? Math.round(P.done / P.total * 100) : 100; const ro = canWrite ? '' : ' disabled';
+  const unit = o => UNIT_EN[o.u] || o.u;
+  const supOpts = cur => SUP_ORDER.map(id => '<option value="' + id + '"' + (id === cur ? ' selected' : '') + '>' + esc(SUPS[id].name) + '</option>').join('') + '<option value="__new">+ New supplier…</option>';
+  const row = (x, r) => { const k = x.sid + '|' + r.key; const who = r.who.map(w => esc(firstName(w.c)) + ' ' + fmtQty(w.q)).join(' · '); const menu = ui.pkMenu === k;
+    return '<div class="pkrow' + (r.picked ? ' done' : '') + '"><button type="button" class="pkt" data-act="pktick" data-k="' + esc(k) + '" aria-pressed="' + r.picked + '"' + ro + '><span class="pkbox" aria-hidden="true">' + ICO.check + '</span><span class="pkn"><b>' + esc(supName(r.it)) + (r.it.e && r.it.e !== supName(r.it) ? ' <small>· ' + esc(r.it.e) + '</small>' : '') + '</b><span>' + who + '</span></span><span class="pkq num">' + fmtQty(r.q) + ' ' + esc(unit(r.o)) + '</span></button><button type="button" class="pkmore" data-act="pkmore" data-k="' + esc(k) + '" aria-label="More for ' + esc(supName(r.it)) + '" aria-expanded="' + menu + '"' + ro + '>⋯</button></div>' +
+      (menu ? '<div class="pkmenu"><button type="button" class="pkna" data-act="pkna" data-k="' + esc(k) + '">Not available</button><label class="pkmv"><span>Buy from</span><select data-pkmove="' + esc(r.key) + '">' + supOpts(x.sid) + '</select></label>' +
+        (ui.pkNew === r.key ? '<div class="pknew"><input id="pkns-name" placeholder="Supplier name, e.g. Pak Made fruit"><input id="pkns-wa" inputmode="tel" placeholder="WhatsApp (optional)"><button type="button" class="btn sm" data-act="pknewsave" data-key="' + esc(r.key) + '">Add and move</button></div>' : '') + '</div>' : ''); };
+  const goneRow = (x, g) => '<div class="pkrow gone"><span class="pkt"><span class="pkbox na" aria-hidden="true">✕</span><span class="pkn"><b>' + esc(g.it ? supName(g.it) : g.key) + '</b><span>Not available · removed from ' + g.who.map(w => esc(firstName(w.c))).join(', ') + '</span></span></span><button type="button" class="linkbtn" data-act="pkback" data-key="' + esc(g.key) + '" data-day="' + day + '"' + ro + '>Undo</button></div>';
+  const supCard = x => { const S1 = SUPS[x.sid] || { name: x.sid }; const all = x.rows.length && x.done === x.rows.length; const so = ui.pkSup && ui.pkSup[x.sid] !== undefined ? ui.pkSup[x.sid] : !all;
+    const msg = 'Halo ' + (S1.short || S1.name) + ', pesanan Vurata Market untuk ' + fmtDate(day, 'id') + ':\n' + x.rows.map(r => '- ' + supName(r.it) + ': ' + fmtQty(r.q) + ' ' + unitId(unit(r.o))).join('\n') + '\n\nTerima kasih!';
+    return '<div class="pksup' + (all ? ' all' : '') + '" style="--sc:' + (S1.rgb ? 'rgb(' + S1.rgb.join(',') + ')' : 'var(--gold)') + '"><button type="button" class="pkh" data-act="pksup" data-id="' + x.sid + '" aria-expanded="' + so + '"><span class="pkdot"></span><span class="pkhn"><b>' + esc(S1.name) + '</b><span>' + (!x.rows.length ? 'Nothing to pick' : (all ? 'All ' + x.rows.length + ' picked' : x.done + ' of ' + x.rows.length + ' picked') + ' · ' + fmtRp(x.cost)) + '</span></span>' + (all ? '<span class="pkok">' + ICO.check + '</span>' : '<span class="pkchev" aria-hidden="true">▾</span>') + '</button>' +
+      (so ? '<div class="pkbody">' + x.rows.map(r => row(x, r)).join('') + x.gone.map(g => goneRow(x, g)).join('') + (x.rows.length ? '<div class="pkfoot">' + (S1.wa ? '<a class="btn ghost sm" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + S1.wa + '&text=' + encodeURIComponent(msg) + '">Send list on WhatsApp</a>' : '<span class="hint">Add their WhatsApp in Ledger to send the list.</span>') + '<button type="button" class="btn ghost sm" data-act="pkcopy" data-t="' + esc(msg) + '">Copy list</button></div>' : '') + '</div>' : '') + '</div>'; };
+  const allDone = P.total && P.done === P.total;
+  return '<div class="card pickup" id="pickCard"><button type="button" class="pkhead" data-act="pktog" aria-expanded="' + open + '"><span><b>Pickup list</b><small>' + lab + ' · ' + P.orders.length + ' order' + (P.orders.length === 1 ? '' : 's') + '</small></span><span class="pkcount num">' + P.done + ' of ' + P.total + '</span></button>' +
+    '<div class="pkbar"><i style="width:' + pct + '%"></i></div>' +
+    (open ? P.list.map(supCard).join('') + (allDone ? '<div class="pkdone">' + ICO.check + '<span><b>Everything is picked.</b> Next, send the drivers their run.</span><button type="button" class="btn sm" data-act="goto" data-t="#driverCard">Drivers</button></div>' : '') +
+      (ui.pkAddSup ? '<div class="pknew solo"><input id="pkns-name2" placeholder="Supplier name, e.g. Pak Made fruit"><input id="pkns-wa2" inputmode="tel" placeholder="WhatsApp (optional)"><button type="button" class="btn sm" data-act="pknewsup">Add supplier</button></div>' : '<button type="button" class="linkbtn pkadd" data-act="pkaddsup">+ New supplier</button>') : '') + '</div>';
+}
+function pkOrders(k) { const i = k.indexOf('|'); const key = k.slice(i + 1); return { key, orders: cust.filter(c => c.need === boardDay() && c.status !== 'cancelled' && c.status !== 'delivered' && c.lines && c.lines[key] && c.lines[key].q > 0) }; }
 function overviewHtml() {
   const ns = nextStep();
   const nx = '<div class="nextstep"><span><i>Next</i>' + esc(ns.t) + '</span>' + (ns.b ? '<button type="button" class="btn sm" ' + (ns.go ? 'data-act="goto" data-t="' + ns.go + '"' : 'data-act="' + ns.act + '"') + '>' + ns.b + '</button>' : '') + '</div><button type="button" class="btn pastebtn" data-act="pasteorder"' + (canWrite ? '' : ' disabled') + '>Paste order from clipboard</button>';
@@ -3357,7 +3419,7 @@ function overviewHtml() {
   const areaRows = Object.keys(by).sort((a, b) => by[b] - by[a] || a.localeCompare(b)).map(z => [z, by[z], false]);
   const brkCol = (title, rows) => rows.length ? '<div class="brk"><h4>' + title + '</h4><ul>' + rows.map(r => '<li' + (r[2] ? ' class="neg"' : '') + '><span>' + esc(r[0]) + '</span><b class="num">' + r[1] + '</b></li>').join('') + '</ul></div>' : '';
   const brkHtml = (d, a) => (d.length || a.length) ? '<div class="brkgrid">' + brkCol('Deliveries by day', d) + brkCol('Deliveries by area', a) + '</div>' : '';
-  return boardHtml(); /* the next action sits above everything; counts and Paste live in the Today panel */
+  return boardHtml() + pickupHtml(); /* the next action sits above everything; counts and Paste live in the Today panel */
 }
 function packState(c, comp) { let n = 0, done = 0; comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st === 'x') return; n++; if (c.pk && c.pk[ln.key]) done++; })); return { n, done }; }
 const ID_SLOT = { 'Morning (10 AM to 2 PM)': 'Pagi (10.00-14.00)', 'Afternoon (2 to 6 PM)': 'Siang (14.00-18.00)', 'Evening (6 to 10 PM)': 'Malam (18.00-22.00)', 'Late morning (10:30 to 12)': 'Menjelang siang (10.30-12.00)', 'Afternoon (12 to 4)': 'Siang (12.00-16.00)', 'Evening (4 to 7)': 'Sore (16.00-19.00)' };
@@ -4414,6 +4476,18 @@ document.addEventListener('click', e => {
     updCust(id, { status: 'cancelled', cx: { r: a.r, n: (ni ? ni.value : a.n || '').trim().slice(0, 200), at: Date.now(), from: prev } }); delete ui.cxAsk[id]; if (ui.cexp) ui.cexp[id] = false;
     toast('Order ' + orderNo(c) + ' cancelled.', { label: 'Undo', fn: () => updCust(id, { status: prev }) }); }
   else if (act === 'cxreopen') { const c = cust.find(x => x.id === b.dataset.id); if (c) { updCust(c.id, { status: 'new' }); toast('Order ' + orderNo(c) + ' reopened as New.'); } }
+  else if (act === 'pktog') { ui.pkOpen = !(ui.pkOpen === undefined ? true : ui.pkOpen); renderCustomers(); }
+  else if (act === 'pksup') { ui.pkSup = ui.pkSup || {}; ui.pkSup[b.dataset.id] = b.getAttribute('aria-expanded') !== 'true'; renderCustomers(); }
+  else if (act === 'pkmore') { ui.pkMenu = ui.pkMenu === b.dataset.k ? '' : b.dataset.k; ui.pkNew = ''; renderCustomers(); }
+  else if (act === 'pktick') { const P = pkOrders(b.dataset.k); const on = b.getAttribute('aria-pressed') !== 'true'; P.orders.forEach(c => updCust(c.id, { pk: { [P.key]: on } })); ui.pkMenu = ''; renderCustomers(); }
+  else if (act === 'pkna') { const P = pkOrders(b.dataset.k); const it = BY_ID[P.key.split('|')[0]]; P.orders.forEach(c => { const L = c.lines[P.key]; updCust(c.id, { lines: { [P.key]: { q: 0, oq: L.oq != null ? L.oq : L.q } } }); }); ui.pkMenu = ''; renderCustomers(); toast((it ? supName(it) : 'Item') + ' removed from ' + P.orders.length + ' order' + (P.orders.length === 1 ? '' : 's') + '. Their bills show it struck through.'); }
+  else if (act === 'pkback') { const key = b.dataset.key; cust.filter(c => c.need === b.dataset.day && c.lines && c.lines[key] && !(c.lines[key].q > 0) && +c.lines[key].oq > 0).forEach(c => updCust(c.id, { lines: { [key]: { q: +c.lines[key].oq } } })); renderCustomers(); toast('Brought back.'); }
+  else if (act === 'pkcopy') { const t = b.dataset.t; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('List copied.')).catch(() => toast('Could not copy. Select the text instead.')); }
+  else if (act === 'pkaddsup') { ui.pkAddSup = true; renderCustomers(); const f = document.getElementById('pkns-name2'); if (f) f.focus(); }
+  else if (act === 'pknewsup' || act === 'pknewsave') { const two = act === 'pknewsup'; const nmv = ((document.getElementById(two ? 'pkns-name2' : 'pkns-name') || {}).value || '').trim(); if (!nmv) { toast('Type the supplier name first.'); return; }
+    const id = 's' + Date.now().toString(36); saveLedger({ sups: { [id]: { name: nmv, what: nmv, phone: ((document.getElementById(two ? 'pkns-wa2' : 'pkns-wa') || {}).value || '').trim(), h: nextHue() } } });
+    if (!two) { const iid = b.dataset.key.split('|')[0]; saveLedger({ ov: { [iid]: { s: id } } }); toast(supName(BY_ID[iid]) + ' is now bought from ' + nmv + '. Update its price in Ledger if it differs.'); } else toast('Added ' + nmv + '.');
+    ui.pkAddSup = false; ui.pkNew = ''; ui.pkMenu = ''; renderCustomers(); }
   else if (act === 'nxopen') { const id = b.dataset.id; ui.cexp = ui.cexp || {}; ui.cexp[id] = true; ui.keep = ui.keep || {}; ui.keep[id] = 1; ui.flash = id; renderCustomers(); const el = document.querySelector('#custList [data-cid="' + id + '"]'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); setTimeout(() => { if (ui.flash === id) ui.flash = ''; }, 2500); }
   else if (act === 'bday') { ui.bday = b.dataset.d; renderCustomers(); }
   else if (act === 'cexp') { ui.cexp = ui.cexp || {}; const id = b.dataset.id; ui.cexp[id] = !ui.cexp[id]; if (!ui.cexp[id]) { ui.custOpen[id] = false; if (ui.cedit) ui.cedit[id] = false; } renderCustomers(); const el = document.querySelector('[data-cid="' + id + '"]'); if (el && ui.cexp[id]) el.scrollIntoView({ block: 'nearest' }); }
@@ -4471,6 +4545,7 @@ document.addEventListener('change', e => {
   else if (t.matches('input[data-hren]')) { renameHist(t.dataset.hren, t.value); }
   else if (t.matches('input[data-chn]')) { updCust(t.dataset.chn, { hn: t.value.trim().slice(0, 200) }); }
   else if (t.matches('select[data-cpay]')) { updCust(t.dataset.cpay, { pay: t.value }); }
+  else if (t.matches('select[data-pkmove]')) { const key = t.dataset.pkmove, iid = key.split('|')[0]; if (t.value === '__new') { ui.pkNew = key; renderCustomers(); const f = document.getElementById('pkns-name'); if (f) f.focus(); return; } saveLedger({ ov: { [iid]: { s: t.value } } }); ui.pkMenu = ''; renderCustomers(); toast(supName(BY_ID[iid]) + ' is now bought from ' + SUPS[t.value].name + '. Update its price in Ledger if it differs.'); }
   else if (t.matches('input[data-cpk]')) { const v = t.dataset.cpk, i = v.indexOf('|'); updCust(v.slice(0, i), { pk: { [v.slice(i + 1)]: t.checked } }); }
   else if (t.matches('input[data-caq]')) { const v = t.dataset.caq, i = v.indexOf('|'); const q = parseQty(t.value); updCust(v.slice(0, i), { lines: { [v.slice(i + 1)]: { aq: q > 0 ? Math.round(q * 100) / 100 : 0 } } }); }
   else if (t.matches('input[data-cdep]')) { updCust(t.dataset.cdep, { dep: parseInt(String(t.value).replace(/\D/g, ''), 10) || 0 }); }
