@@ -3194,8 +3194,9 @@ function topSellersHtml() {
 function salesList() { const cut = ui.srep === 'week' ? Date.now() - 7 * 864e5 : ui.srep === 'month' ? Date.now() - 30 * 864e5 : 0; return cust.filter(c => c.status === 'delivered' && (c.dat || c.at) >= cut); }
 function custView() {
   let l = cust.slice(); const cq = String(ui.cq || '').trim().toLowerCase().replace(/^#/, ''); if (cq) { const dg = cq.replace(/\D/g, ''); l = l.filter(c => orderNo(c).toLowerCase() === cq || String(1000 + ordNum(c)) === dg || String(ordNum(c)) === cq || String(c.name || '').toLowerCase().includes(cq) || (dg.length >= 3 && String(c.phone || '').replace(/\D/g, '').includes(dg))); }
-  if (ui.cfil === 'all' && !ui.showDel && !cq) l = l.filter(c => c.status !== 'delivered'); if (ui.cfil !== 'cancelled' && !cq) l = l.filter(c => c.status !== 'cancelled');
-  if (ui.cfil !== 'all') l = l.filter(c => c.status === ui.cfil); if (ui.cunpaid) l = l.filter(c => dueOf(c) > 0);
+  const kp = c => !!(ui.keep && ui.keep[c.id]); /* an order you just changed stays where it is until you pick another filter */
+  if (ui.cfil === 'all' && !ui.showDel && !cq) l = l.filter(c => kp(c) || c.status !== 'delivered'); if (ui.cfil !== 'cancelled' && !cq) l = l.filter(c => kp(c) || c.status !== 'cancelled');
+  if (ui.cfil !== 'all') l = l.filter(c => kp(c) || c.status === ui.cfil); if (ui.cunpaid) l = l.filter(c => kp(c) || dueOf(c) > 0);
   l.sort((a, b) => (a.need || '9999').localeCompare(b.need || '9999') || a.at - b.at); return l;
 }
 function paySelect(c) {
@@ -3732,7 +3733,7 @@ function allMsgsMenu(c) { const ph = digitsOf(c.phone); const nx = nextMsg(c);
   return '<div class="cmsgmenu">' + CMSG.map(g => '<div class="cmsgstep">' + g.step + '</div>' + g.items.map(x => '<a class="cmsgopt' + (x[0] === nx ? ' next' : '') + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span></a>').join('')).join('') + '</div>'; }
 function cmdBar(c, open) {
   return '<div class="cmdbar"><button type="button" class="cmd" data-act="cview" data-id="' + esc(c.id) + '" aria-expanded="' + open + '">' + ICO_BILL + '<span>' + (open ? 'Hide bill' : 'View &amp; edit bill') + '</span><i class="chev" aria-hidden="true"></i></button></div>'; }
-function updCust(id, p) {
+function updCust(id, p) { if (!cmode) { ui.keep = ui.keep || {}; ui.keep[id] = 1; }
   const c = cust.find(x => x.id === id); if (!c) return; if (!canWrite) { toast('This copy is view-only.'); return; }
   deepMerge(c, clone(p));
   if (db) { custChain = custChain.then(() => db.doc('customers/' + id).update(p)).catch(() => toast('Could not save that change.')); } else { LS.set('mumu-cust', JSON.stringify(cust)); }
@@ -4284,9 +4285,9 @@ document.addEventListener('click', e => {
   else if (act === 'stopopen') { ui.stopOpen = ui.stopOpen || {}; ui.stopOpen[b.dataset.id] = !ui.stopOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'packall') { const c = cust.find(x => x.id === b.dataset.id); if (c) { const pk = {}; compute(custState(c), 'sell').groups.forEach(g => g.lines.forEach(ln => { if (ln.st !== 'x') pk[ln.key] = true; })); updCust(c.id, { pk }); } }
   else if (act === 'rmdemo') { if (!ui.demoAsk) { ui.demoAsk = true; renderCustomers(); } else { ui.demoAsk = false; cust.filter(c => c.demo).forEach(c => purgeCust(c.id)); toast('Demo orders removed.'); } }
-  else if (act === 'unpaid') { ui.cunpaid = true; ui.cfil = 'all'; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+  else if (act === 'unpaid') { ui.keep = {}; ui.cunpaid = true; ui.cfil = 'all'; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
   else if (act === 'impopt') { ui.impOpt = b.dataset.k; renderCustomers(); }
-  else if (act === 'cfil') { ui.cfil = b.dataset.k; renderCustomers(); }
+  else if (act === 'cfil') { ui.keep = {}; ui.cfil = b.dataset.k; renderCustomers(); }
   else if (act === 'srep') { ui.srep = b.dataset.k; renderCustomers(); }
   else if (act === 'csvsales') { exportSalesCsv(); }
   else if (act === 'csvledger') { exportLedgerCsv(); }
@@ -4321,8 +4322,8 @@ document.addEventListener('click', e => {
     toast('Order ' + orderNo(c) + ' cancelled.', { label: 'Undo', fn: () => updCust(id, { status: prev }) }); }
   else if (act === 'cxreopen') { const c = cust.find(x => x.id === b.dataset.id); if (c) { updCust(c.id, { status: 'new' }); toast('Order ' + orderNo(c) + ' reopened as New.'); } }
   else if (act === 'cexp') { ui.cexp = ui.cexp || {}; const id = b.dataset.id; ui.cexp[id] = !ui.cexp[id]; if (!ui.cexp[id]) { ui.custOpen[id] = false; if (ui.cedit) ui.cedit[id] = false; } renderCustomers(); const el = document.querySelector('[data-cid="' + id + '"]'); if (el && ui.cexp[id]) el.scrollIntoView({ block: 'nearest' }); }
-  else if (act === 'cfil' && b.closest('.sidep')) { ui.cfil = b.dataset.k; ui.cunpaid = false; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-  else if (act === 'cunpaid') { ui.cunpaid = true; ui.cfil = 'all'; ui.showDel = true; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  else if (act === 'cfil' && b.closest('.sidep')) { ui.keep = {}; ui.cfil = b.dataset.k; ui.cunpaid = false; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  else if (act === 'cunpaid') { ui.keep = {}; ui.cunpaid = true; ui.cfil = 'all'; ui.showDel = true; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   else if (act === 'cmsgtog') { ui.cmsgOpen = ui.cmsgOpen || {}; ui.cmsgOpen[b.dataset.id] = !ui.cmsgOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'cview') { ui.custOpen[b.dataset.id] = !ui.custOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'cq') { const c = cust.find(x => x.id === b.dataset.id); const key = b.dataset.key; if (c && c.lines[key]) { const o = BY_ID[key.split('|')[0]].o[+key.split('|')[1]]; const L = c.lines[key]; let q = Math.round((L.q + (+b.dataset.d) * (o.st || 1)) * 100) / 100; if (o.mn && q > 0 && q < o.mn) q = +b.dataset.d < 0 ? 0 : o.mn; q = Math.max(0, q); const pl = { q }; if (L.oq == null) pl.oq = L.q; const q0 = L.q; updCust(c.id, { lines: { [key]: pl } });
@@ -4359,7 +4360,7 @@ document.addEventListener('change', e => {
   else if (t.matches('select[data-lds]')) { const k = t.dataset.lds.split('|'); saveLedger({ ov: { [k[0]]: { [k[1]]: t.value } } }); renderLedgerList(); toast(k[1] === 's' ? 'Supplier changed. Customers see no difference.' : 'Customers now find it under ' + SUPS[t.value].tag + '.'); }
   else if (t.matches('input[data-ld]')) { const k = t.dataset.ld.split('|'); const val = t.value.trim(); if ((k[1] === 'n' || k[1] === 'c') && !val) { toast('That field cannot be empty.'); renderLedgerList(); return; } saveLedger({ ov: { [k[0]]: { [k[1]]: val } } }); }
   else if (t.id === 'importFile') { importFiles(t.files); t.value = ''; }
-  else if (t.id === 'unpaidOnly') { ui.cunpaid = t.checked; renderCustomers(); }
+  else if (t.id === 'unpaidOnly') { ui.keep = {}; ui.cunpaid = t.checked; renderCustomers(); }
   else if (t.dataset && t.dataset.ced) { const i = t.dataset.ced.indexOf('|'); custEdit(t.dataset.ced.slice(0, i), t.dataset.ced.slice(i + 1), t.value); }
   else if (t.id === 'runDate') { if (t.value) { ui.runDay = t.value; renderCustomers(); } }
   else if (t.matches && t.matches('select[data-drvfor]')) { updCust(t.dataset.drvfor, { drv: t.value }); }
@@ -4400,7 +4401,7 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'bse-q') { if (ui.bsEdit) { ui.bsEdit.q = t.value; const pos = t.selectionStart; bsEditRender(); const f = document.getElementById('bse-q'); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch (er) {} } } return; }
   if (t.id === 'mk-pct') { const v = parseFloat(String(t.value).replace(',', '.')); const ok = !isNaN(v) && v >= 0 && v <= 300; const b = document.getElementById('mk-apply'); if (b) { b.disabled = !ok || v === cfgNow().pct; b.textContent = ok && v !== cfgNow().pct ? 'Apply ' + fmtQty(v) + '% markup' : 'Apply markup'; } const ex = document.getElementById('mk-ex'); if (ex && ok) ex.textContent = fmtRp(Math.ceil(100000 * (1 + v / 100) / cfgNow().round) * cfgNow().round); return; }
-  if (t.id === 'cq') { ui.cq = t.value; renderCustomers(); const el = document.getElementById('cq'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } return; }
+  if (t.id === 'cq') { ui.keep = {}; ui.cq = t.value; renderCustomers(); const el = document.getElementById('cq'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } return; }
   if (t.id === 'q') { if (t.value) ui.saved = false; ui.q = t.value; ui.limit = 80; renderPick(); }
   else if (t.id === 'lq') { ui.lq = t.value; ui.llimit = 40; renderLedgerList(); }
   else if (t.id === 'm-addr' && cmode) { const mm = t.value.match(MAPS_URL); if (mm) { t.value = t.value.replace(mm[0], '').replace(/\n{2,}/g, '\n').trim(); patch({ meta: { addr: withMap(t.value, mapLinkOf(S.meta)) } }); applyMapLink(mm[0]); return; }
