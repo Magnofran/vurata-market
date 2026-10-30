@@ -1375,6 +1375,13 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .orow[aria-expanded="true"] { position: sticky; top: var(--barh, 0px); z-index: 3; background: var(--ink); color: var(--bg); border-bottom-color: var(--ink); }
 .orow[aria-expanded="true"] > span:first-child, .orow[aria-expanded="true"] .ov { color: var(--bg); } .orow[aria-expanded="true"] .ov b.pos { color: color-mix(in srgb, var(--fv) 55%, var(--bg)); } .orow[aria-expanded="true"] .ov b.neg { color: color-mix(in srgb, var(--danger) 55%, var(--bg)); } .orow[aria-expanded="true"] .chev { border-color: var(--bg); }
 @media (hover: hover) { .orow[aria-expanded="true"]:hover { background: color-mix(in srgb, var(--ink) 88%, var(--bg)); } }
+/* status row on the order card */
+.cnow { grid-template-columns: 34px minmax(0, 1fr); align-items: center; column-gap: 12px; padding: 14px 16px !important; box-shadow: none !important; border-radius: 0 !important; background: color-mix(in srgb, var(--sc) 7%, var(--surface)); }
+.cnow.bad { background: color-mix(in srgb, var(--danger) 8%, var(--surface)); }
+.cnico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50% !important; background: color-mix(in srgb, var(--sc) 18%, var(--surface)); color: var(--sc); }
+.cnico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cnow.ok .cnico { background: var(--sc); color: var(--on-sup, #fff); } .cnow.bad .cnico { background: var(--danger); color: #fff; }
+.cntx { display: grid; gap: 2px; min-width: 0; } .cntx b { font-size: 15px; } .cntx > span { font-size: 13px; color: var(--muted); } .cntx .nowbar { margin-top: 6px; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3500,7 +3507,10 @@ function fullCard(c, comp, date, open, det) {
   if (st === 'new') now = c.cf ? '<b>Order from suppliers</b><span>Confirmed. Buy it with the combined order, then mark it ordered.</span>' : '<b>Confirm the order</b><span>Check stock, then send the bill. ' + comp.count + ' item' + (comp.count === 1 ? '' : 's') + ' · ' + fmtRp(comp.grand) + '</span>';
   else if (st === 'ordered') { const ps = packState(c, comp); now = '<b>Pack and deliver</b><span>' + (ps.n ? 'Packed ' + ps.done + ' of ' + ps.n + ' items' : 'Nothing to pack') + (hasPin ? '' : ' · no map pin yet') + '</span>' + (ps.n ? '<div class="nowbar"><i style="width:' + Math.round(ps.done / ps.n * 100) + '%"></i></div>' : ''); }
   else now = due > 0 ? '<b>Collect payment</b><span>' + fmtRp(due) + ' still open' + (c.pay ? ' · ' + esc(c.pay) : '') + '</span>' : '<b>All done</b><span>Delivered and paid. Send a thank you if you have not.</span>';
-  const nowHtml = '<div class="cnow s-' + st + (st === 'delivered' && due > 0 ? ' bad' : '') + '">' + now + '</div>';
+  /* status row: one icon for what this step is, in the step colour */
+  const NI = { send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/><path d="M11.5 13.5L20 4"/>', cart: '<path d="M3 4h2l2.4 11h10.2L20 8H6.3"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>', box: '<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>', pay: '<path d="M12 7v6"/><path d="M12 16.5v.5"/><circle cx="12" cy="12" r="9"/>', done: '<path d="M5 12.5l4.5 4.5L19 7.5"/>' };
+  const nk = st === 'new' ? (c.cf ? 'cart' : 'send') : st === 'ordered' ? 'box' : due > 0 ? 'pay' : 'done';
+  const nowHtml = '<div class="cnow s-' + st + (st === 'delivered' && due > 0 ? ' bad' : '') + (nk === 'done' ? ' ok' : '') + '"><span class="cnico" aria-hidden="true"><svg viewBox="0 0 24 24">' + NI[nk] + '</svg></span><div class="cntx">' + now + '</div></div>';
   /* quiet rows + what opens under them */
   const pv = c.paid || due <= 0 ? '<b class="pos">Paid</b>' : '<b class="neg">' + fmtRp(due) + '</b>' + (c.pay ? ' · ' + esc(String(c.pay).split(' ')[0]) : '');
   const pay = row('pay', 'Payment', pv) + (sec === 'pay' ? '<div class="obody"><div class="cprow">' + paySelect(c) + '<button type="button" class="paidtog" data-act="cpaidtog" data-id="' + id + '" aria-pressed="' + !!c.paid + '"' + ro + '>' + (c.paid ? '✓ Paid' : 'Mark as paid') + '</button></div>' + (c.paid ? '' : '<label class="lf dep"><span>Deposit received</span><span class="lpr">Rp <input data-cdep="' + id + '" inputmode="numeric" value="' + (c.dep || '') + '" placeholder="0"' + ro + '></span></label>') + '</div>' : '');
