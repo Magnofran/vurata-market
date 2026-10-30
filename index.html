@@ -1371,6 +1371,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .item .pnote { grid-column: 1 / -1; } .pnote { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--gold); background: color-mix(in srgb, var(--gold) 9%, var(--surface)); font-size: 13px; line-height: 1.5; color: var(--ink); }
 .coldnote { display: flex; align-items: center; gap: 5px; margin: 4px 0 0; font-size: 12px; font-weight: 600; color: var(--gr); } .coldnote span { font-size: 12px; line-height: 1; }
 /* order card: an open row becomes a solid ink band pinned under the tabs, same as the Ledger */
+.orow, .osecw { border-radius: 0 !important; }
 .orow[aria-expanded="true"] { position: sticky; top: var(--barh, 0px); z-index: 3; background: var(--ink); color: var(--bg); border-bottom-color: var(--ink); }
 .orow[aria-expanded="true"] > span:first-child, .orow[aria-expanded="true"] .ov { color: var(--bg); } .orow[aria-expanded="true"] .ov b.pos { color: color-mix(in srgb, var(--fv) 55%, var(--bg)); } .orow[aria-expanded="true"] .ov b.neg { color: color-mix(in srgb, var(--danger) 55%, var(--bg)); } .orow[aria-expanded="true"] .chev { border-color: var(--bg); }
 @media (hover: hover) { .orow[aria-expanded="true"]:hover { background: color-mix(in srgb, var(--ink) 88%, var(--bg)); } }
