@@ -1333,6 +1333,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 #prodCard .pfind { margin-top: 0; padding-top: 0; background: none; }
 .bkrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); } .bkw { display: grid; gap: 2px; min-width: 0; } .bkw b { font-size: 14px; } .bkw small { font-size: 12.5px; color: var(--muted); } .bkacts { display: flex; gap: 14px; flex: none; }
 .bkconf { display: grid; gap: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--danger); background: color-mix(in srgb, var(--danger) 6%, var(--surface)); } .bkconf p { margin: 0; font-size: 13.5px; line-height: 1.45; }
+.lsec .osub.filebtn { min-height: 42px; width: 100%; }
 .plgrp { display: grid; margin-top: 10px; } .plgrp .lgl { margin-bottom: 4px; }
 .plrow { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); cursor: pointer; } .plrow.none { cursor: default; flex-wrap: wrap; } .plrow.none select { flex: 1 1 100%; }
 .plrow input[type=checkbox] { flex: none; width: 20px; height: 20px; } .pln { display: grid; gap: 2px; min-width: 0; flex: 1; } .pln b { font-size: 14px; } .pln small { font-size: 12.5px; color: var(--muted); } .pln em { color: var(--danger); font-style: normal; font-weight: 600; }
@@ -4476,16 +4477,36 @@ function pxConfirmHtml() {
 const PL_STOP = new Set(['rp', 'per', 'isi', 'harga', 'price', 'kg', 'gr', 'gram', 'pcs', 'pc', 'pack', 'pak', 'box', 'ctn', 'btl', 'ltr', 'the', 'dan', 'and']);
 const plNorm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 const plToks = t => plNorm(t).split(' ').filter(w => w.length > 1 && !PL_STOP.has(w));
-const PL_UNIT = { kg: 'kg', kilo: 'kg', pcs: 'pcs', pc: 'pcs', biji: 'pcs', ekor: 'pcs', pack: 'pack', pak: 'pack', box: 'box', ctn: 'carton', carton: 'carton', karton: 'carton', btl: 'btl', botol: 'btl', ltr: 'ltr', liter: 'ltr', sisir: 'sisir', ikat: 'pack' };
+const PL_UNIT = { kg: 'kg', kilo: 'kg', pcs: 'pcs', pc: 'pcs', biji: 'pcs', buah: 'pcs', ekor: 'pcs', pack: 'pack', pak: 'pack', pax: 'pax', box: 'box', kotak: 'kotak', ctn: 'carton', carton: 'carton', karton: 'carton', btl: 'btl', botol: 'btl', ltr: 'ltr', liter: 'ltr', sisir: 'sisir', ikat: 'pack' };
+const PL_URX = 'kg|kilo|pcs|pc|biji|ekor|pack|pak|pax|box|kotak|ctn|carton|karton|btl|botol|ltr|liter|sisir|ikat';
 function plParse(text) {
-  return String(text || '').split(/\r?\n/).map(raw => { const line = raw.replace(/^[\s\-*•·\d]+[.)]\s+/, '').replace(/^[\s\-*•·]+/, '').trim(); if (!line) return null;
-    let price = 0, cut = null; const k = line.match(/(\d+(?:[.,]\d+)?)\s*k\b/i); const nums = [...line.matchAll(/(\d{1,3}(?:[.,]\d{3})+|\d{4,7})(?:[.,]-|,00)?/g)];
-    if (nums.length) { const m = nums[nums.length - 1]; price = parseInt(m[1].replace(/\D/g, ''), 10); cut = m; } else if (k) { price = Math.round(parseFloat(k[1].replace(',', '.')) * 1000); cut = k; }
-    if (!(price >= 100)) return null;
-    const um = line.match(/(?:\/|\bper\s*|\bse?\s*)(kg|kilo|pcs|pc|biji|ekor|pack|pak|box|ctn|carton|karton|btl|botol|ltr|liter|sisir|ikat)\b/i);
-    const name = (line.slice(0, cut.index) + ' ' + line.slice(cut.index + cut[0].length)).replace(/\brp\.?/ig, ' ').replace(/(?:\/|\bper\s+)(kg|kilo|pcs|pc|biji|ekor|pack|pak|box|ctn|carton|karton|btl|botol|ltr|liter|sisir|ikat)\b/ig, ' ').replace(/[=:@|\t]+/g, ' ').replace(/\s+/g, ' ').replace(/^[\s\-.,]+|[\s\-.,]+$/g, '');
-    return name ? { raw: line, name, price, u: um ? PL_UNIT[um[1].toLowerCase()] : '' } : null; }).filter(Boolean);
+  /* PDFs sometimes run several table rows together ("36 Salak 37 Jeruk 38 Sunkist kg kg kg 30000" then the other prices on their own lines): split them back */
+  const src = String(text || '').split(/\r?\n/), lines = [];
+  for (let i = 0; i < src.length; i++) { const t = src[i].trim(); const parts = t.split(/\s(?=\d{1,3}\s+[A-Za-z])/).filter(x => /^\d{1,3}\s+[A-Za-z]/.test(x));
+    if (parts.length > 1 && /^\d{1,3}\s+[A-Za-z]/.test(t)) { const pr = []; const tail = parts[parts.length - 1].match(/(\d{4,7})\s*$/); if (tail) pr.push(tail[1]); while (pr.length < parts.length && i + 1 < src.length && /^\s*\d{4,7}\s*$/.test(src[i + 1])) pr.push(src[++i].trim());
+      parts.forEach((x, k) => lines.push(x.replace(/(\s+(?:kg|pcs|pax|sisir|kotak))+\s+\d{4,7}\s*$/i, '').replace(/(\s+(?:kg|pcs|pax|sisir|kotak))+$/i, '') + (pr[k] ? ' ' + pr[k] : ''))); }
+    else lines.push(t); }
+  return lines.map(raw => { const line = raw.replace(/^\s*\d{1,3}[.)]?\s+(?=\D)/, '').replace(/^[\s\-*•·]+/, '').trim(); if (!line || !/[a-z]/i.test(line)) return null;
+    let price = 0, cut = null; const nums = [...line.matchAll(/(?<![\d.,:])(\d{1,3}(?:[.,]\d{3})+|\d{4,7})(?!\d)(?:[.,]-|,00)?/g)]; const k = line.match(/(?<![\d.,])(\d+(?:[.,]\d+)?)\s*k\b/i);
+    if (nums.length) { cut = nums[nums.length - 1]; price = parseInt(cut[1].replace(/\D/g, ''), 10); } else if (k) { cut = k; price = Math.round(parseFloat(k[1].replace(',', '.')) * 1000); }
+    if (!(price >= 100) || price > 5e6) return null;
+    const rest = line.slice(0, cut.index) + ' ' + line.slice(cut.index + cut[0].length);
+    const um = rest.match(new RegExp('(?:\\/|\\bper\\s*)(' + PL_URX + ')\\b', 'i')) || rest.match(new RegExp('\\b(' + PL_URX + ')\\b', 'i'));
+    const name = rest.replace(/\brp\.?/ig, ' ').replace(new RegExp('(?:\\/|\\bper\\s+)?\\b(' + PL_URX + ')\\b', 'ig'), ' ').replace(/[=:@|\t]+/g, ' ').replace(/\s+/g, ' ').replace(/^[\s\-.,/]+|[\s\-.,/]+$/g, '');
+    if (!name || /^(no|nama|harga|satuan|ket)/i.test(name) && /harga|satuan/i.test(name)) return null;
+    return { raw: line, name, price, u: um ? PL_UNIT[um[1].toLowerCase()] : '' }; }).filter(Boolean);
 }
+/* Read a PDF price list in the browser: rebuild each table row from the text positions, top to bottom */
+function loadPdfJs() { if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib); return new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; sc.onload = () => { const L = window.pdfjsLib; if (!L) { rej(new Error('load')); return; } L.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(L); }; sc.onerror = () => rej(new Error('load')); document.head.appendChild(sc); }); }
+async function pdfText(file) { const L = await loadPdfJs(); const doc = await L.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise; const out = [];
+  for (let n = 1; n <= Math.min(doc.numPages, 20); n++) { const tc = await (await doc.getPage(n)).getTextContent(); const rows = [];
+    tc.items.forEach(it => { if (!it.str || !it.str.trim()) return; const x = it.transform[4], y = it.transform[5]; let r = rows.find(q => Math.abs(q.y - y) < 4); if (!r) rows.push(r = { y, xs: [] }); r.xs.push([x, it.str]); });
+    rows.sort((a, b) => b.y - a.y).forEach(r => out.push(r.xs.sort((a, b) => a[0] - b[0]).map(q => q[1]).join(' ').replace(/\s+/g, ' ').trim())); }
+  return out.join('\n'); }
+/* Which supplier is this list from? The one whose products match the most lines */
+function plGuessSup(lines, cur) { let best = cur, bn = -1; const cnt = sid => { const prods = CATALOG.filter(it => it.s === sid); return lines.filter(ln => prods.some(p => plScore(ln.name, p) >= .7)).length; };
+  const cn = cnt(cur); SUP_ORDER.forEach(sid => { const n = cnt(sid); if (n > bn) { bn = n; best = sid; } }); return bn >= Math.max(3, cn * 1.5) ? best : cur; }
+
 const plGrams = t => { const x = plNorm(t).replace(/ /g, ''), g = []; for (let i = 0; i < x.length - 1; i++) g.push(x.slice(i, i + 2)); return g; };
 const plDice = (a, b) => { const A = plGrams(a), B = plGrams(b); if (!A.length || !B.length) return 0; const m = {}; A.forEach(g => { m[g] = (m[g] || 0) + 1; }); let hit = 0; B.forEach(g => { if (m[g]) { m[g]--; hit++; } }); return 2 * hit / (A.length + B.length); };
 function plScore(a, it) { const na = plNorm(a); let best = 0;
@@ -4498,18 +4519,18 @@ function plCompute() { const P = ui.pl; if (!P || !P.lines) return null; const s
     else if (mem[plNorm(ln.name)] && BY_ID[mem[plNorm(ln.name)]]) { it = BY_ID[mem[plNorm(ln.name)]]; sc = 1; how = 'mem'; }
     else { prods.forEach(p => { const v = plScore(ln.name, p); if (v > sc) { sc = v; it = p; } }); if (sc < .55) it = null; else how = 'auto'; }
     const j = it ? plOpt(it, ln.u) : 0; const key = it ? it.id + '|' + j : ''; if (key && used[key] !== undefined) { it = null; how = 'dup'; } else if (key) used[key] = i;
-    const old = it ? it.o[j].pr || 0 : 0; const pct = old > 0 ? (ln.price - old) / old * 100 : null; const big = pct !== null && Math.abs(pct) >= 40;
-    return { i, ln, it, j, sc, how, old, pct, big, on: !!it && ln.price !== old && !((P.off || {})[i] !== undefined ? P.off[i] : big) }; });
+    const old = it ? it.o[j].pr || 0 : 0; const pct = old > 0 ? (ln.price - old) / old * 100 : null; const um = !!(it && ln.u && it.o[j].u !== ln.u); const big = um || pct !== null && Math.abs(pct) >= 40;
+    return { i, ln, it, j, sc, how, old, pct, big, um, on: !!it && ln.price !== old && !((P.off || {})[i] !== undefined ? P.off[i] : big) }; });
   const seen = new Set(rows.filter(r => r.it).map(r => r.it.id)); const missing = prods.filter(p => !p.hidden && p.o.some(o => o.pr > 0) && !seen.has(p.id));
   return { rows, ch: rows.filter(r => r.it && r.ln.price !== r.old), same: rows.filter(r => r.it && r.ln.price === r.old), none: rows.filter(r => !r.it), missing }; }
 function plHtml() { const P = ui.pl || {}; const ro = canWrite ? '' : ' disabled'; const sid = P.sid || SUP_ORDER[0];
   const sel = '<select id="pl-sup"' + ro + '>' + SUP_ORDER.map(x => '<option value="' + x + '"' + (x === sid ? ' selected' : '') + '>' + esc(SUPS[x].name) + '</option>').join('') + '</select>';
-  if (!P.lines) return '<section class="lsec"><div class="lsec-h"><b>New price list from a supplier?</b><span>Paste it here. You check every change before anything is saved.</span></div>' +
+  if (!P.lines) return '<section class="lsec"><div class="lsec-h"><b>New price list from a supplier?</b><span>Upload their PDF or paste the list. You check every change before anything is saved.</span></div>' +
     '<div class="field"><label for="pl-sup">Which supplier</label>' + sel + '</div><div class="field"><label for="pl-txt">Their price list</label><textarea id="pl-txt" class="pre sm" rows="7" placeholder="Paste the WhatsApp message, or copy the text from their PDF or Excel. One product per line, e.g.&#10;Chicken breast boneless 44.000/kg"' + ro + '>' + esc(P.text || '') + '</textarea></div>' +
-    '<div class="kfoot"><button type="button" class="omain" data-act="plcheck"' + ro + '>Check the list</button></div></section>';
+    '<div class="kfoot"><button type="button" class="omain" data-act="plcheck"' + ro + '>Check the list</button><div class="osubs"><label class="osub ghost filebtn' + (canWrite ? '' : ' off') + '">' + (ui.plBusy ? 'Reading the PDF…' : 'Or upload their PDF') + '<input type="file" accept="application/pdf,.pdf" multiple data-plpdf class="sr"' + ro + '></label></div></div></section>';
   const C = plCompute(); const up = C.ch.filter(r => r.ln.price > r.old && r.old > 0).length, dn = C.ch.filter(r => r.ln.price < r.old).length, nw = C.ch.filter(r => !(r.old > 0)).length; const nOn = C.rows.filter(r => r.on).length;
   const opts = (r) => { const prods = CATALOG.filter(it => it.s === P.sid).map(p => [p, plScore(r.ln.name, p)]).sort((a, b) => b[1] - a[1]).slice(0, 12); return '<select data-plpick="' + r.i + '" aria-label="Which product is ' + esc(r.ln.name) + '"><option value="">Choose the product…</option>' + prods.map(x => '<option value="' + x[0].id + '">' + esc(supName(x[0])) + (x[0].e && x[0].e !== supName(x[0]) ? ' · ' + esc(x[0].e) : '') + '</option>').join('') + '<option value="skip"' + (r.how === 'skip' ? ' selected' : '') + '>Not ours, skip it</option></select>'; };
-  const chRow = r => '<label class="plrow' + (r.big ? ' big' : '') + '"><input type="checkbox" data-plon="' + r.i + '"' + (r.on ? ' checked' : '') + ro + '><span class="pln"><b>' + esc(supName(r.it)) + (r.it.o.length > 1 ? ' <small>' + esc(optLabel(r.it.o[r.j])) + '</small>' : '') + '</b><small>' + (r.how === 'auto' && r.sc < 1 ? 'Their line: ' + esc(r.ln.name) : r.how === 'pick' ? 'You matched this' : r.how === 'mem' ? 'Matched like last time' : 'Exact match') + (r.big ? ' · <em>Big change, check it</em>' : '') + '</small></span><span class="plp num">' + (r.old > 0 ? '<s>' + fmtRp(r.old) + '</s>' : '<i>No price yet</i>') + '<b>' + fmtRp(r.ln.price) + '</b>' + (r.pct !== null ? '<em class="' + (r.pct > 0 ? 'neg' : 'pos') + '">' + pxPct(r.pct) + '</em>' : '') + '</span></label>';
+  const chRow = r => '<label class="plrow' + (r.big ? ' big' : '') + '"><input type="checkbox" data-plon="' + r.i + '"' + (r.on ? ' checked' : '') + ro + '><span class="pln"><b>' + esc(supName(r.it)) + (r.it.o.length > 1 ? ' <small>' + esc(optLabel(r.it.o[r.j])) + '</small>' : '') + '</b><small>' + (r.how === 'auto' && r.sc < 1 ? 'Their line: ' + esc(r.ln.name) : r.how === 'pick' ? 'You matched this' : r.how === 'mem' ? 'Matched like last time' : 'Exact match') + (r.um ? ' · <em>Theirs is per ' + esc(UNIT_EN[r.ln.u] || r.ln.u) + ', ours per ' + esc(UNIT_EN[r.it.o[r.j].u] || r.it.o[r.j].u) + '</em>' : r.big ? ' · <em>Big change, check it</em>' : '') + '</small></span><span class="plp num">' + (r.old > 0 ? '<s>' + fmtRp(r.old) + '</s>' : '<i>No price yet</i>') + '<b>' + fmtRp(r.ln.price) + '</b>' + (r.pct !== null ? '<em class="' + (r.pct > 0 ? 'neg' : 'pos') + '">' + pxPct(r.pct) + '</em>' : '') + '</span></label>';
   const noRow = r => '<div class="plrow none"><span class="pln"><b>' + esc(r.ln.name) + '</b><small>' + fmtRp(r.ln.price) + (r.how === 'dup' ? ' · matched a product already on the list' : '') + '</small></span>' + opts(r) + '</div>';
   return '<section class="lsec plrev"><div class="lsec-h"><b>' + esc(SUPS[P.sid].name) + ': ' + C.rows.length + ' lines read</b><span><span class="neg">' + up + ' up</span> · <span class="pos">' + dn + ' down</span>' + (nw ? ' · ' + nw + ' new price' + (nw > 1 ? 's' : '') : '') + ' · ' + C.same.length + ' unchanged' + (C.none.length ? ' · <b>' + C.none.length + ' to match</b>' : '') + '</span></div>' +
     (C.ch.length ? '<div class="plgrp"><span class="lgl">Price changes</span>' + C.ch.map(chRow).join('') + '</div>' : '<p class="hint">No price changes in this list.</p>') +
@@ -4733,7 +4754,7 @@ document.addEventListener('click', e => {
   else if (act === 'csvledger') { exportLedgerCsv(); }
   else if (act === 'resetprices') { askResetPrices(document.getElementById('bk-sup').value); }
   else if (act === 'pxno') { ui.pxAsk = null; renderLedger(); }
-  else if (act === 'plcheck') { const t = (document.getElementById('pl-txt') || {}).value || '', sid = (document.getElementById('pl-sup') || {}).value; const lines = plParse(t); if (!lines.length) { toast('No prices found. Paste lines with a name and a price, like Chicken breast 44.000.'); return; } ui.pl = { sid, text: t, lines, pick: {}, off: {} }; renderLedger(); }
+  else if (act === 'plcheck') { const t = (document.getElementById('pl-txt') || {}).value || '', sid = (document.getElementById('pl-sup') || {}).value; const lines = plParse(t); if (!lines.length) { toast('No prices found. Paste lines with a name and a price, like Chicken breast 44.000.'); return; } ui.pl = { sid: plGuessSup(lines, sid), text: t, lines, pick: {}, off: {} }; renderLedger(); }
   else if (act === 'plback') { if (ui.pl) { ui.pl.lines = null; } renderLedger(); }
   else if (act === 'plcancel') { ui.pl = null; renderLedger(); }
   else if (act === 'plapply') { plApply(); }
@@ -4831,6 +4852,10 @@ document.addEventListener('change', e => {
   else if (t.matches && t.matches('select[data-drvfor]')) { updCust(t.dataset.drvfor, { drv: t.value }); }
   else if (t.id === 'bankTxt') { bankTxt = t.value.slice(0, 400); LS.set('mumu-bank', bankTxt); if (db) { custChain = custChain.then(() => db.doc('settings/host').set({ wa: myWA, bank: bankTxt })).catch(() => {}); } toast('Payment details saved.'); renderCustomers(); }
   else if (t.matches('input[data-cfee]')) { const raw = String(t.value).replace(/\D/g, ''); updCust(t.dataset.cfee, { fee: raw === '' ? null : parseInt(raw, 10) }); }
+  else if (t.matches('input[data-plpdf]')) { const fs = [...(t.files || [])]; t.value = ''; if (!fs.length) return; ui.plBusy = true; renderLedger();
+    Promise.all(fs.map(pdfText)).then(txts => { ui.plBusy = false; const text = txts.join('\n'); const lines = plParse(text); const sid = (document.getElementById('pl-sup') || {}).value || SUP_ORDER[0];
+      if (!lines.length) { ui.pl = { sid, text }; renderLedger(); toast('No prices found in that PDF. If it is a scan or photo, type or paste the list instead.'); return; }
+      ui.pl = { sid: plGuessSup(lines, sid), text, lines, pick: {}, off: {} }; renderLedger(); }).catch(() => { ui.plBusy = false; renderLedger(); toast('Could not read that PDF. Paste the list instead.'); }); }
   else if (t.matches('select[data-plpick]') && ui.pl) { ui.pl.pick[t.dataset.plpick] = t.value; delete ui.pl.off[t.dataset.plpick]; renderLedger(); }
   else if (t.matches('input[data-plon]') && ui.pl) { ui.pl.off[t.dataset.plon] = !t.checked; renderLedger(); }
   else if (t.matches('input[data-limport]')) { const fl = t.files && t.files[0]; t.value = ''; if (fl) importBundle(fl); }
