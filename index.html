@@ -84,7 +84,9 @@ h1, h2, h3, h4, p { margin: 0; }
 @media (min-width: 1000px) { .side { display: block; } .bottombar { display: none !important; } }
 
 /* filters */
-.filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; } .sticky + .filters { margin-top: 10px; }
+.filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 10px; }
+/* the search box is what stays pinned while browsing: it is used all the time; the filters above scroll away */
+.ssearch { margin-top: 4px; padding-top: 10px !important; padding-bottom: 10px !important; box-shadow: 0 1px 0 var(--line); }
 .sticky { margin-inline: -16px; padding-inline: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 92px)); z-index: 15; background: var(--bg); padding: 8px 0 6px; display: grid; gap: 10px; margin-top: -6px; }
 .search { position: relative; }
 .search input { width: 100%; height: 46px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 0 14px; font-size: 16px; }
@@ -1790,10 +1792,11 @@ body { margin: 0; padding-inline: 8px; }
         <div class="dlinfo" id="dlInfo" hidden></div>
         <button type="button" class="howlink" id="cNote" data-act="showhow" hidden aria-label="Show how it works"><span>How it works</span><i aria-hidden="true">+</i></button>
         <ul class="trust" id="trustRow" hidden></ul>
-        <div class="sticky">
-          <div class="chips" id="supChips"></div></div>
+        <div class="chips" id="supChips"></div>
         <div class="filters">
           <div class="row2"><label class="sr" for="catSel">Category</label><select id="catSel"></select></div>
+        </div>
+        <div class="sticky ssearch">
           <div class="search"><label class="sr" for="q">Search items</label><input id="q" type="search" enterkeyhint="search" placeholder="Search: buah naga, dragon fruit" autocomplete="off"><button type="button" class="sclear" data-act="qclear" aria-label="Clear search" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
         </div>
         <div id="pickList"></div>
@@ -4494,7 +4497,7 @@ document.addEventListener('input', e => {
   if (t.id === 'bse-q') { if (ui.bsEdit) { ui.bsEdit.q = t.value; const pos = t.selectionStart; bsEditRender(); const f = document.getElementById('bse-q'); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch (er) {} } } return; }
   if (t.id === 'mk-pct') { const v = parseFloat(String(t.value).replace(',', '.')); const ok = !isNaN(v) && v >= 0 && v <= 300; const b = document.getElementById('mk-apply'); if (b) { b.disabled = !ok || v === cfgNow().pct; b.textContent = ok && v !== cfgNow().pct ? 'Apply ' + fmtQty(v) + '% markup' : 'Apply markup'; } const ex = document.getElementById('mk-ex'); if (ex && ok) ex.textContent = fmtRp(Math.ceil(100000 * (1 + v / 100) / cfgNow().round) * cfgNow().round); return; }
   if (t.id === 'cq') { ui.keep = {}; ui.cq = t.value; renderCustomers(); const el = document.getElementById('cq'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } return; }
-  if (t.id === 'q') { if (t.value) ui.saved = false; ui.q = t.value; ui.limit = 80; renderPick(); }
+  if (t.id === 'q') { if (t.value) ui.saved = false; ui.q = t.value; ui.limit = 80; renderPick(); const ss = document.querySelector('.ssearch'), pl = document.getElementById('pickList'); if (ss && pl) { const gap = pl.getBoundingClientRect().top - ss.getBoundingClientRect().bottom; if (gap < 0) window.scrollBy(0, gap - 4); } }
   else if (t.id === 'lq') { ui.lq = t.value; ui.llimit = 40; renderLedgerList(); }
   else if (t.id === 'm-addr' && cmode) { const mm = t.value.match(MAPS_URL); if (mm) { t.value = t.value.replace(mm[0], '').replace(/\n{2,}/g, '\n').trim(); patch({ meta: { addr: withMap(t.value, mapLinkOf(S.meta)) } }); applyMapLink(mm[0]); return; }
     const full = withMap(t.value, mapLinkOf(S.meta)); patch({ meta: { addr: full } }); const fd = t.closest('.field'); if (fd) fd.classList.toggle('miss', !reqOk('addr', { addr: full })); }
