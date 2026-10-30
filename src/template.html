@@ -1168,6 +1168,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .pstat[data-k] { box-shadow: inset 0 3px 0 var(--sc, transparent); }
 .lseg [data-act="cfil"][data-k="new"]::before, .lseg [data-act="cfil"][data-k="ordered"]::before, .lseg [data-act="cfil"][data-k="delivered"]::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50% !important; background: var(--sc); vertical-align: middle; }
 .ccard[data-st="ordered"] { --sa: var(--gr); } .ccard[data-st="delivered"] { --sa: var(--fv); } .ccard[data-st="new"] { --sa: var(--warn); }
+.ctotw { display: grid; justify-items: end; gap: 1px; } .pft { font-size: 11.5px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; } .pft.pos { color: var(--fv); } .pft.neg { color: var(--danger); } .pft small { font-weight: 500; opacity: .8; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3354,7 +3355,8 @@ function ccardHead(c, comp, date) {
     ['Address', c.addr ? esc(c.addr) : ''],
     ['Map', (c.pin || c.addr) ? '<a href="' + mapUrl(c) + '" target="_blank" rel="noopener">' + (c.pin ? 'Open customer pin' : mapLinkOf(c) ? 'Open their Maps link' : 'Search the address') + '</a>' : ''],
     ['Notes', c.notes ? esc(c.notes) : ''],
-    ['Order', comp.count + ' line' + (comp.count === 1 ? '' : 's') + ' &middot; received ' + esc(date)]
+    ['Order', comp.count + ' line' + (comp.count === 1 ? '' : 's') + ' &middot; received ' + esc(date)],
+    ['Profit', (() => { const p = profitOf(custState(c)); return p.rev ? '<b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b> on ' + fmtRp(p.rev) + ' of items (' + Math.round(p.profit / p.rev * 100) + '%), before delivery costs' : ''; })()]
   ].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('');
   const ret = c.phone && cust.filter(x => digitsOf(x.phone) === digitsOf(c.phone)).length > 1;
   return '<div class="ccard' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(c.status || 'new') + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono" title="Order number">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.ed ? '<span class="edpill" title="Details changed after the order arrived">Edited</span>' : '') + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div>' + (ui.cedit && ui.cedit[c.id] ? ceditHtml(c) : '<dl class="cinfo">' + rows + '</dl>') + (canWrite ? '<button type="button" class="edbtn" data-act="cedit" data-id="' + esc(c.id) + '" aria-expanded="' + !!(ui.cedit && ui.cedit[c.id]) + '">' + (ui.cedit && ui.cedit[c.id] ? '✓ Done editing' : '✏️ Edit details') + '</button>' : '') + '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label>';
@@ -3579,7 +3581,7 @@ function compactCard(c, comp, date) { if (c.status === 'cancelled') return '<div
   const due = dueOf(c); const ps = packState(c, comp); const ready = st !== 'delivered' && ps.n > 0 && ps.done === ps.n;
   const ph = digitsOf(c.phone); const keys = STEP_MSGS[st].filter(k => k !== 'pay' || (!c.paid && due > 0)); const k = keys[0]; const x = k && msgDef(k);
   const meta = [repeatTag(c), c.zone ? zoneLabel(c.zone) : '', c.need ? shortDate(c.need) : '', c.paid || due <= 0 ? '<span class="pos">Paid</span>' : '<span class="neg">' + fmtRp(due) + ' to collect</span>', ready ? '<span class="rdy">Ready for driver</span>' : '', c.cf && st === 'new' ? '<span class="pos">Confirmed ✓</span>' : ''].filter(Boolean).join(' · ');
-  return '<div class="ccard compact' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(st) + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.lang === 'id' ? '<em class="langtag">ID</em>' : '') + '<i class="leader" aria-hidden="true"></i><span class="num ctot">' + fmtRp(comp.grand) + '</span></div>' +
+  return '<div class="ccard compact' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(st) + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.lang === 'id' ? '<em class="langtag">ID</em>' : '') + '<i class="leader" aria-hidden="true"></i><span class="ctotw"><span class="num ctot">' + fmtRp(comp.grand) + '</span>' + profitTag(c) + '</span></div>' +
     '<div class="cmeta">' + meta + '</div><div class="crow3"><span class="stpill st-' + st + '">' + L[cur] + '</span>' +
     (x && ph ? '<a class="stepmsg main sm" target="_blank" rel="noopener"' + (k === 'bill' ? ' data-confsent="' + esc(c.id) + '"' : '') + ' href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b></span></a>' : '') +
     '<button type="button" class="cmore" data-act="cexp" data-id="' + esc(c.id) + '" aria-expanded="false">Details</button></div></div>'; }
@@ -3878,6 +3880,8 @@ function setSell(id, i, val) {
   const arr = it.o.map((_, j) => (cur[j] === undefined ? null : cur[j])); arr[i] = val > 0 ? val : null; saveLedger({ ov: { [id]: { sp: arr } } });
 }
 function avgMargin() { let n = 0, t = 0; CATALOG.forEach(it => { if (it.hidden) return; it.o.forEach(o => { if (o.pr && o.sp) { n++; t += (o.sp - o.pr) / o.sp; } }); }); return n ? Math.round(t / n * 100) : 0; }
+/* Staff only: item profit for one order (delivery not included, its cost varies), as an inline label */
+const profitTag = c => { if (cmode || c.status === 'cancelled') return ''; const p = profitOf(custState(c)); if (!p.rev) return ''; const pct = Math.round(p.profit / p.rev * 100); return '<span class="pft ' + (p.profit > 0 ? 'pos' : 'neg') + '">Profit ' + fmtRp(p.profit) + ' <small>' + pct + '%</small></span>'; };
 function profitOf(state) { const sl = compute(state, 'sell'), co = compute(state, 'cost'); return { rev: sl.total, cost: co.total, profit: sl.total - co.total }; }
 const supHue = id => { const sx = (ledger.supx || {})[id], d = (ledger.sups || {})[id]; return sx && sx.h != null ? sx.h : d && d.h != null ? d.h : id === 'ot' ? 4 : d ? Object.keys(ledger.sups || {}).indexOf(id) % SUP_HUES.length : null; };
 const SUP_ORIG = { fv: [75, 107, 61], mt: [156, 75, 62], gr: [47, 74, 107] };
