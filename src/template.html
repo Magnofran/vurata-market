@@ -1331,6 +1331,8 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .kcard .lbbody { background: var(--surface-2); } @media (hover: hover) { .kcard .lblock .lbhead:hover { background: var(--surface-2); } .kcard .lblock:not(.open):hover { border-color: var(--line); } }
 #ledCard, .kcard.rows { padding-bottom: 0; } #ledCard .kband, .kcard.rows .kband { margin-bottom: 0; } #ledCard .lblock:last-child, .kcard.rows .lblock:last-child { border-bottom: 0; } .kcard .lbt .neg { color: var(--danger); }
 #prodCard .pfind { margin-top: 0; padding-top: 0; background: none; }
+.bkrow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); } .bkw { display: grid; gap: 2px; min-width: 0; } .bkw b { font-size: 14px; } .bkw small { font-size: 12.5px; color: var(--muted); } .bkacts { display: flex; gap: 14px; flex: none; }
+.bkconf { display: grid; gap: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--danger); background: color-mix(in srgb, var(--danger) 6%, var(--surface)); } .bkconf p { margin: 0; font-size: 13.5px; line-height: 1.45; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2910,8 +2912,8 @@ const kmain = (inner, attrs, tag) => tag === 'a' ? '<a class="omain" ' + attrs +
 function custSide() { if (!cust.length) return ''; const n = x => cust.filter(c => c.status === x).length; const toCollect = cust.reduce((t, c) => t + dueOf(c), 0);
   const today = runStops(runToday()); const byDrv = drivers.map(d => [d, today.filter(c => drvOf(c) === d.id).length]).filter(x => x[1]); const noDrv = drivers.length ? today.filter(c => !drvOf(c)).length : 0;
   const jumps = [['#custList', 'Orders'], ['#combCard', 'Combined order'], ['#driverCard', 'Delivery run'], ['#importCard', 'Import an order'], ['#salesCard', 'Sales'], ['#inviteCard', 'Invite customers']];
-  const lastBk = +(LS.get('mumu-lastbackup') || 0); const bkDue = Date.now() - lastBk > 7 * 864e5;
-  const bkNudge = bkDue ? '<button type="button" class="bknudge" data-act="backup"><span><b>Download this week\'s backup</b><small>' + (lastBk ? 'Last one ' + Math.floor((Date.now() - lastBk) / 864e5) + ' days ago' : 'No backup yet on this device') + '. Keeps your orders and prices safe.</small></span><em>Download</em></button>' : '';
+  const lastBk = +(LS.get('mumu-lastbackup') || 0); const bkDue = Date.now() - lastBk > 30 * 864e5;
+  const bkNudge = bkDue ? '<button type="button" class="bknudge" data-act="backup"><span><b>Download this month\'s backup</b><small>' + (lastBk ? 'Last one ' + Math.floor((Date.now() - lastBk) / 864e5) + ' days ago' : 'No backup yet on this device') + '. A file on your computer, on top of the nightly copies.</small></span><em>Download</em></button>' : '';
   return '<div class="card sidecard kcard" style="--sc:var(--gold)">' + kband('Today', new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }), cust.filter(c => c.status === 'new').length + ' to confirm · ' + today.length + (today.length === 1 ? ' stop' : ' stops') + ' today') + bkNudge + moneyLine() + routineHtml() +
     '<div class="pgrid">' + [['new', 'New'], ['ordered', 'Ordered'], ['delivered', 'Delivered']].map(x => '<button type="button" class="pstat' + (ui.cfil === x[0] ? ' on' : '') + '" data-act="cfil" data-k="' + x[0] + '"><b class="num">' + n(x[0]) + '</b><span>' + x[1] + '</span></button>').join('') + '</div>' +
     pRow('To collect', fmtRp(toCollect), 'data-act="cfil" data-k="all"', toCollect > 0 ? 'neg' : '') +
@@ -3327,6 +3329,18 @@ async function saveCsv(name, rows) {
   if (!dlCap) { toast('Saving files is not available here.'); return; }
   try { await dlCap.save({ filename: name, data: '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\n') }); toast('Saved.'); } catch (e) { if (!e || e.code !== 'declined') toast('Could not save the file.'); }
 }
+/* ===== Backups: Supabase keeps a copy of prices, customers and orders every night at 2 AM, only when something changed
+   (14 days, 8 weeks, 12 months). Restore puts everything back; the state just before a restore is saved first, so it can be undone. ===== */
+const BK_KIND = { auto: 'Nightly', manual: 'Saved by you', 'pre-restore': 'Before a restore' };
+const bkWhen = at => { const d = new Date(at), o = { timeZone: 'Asia/Makassar' }; return d.toLocaleDateString('en-GB', Object.assign({ weekday: 'short', day: 'numeric', month: 'short' }, o)) + ', ' + d.toLocaleTimeString('en-US', Object.assign({ hour: 'numeric', minute: '2-digit' }, o)); };
+function bkLoad(force) { if (!window.SB || !SB.rpc || !canWrite || (ui.bkList !== undefined && !force)) return; if (ui.bkList === undefined) ui.bkList = null;
+  SB.rpc('backup_list').then(l => { ui.bkList = l || []; ui.bkErr = false; if (ui.view === 'ledger') renderLedger(); }).catch(() => { ui.bkList = []; ui.bkErr = true; if (ui.view === 'ledger') renderLedger(); }); }
+function bkHtml() { const l = ui.bkList; if (!l) return '<p class="hint">Loading backups…</p>';
+  const row = b => { const m = b.meta || {}; const w = bkWhen(b.at); return '<div class="bkrow"><span class="bkw"><b>' + w + '</b><small>' + BK_KIND[b.kind] + ' · ' + (m.customers || 0) + ' customer' + (m.customers === 1 ? '' : 's') + ' · ' + (m.products || 0) + ' products</small></span><span class="bkacts"><button type="button" class="linkbtn" data-act="bkget" data-id="' + b.id + '">Download</button><button type="button" class="linkbtn" data-act="bkask" data-id="' + b.id + '"' + (canWrite ? '' : ' disabled') + '>Restore</button></span></div>' +
+    (ui.bkAsk === b.id ? '<div class="bkconf"><p><b>Go back to ' + w + '?</b> Prices, customers and orders return to how they were then. Everything as it is now is saved first, so you can undo this.</p><button type="button" class="omain" style="--sc:var(--danger)" data-act="bkdo" data-id="' + b.id + '">Restore this copy</button><button type="button" class="osub ghost" data-act="bkask" data-id="">Keep things as they are</button></div>' : ''); };
+  return '<p class="hint" style="margin:0 0 4px">Every night at 2 AM a copy of your prices, customers and orders is saved, only when something changed. Kept for 14 days, then one a week for 8 weeks and one a month for a year. Photos are not included.</p>' +
+    (ui.bkErr ? '<p class="hint neg">Could not load the backups. Check the connection and open this again.</p>' : '') + l.map(row).join('') +
+    '<div class="kfoot" style="margin-top:12px"><button type="button" class="omain" data-act="bknow"' + (canWrite ? '' : ' disabled') + '>Save a copy now</button><div class="osubs"><button type="button" class="osub ghost" data-act="backup">Download a file to keep</button></div></div><p class="hint" style="margin-top:6px">Keep a file on your computer once a month too. It covers the rare case where the online copies are lost.</p>'; }
 async function exportBackup() {
   if (!dlCap) { toast('Saving files is not available here.'); return; }
   const data = JSON.stringify({ app: 'Vurata Market', saved: new Date().toISOString(), ledger, customers: cust, savedOrders: hist, favorites: Object.keys(favs) }, null, 1);
@@ -4300,7 +4314,7 @@ function renderLedgerList() {
   const lcn = document.getElementById('lcount'); if (lcn) lcn.textContent = items.length;
   if (keep) { const el = box.querySelector('[' + keep[0] + '="' + CSS.escape(keep[1]) + '"]'); if (el) el.focus({ preventScroll: true }); }
 }
-function renderLedger() {
+function renderLedger() { bkLoad();
   const host = document.getElementById('ledgerBody'); if (!host) return;
   const cats = []; CATALOG.forEach(i => { if (!cats.includes(i.c)) cats.push(i.c); });
   const editedN = CATALOG.filter(isEdited).length;
@@ -4356,7 +4370,8 @@ function renderLedger() {
     lbOpen('lb-limit', 'Weight limit', ((ledger.cfg && +ledger.cfg.mx > 0 ? +ledger.cfg.mx : 10) + ' kg per item')) + (cardOpen('lb-limit') ? '<section class="lsec"><div class="field"><label for="mx-kg">Most kg per item</label><input id="mx-kg" inputmode="decimal" value="' + (+(ledger.cfg && ledger.cfg.mx) > 0 ? ledger.cfg.mx : 10) + '"' + (canWrite ? '' : ' disabled') + '><p class="hint">Items sold by weight. Above this, the customer is asked to message us on WhatsApp. Other items stop at 99.</p></div></section>' : '') + lbClose('lb-limit') +
     lbOpen('lb-bask', 'Baskets', basketsNow().length ? basketsNow().filter(b => !b.h).length + ' of ' + basketsNow().length + ' shown' : 'Offer a one-tap basket') + (cardOpen('lb-bask') ? '<section class="lsec"><p class="hint" style="margin:0 0 12px">A basket is a ready-made order customers add in one tap, such as a weekly box for a villa. They can view it first and change quantities afterwards.</p>' + bkPanelHtml() + '</section>' : '') + lbClose('lb-bask') +
     lbOpen('dlCard', 'Delivery', dlc.zones.length + ' area' + (dlc.zones.length === 1 ? '' : 's') + (dlc.cutoff ? ' · cutoff ' + cutLabel(dlc.cutoff) : '')) + (dlOpen ? dlCardOpen.slice(('<div class="card" id="dlCard">' + cardHead('dlCard', 'Delivery', true)).length, -6) : '') + lbClose('dlCard') +
-    (cmode || !db ? '' : lbOpen('lb-data', 'Supplier data', 'Private prices and notes') + (cardOpen('lb-data') ? '<section class="lsec">' + importCard().replace(/^<div class="card"><h3>Supplier data<\/h3>/, '').replace(/<\/div>$/, '') + '</section>' : '') + lbClose('lb-data')) + '</div>' +
+    (cmode || !db ? '' : lbOpen('lb-data', 'Supplier data', 'Private prices and notes') + (cardOpen('lb-data') ? '<section class="lsec">' + importCard().replace(/^<div class="card"><h3>Supplier data<\/h3>/, '').replace(/<\/div>$/, '') + '</section>' : '') + lbClose('lb-data')) +
+    (window.SB && SB.rpc ? lbOpen('lb-backup', 'Backups', ui.bkList && ui.bkList.length ? 'Last ' + bkWhen(ui.bkList[0].at) : 'Nightly at 2 AM') + (cardOpen('lb-backup') ? '<section class="lsec">' + bkHtml() + '</section>' : '') + lbClose('lb-backup') : '') + '</div>' +
     form + photoCardHtml + '<div class="card kcard" id="prodCard">' + kband('Products', '<span id="lcount">' + ledgerItems().length + '</span>', 'Search or filter, then tap a product to change it') +
     '<section class="lsec pfind">' +
     '<div class="search"><input id="lq" type="search" placeholder="Search by product name" value="' + esc(ui.lq) + '" autocomplete="off" aria-label="Search the ledger"></div>' +
@@ -4576,6 +4591,10 @@ document.addEventListener('click', e => {
   else if (act === 'cstat') { const c = cust.find(x => x.id === b.dataset.id); const v = b.dataset.v; if (c && c.status !== v) { updCust(c.id, { status: v, dat: v === 'delivered' ? Date.now() : 0 }); offerStatusMsg(c.id, v); } }
   else if (act === 'cpaidtog') { const c = cust.find(x => x.id === b.dataset.id); if (c) { updCust(c.id, { paid: !c.paid }); toast(c.paid ? 'Marked as paid.' : 'Marked as not paid.'); } }
   else if (act === 'advance') { const c = cust.find(x => x.id === b.dataset.id); if (c) { const st = c.status === 'new' ? 'ordered' : 'delivered'; updCust(c.id, { status: st, dat: st === 'delivered' ? Date.now() : 0 }); offerStatusMsg(c.id, st); } }
+  else if (act === 'bknow') { b.disabled = true; SB.rpc('backup_now').then(() => { toast('Copy saved.'); bkLoad(true); }).catch(() => { b.disabled = false; toast('Could not save a copy. Try again.'); }); }
+  else if (act === 'bkask') { ui.bkAsk = +b.dataset.id || null; renderLedger(); }
+  else if (act === 'bkget') { const id = +b.dataset.id, x = (ui.bkList || []).find(y => y.id === id); SB.rpc('backup_get', { p_id: id }).then(d => dlCap ? dlCap.save({ filename: 'Vurata Market backup ' + (x ? new Date(x.at).toISOString().slice(0, 16).replace('T', ' ').replace(':', '.') : id) + '.json', data: JSON.stringify({ app: 'Vurata Market', kind: 'server backup', saved: x && x.at, data: d }) }) : toast('Saving files is not available here.')).catch(e => { if (!e || e.code !== 'declined') toast('Could not download that copy.'); }); }
+  else if (act === 'bkdo') { b.disabled = true; SB.rpc('backup_restore', { p_id: +b.dataset.id }).then(() => { ['mumu-ledger', 'mumu-cust'].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} }); toast('Restored. Reloading…'); setTimeout(() => location.reload(), 900); }).catch(() => { b.disabled = false; toast('Could not restore. Nothing was changed.'); }); }
   else if (act === 'backup') { exportBackup(); LS.set('mumu-lastbackup', String(Date.now())); setTimeout(() => { if (ui.view === 'cust') renderCustomers(); }, 300); }
   else if (act === 'lft') { saveLedger({ ov: { [b.dataset.id]: { ft: b.dataset.s === '1' } } }); }
   else if (act === 'featadd') { const k = b.dataset.key; const o = BY_ID[k.split('|')[0]].o[+(k.split('|')[1] || 0)]; const cur = (S.lines[k] && S.lines[k].q) || 0; setQty(k, cur ? cur + (o.st || 1) : (o.mn || o.st || 1), false); renderPick(); }
