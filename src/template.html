@@ -1348,6 +1348,12 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .sidecard .kband { margin-bottom: 4px; } .kband + .drvmgr { margin-top: 0; padding-top: 0; border-top: 0; }
 /* the main step button speaks in the same type as the buttons under it: one group, colour sets the lead */
 .ccard .ofoot .omain { font-size: 13.5px; }
+/* All messages: a soft gold glow and a beating dot until opened for this step */
+.orow.pulse { background: color-mix(in srgb, var(--gold) 9%, var(--surface)); animation: rowglow 2.4s ease-in-out infinite; } .orow.pulse > span:first-child { color: var(--ink); font-weight: 600; }
+.orow.pulse > span:first-child::after { content: ''; display: inline-block; width: 8px; height: 8px; margin-left: 10px; vertical-align: middle; border-radius: 50%; background: var(--gold); animation: rowdot 1.6s ease-out infinite; }
+@keyframes rowglow { 50% { background: color-mix(in srgb, var(--gold) 18%, var(--surface)); } }
+@keyframes rowdot { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 60%, transparent); } 100% { box-shadow: 0 0 0 9px transparent; } }
+@media (prefers-reduced-motion: reduce) { .orow.pulse, .orow.pulse > span:first-child::after { animation: none; } }
 .ostps { padding: 12px 16px; border-bottom: 1px solid var(--line); } .ostps .cstps { padding-top: 0; } .ofoot .osubs:empty { display: none; }
 .kfoot { display: grid; gap: 8px; margin-top: 4px; } .kcard .omain, .drvmsg .omain { --sc: var(--ink); } .supcard .omain, .pksup .omain { --sc: inherit; }
 .pkfoot { display: grid; gap: 8px; }
@@ -3545,18 +3551,15 @@ function fullCard(c, comp, date, open, det) {
   /* quiet rows + what opens under them */
   const pv = c.paid || due <= 0 ? '<b class="pos">Paid</b>' : '<b class="neg">' + fmtRp(due) + '</b>' + (c.pay ? ' · ' + esc(String(c.pay).split(' ')[0]) : '');
   const pay = row('pay', 'Payment', pv) + (sec === 'pay' ? '<div class="obody"><div class="cprow">' + paySelect(c) + '<button type="button" class="paidtog" data-act="cpaidtog" data-id="' + id + '" aria-pressed="' + !!c.paid + '"' + ro + '>' + (c.paid ? '✓ Paid' : 'Mark as paid') + '</button></div>' + (c.paid ? '' : '<label class="lf dep"><span>Deposit received</span><span class="lpr">Rp <input data-cdep="' + id + '" inputmode="numeric" value="' + (c.dep || '') + '" placeholder="0"' + ro + '></span></label>') + '</div>' : '');
-  const more = row('more', 'All messages', 'Send, include, cancel') + (sec === 'more' ? '<div class="obody">' +
+  /* the messages row pulses until it is opened for this step, then stays calm */
+  const more = row('more', 'All messages', 'Send, include, cancel', sec !== 'more' && (ui.msgSeen || {})[c.id] !== st ? 'pulse' : '') + (sec === 'more' ? '<div class="obody">' +
       (ph ? allMsgsMenu(c) : '') + '<label class="check cinc"><input type="checkbox" data-cinc="' + id + '"' + (c.inc !== false ? ' checked' : '') + ro + '> Include in the combined supplier order</label>' + cancelBox(c) + '</div>' : '');
   const rows = '<div class="orows">' + more + pay + cmdBar(c, open).replace('class="csec crow"', 'class="orowwrap"').replace('class="csum"', 'class="orow"').replace('<span class="csl">', '<span>').replace('<span class="csv">', '<span class="ov">') + (open ? det : '') +
     (st !== 'new' ? dcostHtml(c).replace('class="cpsec crow"', 'class="orowwrap"').replace('class="csum"', 'class="orow"').replace('<span class="csl">', '<span>').replace('<span class="csv">', '<span class="ov">') : '') +
     row('cust', 'Customer details', esc(addrOnly(c.addr).split('\n')[0] || (c.zone ? zoneLabel(c.zone).split(' / ')[0] : 'Add details'))) +
     (sec === 'cust' ? '<div class="obody cdx">' + custDetails(c, date) + repeatInfo(c) + '</div>' : '') +
     '</div>';
-  /* one main action at the bottom, in the step colour */
-  const owed = !c.paid && due > 0; const keys = STEP_MSGS[st].filter(k => k !== 'pay' || owed); if (st === 'delivered' && owed) keys.sort((a, b) => (b === 'pay') - (a === 'pay')); const k = keys[0]; const x = k && msgDef(k);
-  const main = !ph ? '<button type="button" class="omain s-' + st + '" data-act="cedit" data-id="' + id + '">Add a WhatsApp number</button>' : x ? '<a class="omain s-' + st + '" target="_blank" rel="noopener"' + (k === 'bill' ? ' data-confsent="' + id + '"' : '') + ' href="' + esc(waTo(c, k)) + '"><span aria-hidden="true">' + x[1] + '</span>' + esc(x[2]) + '</a>' : '';
-  const sub = !c.paid && due > 0 && st === 'delivered' ? '<button type="button" class="osub s-delivered" data-act="cpaidtog" data-id="' + id + '"' + ro + '>Mark as paid <span aria-hidden="true">&rarr;</span></button>' : '';
-  return '<div class="ccard cfull r2' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(st) + '" data-cid="' + id + '">' + band + icons + steps + nowHtml + '<div class="ofoot">' + main + '<div class="osubs">' + sub + '</div></div>' + rows + '<button type="button" class="cmore less" data-act="cexp" data-id="' + id + '" aria-expanded="true">Show less</button></div>';
+  return '<div class="ccard cfull r2' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(st) + '" data-cid="' + id + '">' + band + icons + steps + nowHtml + rows + '<button type="button" class="cmore less" data-act="cexp" data-id="' + id + '" aria-expanded="true">Show less</button></div>';
 }
 function payRow(c) {
   const due = dueOf(c); const ro = canWrite ? '' : ' disabled';
@@ -4146,7 +4149,7 @@ function renderCustomers() {
 }
 /* Coming back from WhatsApp can reload the page (the phone drops it while you are away).
    Open cards, open rows, filters and the scroll spot are kept for this tab, so you land where you left. */
-const SPOT_KEYS = ['custOpen', 'cexp', 'osec', 'cfil', 'cview', 'person', 'showDel', 'keep'];
+const SPOT_KEYS = ['custOpen', 'cexp', 'osec', 'cfil', 'cview', 'person', 'showDel', 'keep', 'msgSeen'];
 function saveSpot() { if (cmode) return;
   const o = { at: Date.now() }; SPOT_KEYS.forEach(k => { if (ui[k] !== undefined) o[k] = ui[k]; });
   if (ui.view === 'cust') { const bh = document.getElementById('bar').getBoundingClientRect().height; const el = [...document.querySelectorAll('#custList [data-cid], #custList .orow, #custList .obody')].find(x => x.getBoundingClientRect().bottom > bh + 4);
@@ -4952,7 +4955,7 @@ document.addEventListener('click', e => {
     const id = 's' + Date.now().toString(36); saveLedger({ sups: { [id]: { name: nmv, what: nmv, phone: ((document.getElementById(two ? 'pkns-wa2' : 'pkns-wa') || {}).value || '').trim(), h: nextHue() } } });
     if (!two) { const iid = b.dataset.key.split('|')[0]; saveLedger({ ov: { [iid]: { s: id } } }); toast(supName(BY_ID[iid]) + ' is now bought from ' + nmv + '. Update its price in Ledger if it differs.'); } else toast('Added ' + nmv + '.');
     ui.pkAddSup = false; ui.pkNew = ''; ui.pkMenu = ''; renderCustomers(); }
-  else if (act === 'osec') { ui.osec = ui.osec || {}; const k = b.dataset.k; ui.osec[b.dataset.id] = ui.osec[b.dataset.id] === k ? '' : k; renderCustomers(); }
+  else if (act === 'osec') { ui.osec = ui.osec || {}; const k = b.dataset.k; if (k === 'more') { const c = cust.find(x => x.id === b.dataset.id); ui.msgSeen = ui.msgSeen || {}; ui.msgSeen[b.dataset.id] = (c && c.status) || 'new'; } ui.osec[b.dataset.id] = ui.osec[b.dataset.id] === k ? '' : k; renderCustomers(); }
   else if (act === 'dcopen') { ui.dcOpen = ui.dcOpen || {}; ui.dcOpen[b.dataset.id] = !ui.dcOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'dcset') { const c = cust.find(x => x.id === b.dataset.id); const v = +b.dataset.v; updCust(b.dataset.id, { dc: c && +c.dc === v ? 0 : v, dcs: 0, dcn: 0 }); }
   else if (act === 'pview') { ui.cview = b.dataset.v; ui.person = ''; renderCustomers(); }
