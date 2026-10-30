@@ -1148,6 +1148,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .pxhist { margin: -4px 0 14px; font-size: 13px; } .pxhist summary { cursor: pointer; color: var(--muted); font-weight: 600; padding: 4px 0; } .pxhist summary small { margin-left: 4px; font-weight: 500; }
 .pxhist ol { list-style: none; margin: 6px 0 0; padding: 0; display: grid; } .pxhist li { display: grid; grid-template-columns: 9.5em 1fr; gap: 0 12px; padding: 7px 0; border-top: 1px solid var(--line); } .pxhist li > span:first-child { grid-row: span 2; color: var(--muted); font-size: 12px; } .pxhist li b { font-size: 13px; } .pxhist li > span:last-child { color: var(--muted); font-size: 12px; }
 .cehint { display: block; margin-top: 4px; font-size: 11.5px; color: var(--muted); font-weight: 400; letter-spacing: 0; text-transform: none; }
+.billsub { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .billsub .btn { margin: 0; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2873,6 +2874,80 @@ function buildPdf(comp) {
   const n = doc.getNumberOfPages(); for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(140, 148, 143); txt('Vurata Market order  |  page ' + i + ' of ' + n, W / 2, 291, { align: 'center' }); }
   return doc;
 }
+/* Staff: a clean PDF bill for one customer order, in the customer's language. Removed items stay visible, struck through at Rp 0. */
+let QR_IMG = '';
+function ensureQris() { if (QR_IMG) return Promise.resolve(QR_IMG); return fetch('assets/qris.jpg').then(r => r.blob()).then(b => new Promise(res => { const fr = new FileReader(); fr.onload = () => { QR_IMG = fr.result; res(QR_IMG); }; fr.onerror = () => res(''); fr.readAsDataURL(b); })).catch(() => ''); }
+function buildBillPdf(c) {
+  const J = window.jspdf && window.jspdf.jsPDF; if (!J) return null; const id = c.lang === 'id'; const L = (en, ix) => id ? ix : en;
+  const comp = compute(custState(c), 'sell'); const due = c.paid ? 0 : Math.max(0, comp.grand - (+c.dep || 0));
+  const doc = new J({ unit: 'mm', format: 'a4' }); const W = 210, M = 16; let y = 18;
+  const INK = [22, 32, 26], MUTE = [104, 114, 108], LINE = [226, 229, 227], GOLDT = [140, 115, 71], GOLD = [194, 166, 121], FADE = [160, 166, 162];
+  doc.setProperties({ title: 'Vurata Market ' + orderNo(c), author: 'Vurata Market' });
+  const need = h => { if (y + h > 284) { doc.addPage(); y = 18; } };
+  const txt = (t, x, yy, o) => doc.text(clean(t), x, yy, o);
+  const tracked = (t, x, yy, o) => { if (o && o.align === 'right') { txt(t, x, yy, o); return; } doc.setCharSpace(0.9); txt(t, x, yy, o); doc.setCharSpace(0); };
+  /* header */
+  if (WM_PNG) { try { doc.addImage(WM_PNG, 'PNG', M - 0.9, y - 6.6, 38, 7.98, 'vmwm', 'FAST'); doc.setDrawColor(...GOLD); doc.setLineWidth(0.3); doc.line(M + 40, y - 5, M + 40, y + 0.5); let mx = M + 43; if (MK_PNG) { doc.addImage(MK_PNG, 'PNG', mx, y - 4.9, 5.2, 5.2, 'vmmk', 'FAST'); mx += 7.6; } doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...MUTE); txt('M A R K E T', mx, y - 0.8); } catch (e) {} } else { doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...INK); txt('VURATA MARKET', M, y); }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...GOLDT); tracked(L('ORDER', 'PESANAN'), W - M, y - 5, { align: 'right' });
+  doc.setFontSize(15); doc.setTextColor(...INK); txt(orderNo(c), W - M, y + 1.5, { align: 'right' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...MUTE); txt(L('Issued ', 'Dibuat ') + new Date().toLocaleDateString(id ? 'id-ID' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), W - M, y + 6.5, { align: 'right' });
+  y += 12; doc.setDrawColor(...GOLD); doc.setLineWidth(0.6); doc.line(M, y, M + 14, y); y += 8;
+  /* customer and delivery */
+  const slot = c.slot ? (id ? (ID_SLOT[c.slot] || c.slot) : c.slot) : '';
+  const left = [[L('Customer', 'Pelanggan'), c.name], ['WhatsApp', c.phone]], right = [[L('Delivery', 'Pengantaran'), (c.need ? (id ? fmtDate(c.need, 'id') : fmtDate(c.need)) : '') + (slot ? ', ' + slot : '')], [L('Address', 'Alamat'), addrOnly(c.addr)], [L('Payment', 'Pembayaran'), id ? (PAY_ID[c.pay] || c.pay) : c.pay]];
+  const colW = (W - 2 * M - 10) / 2; let ly = y, ry = y;
+  const block = (rows, x, yy) => { rows.forEach(r => { if (!r[1]) return; doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...MUTE); tracked(String(r[0]).toUpperCase(), x, yy); yy += 4.4; doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...INK); const ls = doc.splitTextToSize(clean(r[1]), colW); doc.text(ls, x, yy); yy += ls.length * 4.6 + 2.6; }); return yy; };
+  ly = block(left, M, ly); ry = block(right, M + colW + 10, ry); y = Math.max(ly, ry) + 2;
+  /* items */
+  const rm = removedLines(c); const secs = {}, gone = {};
+  comp.groups.forEach(g => g.lines.forEach(ln => { const d = ln.it.d || ln.it.s; (secs[d] = secs[d] || []).push(ln); }));
+  rm.forEach(r => { const d = r.it.d || r.it.s; (gone[d] = gone[d] || []).push(r); secs[d] = secs[d] || []; });
+  need(16); doc.setFillColor(246, 244, 239); doc.rect(M, y, W - 2 * M, 8, 'F'); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...MUTE);
+  tracked(L('ITEM', 'BARANG'), M + 3, y + 5.3); tracked(L('QTY', 'JUMLAH'), 116, y + 5.3); tracked(L('PRICE', 'HARGA'), 160, y + 5.3, { align: 'right' }); tracked('TOTAL', W - M - 3, y + 5.3, { align: 'right' }); y += 13;
+  const unitOf = o => { const u = UNIT_EN[o.u] || o.u; return id ? unitId(u) : u; };
+  Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => {
+    const tag = (SUPS[d] && SUPS[d].tag) || 'Items'; need(12); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...GOLDT); tracked(clean((id && ID_TEXT[tag]) || tag).toUpperCase(), M + 3, y); y += 6;
+    secs[d].forEach(ln => { const nmL = doc.splitTextToSize(clean(nameIn(ln.it, id ? 'id' : 'en')), 92); need(nmL.length * 4.6 + 3);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...INK); doc.text(nmL, M + 3, y);
+      txt(fmtQty(ln.q) + ' ' + unitOf(ln.o), 116, y); txt(ln.price ? fmtRp(ln.price) : L('ask', 'tanya'), 160, y, { align: 'right' }); txt(ln.total != null ? fmtRp(ln.total) : '-', W - M - 3, y, { align: 'right' });
+      y += nmL.length * 4.4 + 1.1; doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(M + 3, y - 2.5, W - M - 3, y - 2.5); y += 1; });
+    (gone[d] || []).forEach(r => { const name = clean(nameIn(r.it, id ? 'id' : 'en')); need(9);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...FADE); txt(name, M + 3, y); const nw = Math.min(doc.getTextWidth(name), 92);
+      doc.setDrawColor(...FADE); doc.setLineWidth(0.3); doc.line(M + 3, y - 1.2, M + 3 + nw, y - 1.2);
+      txt(fmtQty(r.oq) + ' ' + unitOf(r.o), 116, y); doc.setFontSize(7.5); txt(L('Not available', 'Tidak tersedia'), 160, y, { align: 'right' }); doc.setFontSize(9.5); txt(fmtRp(0), W - M - 3, y, { align: 'right' });
+      y += 5.5; doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(M + 3, y - 2.5, W - M - 3, y - 2.5); y += 1; });
+    y += 3;
+  });
+  /* totals */
+  need(40); y += 2; const tx = 120;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...MUTE); txt(L('Items', 'Barang'), tx, y); doc.setTextColor(...INK); txt(fmtRp(comp.total), W - M - 3, y, { align: 'right' }); y += 6;
+  if (hasDel(comp)) { doc.setTextColor(...MUTE); txt(L('Delivery', 'Ongkir'), tx, y); doc.setTextColor(...INK); txt(id ? (ID_TEXT[delLine(comp)] || delLine(comp)) : delLine(comp), W - M - 3, y, { align: 'right' }); y += 6; }
+  doc.setDrawColor(...INK); doc.setLineWidth(0.4); doc.line(tx, y - 2, W - M - 3, y - 2); y += 5;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...MUTE); tracked('TOTAL', tx, y); doc.setFontSize(17); doc.setTextColor(...INK); txt(fmtRp(comp.grand), W - M - 3, y + 0.5, { align: 'right' }); y += 7;
+  if (+c.dep > 0 && due > 0) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...MUTE); txt(L('Received ', 'Diterima ') + fmtRp(c.dep) + L('   Left to pay ', '   Sisa ') + fmtRp(due), W - M - 3, y, { align: 'right' }); y += 6; }
+  if (c.paid || (comp.grand > 0 && due <= 0)) { doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(27, 127, 75); txt(L('PAID IN FULL', 'LUNAS'), W - M - 3, y, { align: 'right' }); y += 6; }
+  if (rm.length) { y += 2; doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...MUTE); const nl = doc.splitTextToSize(clean(L('Items struck through were not available from our suppliers and are not charged.', 'Barang yang dicoret tidak tersedia dari pemasok kami dan tidak ditagih.')), W - 2 * M); need(nl.length * 4 + 2); doc.text(nl, M, y); y += nl.length * 4 + 2; }
+  /* payment */
+  const thanks = L('Thank you for ordering with us.', 'Terima kasih sudah berbelanja di Vurata Market.');
+  if (due > 0 && /qris/i.test(c.pay || '') && QR_IMG) { const bh = 40; need(bh + 3); y += 3; doc.setFillColor(250, 246, 238); doc.rect(M, y, W - 2 * M, bh, 'F'); doc.setFillColor(...GOLD); doc.rect(M, y, 1.2, bh, 'F');
+    try { doc.addImage(QR_IMG, 'JPEG', W - M - 33, y + 3, 29, 33.5); } catch (e) {}
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...GOLDT); tracked(L('PAY WITH QRIS', 'BAYAR DENGAN QRIS'), M + 7, y + 7.5);
+    doc.setFontSize(13); doc.setTextColor(...INK); txt(fmtRp(due), M + 7, y + 14);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.8); doc.setTextColor(...MUTE); let py = y + 20;
+    [L('Scan the code in any banking or e-wallet app, enter ' + fmtRp(due) + ', then send us a screenshot on WhatsApp.', 'Scan kode di aplikasi bank atau e-wallet apa pun, masukkan ' + fmtRp(due) + ', lalu kirim screenshot ke kami di WhatsApp.'), L('Pay before or when your order arrives.', 'Bayar sebelum atau saat pesanan sampai.')].forEach(t => { const l = doc.splitTextToSize(clean(t), W - 2 * M - 52); doc.text(l, M + 7, py); py += l.length * 4.3 + 1; });
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...INK); txt(thanks, M + 7, y + bh - 4.5);
+    y += bh + 4; }
+  else { need(20); y += 4; doc.setDrawColor(...GOLD); doc.setLineWidth(0.6); doc.line(M, y, M + 14, y); y += 8; doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(...INK); txt(thanks, M, y); y += 6; doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...MUTE); tracked('VURATA MARKET  ·  MARKET.VURATA.COM', M, y); }
+  const n = doc.getNumberOfPages(); for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...FADE); txt('Vurata Market  |  ' + orderNo(c) + '  |  ' + L('page ', 'hal. ') + i + '/' + n, W / 2, 290, { align: 'center' }); }
+  return doc;
+}
+async function saveBillPdf(cid) {
+  const c = cust.find(x => x.id === cid); if (!c) return; await ensureWordmark(); await ensureQris(); const doc = buildBillPdf(c);
+  if (!doc) { toast('The PDF tool did not load. Check your connection and try again.'); return; }
+  if (!dlCap) { toast('Saving files is not available here.'); return; }
+  const fn = 'Vurata Market ' + orderNo(c) + (c.name ? ' ' + String(c.name).replace(/[^\w\s-]/g, '').trim() : '') + '.pdf';
+  try { await dlCap.save({ filename: fn, data: doc.output('arraybuffer') }); toast('PDF ready. Attach it in WhatsApp.'); } catch (e) { if (!e || e.code !== 'declined') toast('Could not save the PDF.'); }
+}
 async function savePdf() {
   await ensureWordmark(); const comp = compute(S); const doc = buildPdf(comp);
   if (!doc) { toast('The PDF tool did not load. Check your connection and try again.'); return; }
@@ -3415,8 +3490,12 @@ function billText(c, comp) {
   if (when.length) out.push('', when.join('\n'));
   /* 3. The bill, as proof */
   out.push('', id ? '🧾 *Rincian pesanan*' : '🧾 *Your bill*');
-  const secs = {}; comp.groups.forEach(g => g.lines.forEach(ln => { const d = ln.it.d || ln.it.s; (secs[d] = secs[d] || []).push(ln); }));
-  Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + tr((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true, id ? 'id' : 'en'))); });
+  const secs = {}, gone = {}; comp.groups.forEach(g => g.lines.forEach(ln => { const d = ln.it.d || ln.it.s; (secs[d] = secs[d] || []).push(ln); }));
+  const rm = removedLines(c); rm.forEach(r => { const d = r.it.d || r.it.s; (gone[d] = gone[d] || []).push(r); secs[d] = secs[d] || []; });
+  /* WhatsApp strikethrough: ~text~ with no spaces just inside the tildes */
+  const goneTxt = r => '- ~' + nameIn(r.it, id ? 'id' : 'en') + ': ' + fmtQty(r.oq) + ' ' + (id ? unitId(UNIT_EN[r.o.u] || r.o.u) : (UNIT_EN[r.o.u] || r.o.u)) + '~ Rp 0';
+  Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + tr((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true, id ? 'id' : 'en'))); (gone[d] || []).forEach(r => out.push(goneTxt(r))); });
+  if (rm.length) { const names = rm.map(r => nameIn(r.it, id ? 'id' : 'en')).join(', '); out.push('', id ? '_' + names + (rm.length > 1 ? ' sedang' : ' sedang') + ' tidak tersedia dari pemasok kami, jadi kami hapus dan tidak ditagih. Mohon maaf._' : '_' + names + (rm.length > 1 ? ' are' : ' is') + ' not available from our suppliers today, so we removed ' + (rm.length > 1 ? 'them' : 'it') + ' and you are not charged. Sorry about that._'); }
   out.push('');
   if (hasDel(comp)) out.push('🚚 ' + (id ? 'Ongkir' : 'Delivery') + (c.zone && c.zone !== '__other' ? ' (' + zoneLabel(c.zone) + ')' : '') + ': ' + tr(delLine(comp)) + (c.dcode ? ' (' + (id ? 'kode ' : 'code ') + c.dcode + ')' : ''));
   out.push('*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? (id ? ' + ongkir' : ' + delivery') : '') + (comp.unpriced ? (id ? ' (+ ' + comp.unpriced + ' barang belum ada harga)' : ' (+ ' + comp.unpriced + ' item(s) still to be priced)') : ''));
@@ -3523,7 +3602,7 @@ function renderCustomers() {
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
         '<div class="grand"><span>Total</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (() => { const p = profitOf(custState(c)); return '<p class="hint" style="margin-top:6px">Your cost ' + fmtRp(p.cost) + ' - profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b></p>'; })() +
         '<textarea class="pre sm" id="bill-' + esc(c.id) + '" readonly>' + esc(billText(c, comp)) + '</textarea>' +
-        '<div class="actions billacts"><a class="btn" data-confsent="' + esc(c.id) + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and ask for payment</a><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button></div><p class="hint">The same message as under Order status. Send it once stock is checked.</p>' +
+        '<div class="actions billacts"><a class="btn" data-confsent="' + esc(c.id) + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and ask for payment</a><div class="billsub"><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button><button type="button" class="btn ghost" data-act="billpdf" data-id="' + esc(c.id) + '">Download PDF</button></div></div><p class="hint">The same message as under Order status. Send it once stock is checked. The PDF is the same bill, to attach in WhatsApp after any change.</p>' +
         '<div class="hdel">' + (ui.custDel[c.id] ? '<span>Remove this order? You can restore it later.</span><button type="button" class="btn danger sm" data-act="cdelyes" data-id="' + esc(c.id) + '">Remove</button><button type="button" class="btn ghost sm" data-act="cdelno" data-id="' + esc(c.id) + '">Keep</button>' : '<button type="button" class="linkbtn" data-act="cdelask" data-id="' + esc(c.id) + '">Remove order</button>') + '</div></div>';
     }
     return ccardHead(c, comp, date) +
@@ -4074,6 +4153,7 @@ document.addEventListener('click', e => {
   else if (act === 'sendopt') { ui.sendOpt = b.dataset.k; renderShare(compute(S)); }
   else if (act === 'tosend') { const cp = compute(S); if (missingReq(S.meta).length) fixFirst(); else if (minGap(cp) > 0) { toast('Minimum order is ' + fmtRp(dlNow().min) + '. Add ' + fmtRp(minGap(cp)) + ' more.'); showView('pick'); } else showView('share'); }
   else if (act === 'fix') { fixFirst(); }
+  else if (act === 'billpdf') { saveBillPdf(b.dataset.id); }
   else if (act === 'setneed') { patch({ meta: { need: b.dataset.d } }); fixSlot(); renderOrder(compute(S)); }
   else if (act === 'noteadd') { const inp = b.closest('.ln').querySelector('input.note'); if (inp && !inp.value.toLowerCase().includes(b.dataset.t.toLowerCase())) { inp.value = (inp.value ? inp.value + ', ' : '') + b.dataset.t; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); } }
   else if (act === 'hrename') { ui.renameId = b.dataset.id; refreshHist(); const el = document.querySelector('input[data-hren]'); if (el) { el.focus(); el.select(); } }
