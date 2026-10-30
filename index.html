@@ -1178,6 +1178,33 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .ccard[data-st] .stepmsg.main .ct small { color: color-mix(in srgb, var(--on-sup) 80%, transparent); } .ccard[data-st] .stepmsg.main .go svg { stroke: var(--on-sup); }
 .ccard[data-st] .stepmsg:not(.main) { border-color: color-mix(in srgb, var(--sc) 35%, var(--line)); } .ccard[data-st] .stepmsg:not(.main) .go svg { stroke: var(--sc); }
 @media (hover: hover) { .ccard[data-st] .stepmsg:not(.main):hover { background: color-mix(in srgb, var(--sc) 12%, var(--surface)); border-color: var(--sc); } }
+/* next action bar */
+.nxbar { display: flex; align-items: stretch; gap: 0; margin-bottom: 14px; border: 1px solid var(--sc); background: color-mix(in srgb, var(--sc) 9%, var(--surface)); }
+.nxbar.s-bad { --sc: var(--danger); }
+.nxmain { flex: 1; min-width: 0; display: grid; gap: 2px; padding: 12px 16px; cursor: pointer; }
+.nxk { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--sc); } .nxk em { font-style: normal; font-weight: 600; letter-spacing: .02em; text-transform: none; color: var(--muted); margin-left: 6px; }
+.nxt { font-size: 17px; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; } .nxs { font-size: 13px; color: var(--muted); }
+.nxbtn { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 20px; border: 0; background: var(--sc); color: var(--on-sup); font: inherit; font-size: 14.5px; font-weight: 700; text-decoration: none; cursor: pointer; white-space: nowrap; }
+@media (hover: hover) { .nxbtn:hover { filter: brightness(1.1); } .nxmain:hover .nxt { text-decoration: underline; text-underline-offset: 3px; } }
+@media (max-width: 560px) { .nxbar { flex-direction: column; } .nxbtn { justify-content: center; min-height: 48px; } }
+/* delivery day board */
+.dayboard .msg-head { flex-wrap: wrap; gap: 10px; }
+.btabs { display: flex; gap: 6px; flex-wrap: wrap; } .btabs button { min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; } .btabs button small { color: var(--muted); font-weight: 500; margin-left: 2px; }
+.btabs button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); } .btabs button[aria-pressed="true"] small { color: inherit; opacity: .7; }
+.bover { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 12px; padding: 8px 12px; background: color-mix(in srgb, var(--danger) 8%, var(--surface)); box-shadow: inset 3px 0 0 var(--danger); font-size: 13px; } .bover b { color: var(--danger); }
+.bgrid { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); } .bgrid.w4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 720px) { .bgrid, .bgrid.w4 { grid-template-columns: minmax(0, 1fr); } }
+.bcol { display: grid; align-content: start; gap: 8px; padding: 10px; background: var(--surface-2); min-width: 0; }
+.bh { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 12px; color: var(--muted); } .bh b { color: var(--ink); font-size: 13px; } .bh em { font-style: normal; font-weight: 700; color: var(--ink); }
+.dcard { display: grid; gap: 4px; padding: 9px 10px; border: 1px solid var(--sc); background: var(--surface); text-align: left; font: inherit; color: var(--ink); cursor: pointer; min-width: 0; }
+.dcard .bt { display: flex; justify-content: space-between; gap: 6px; } .dcard .bt b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .dcard .bst { font-size: 11px; font-weight: 700; color: var(--sc); white-space: nowrap; }
+.dcard .bs { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; color: var(--muted); }
+@media (hover: hover) { .dcard:hover { background: color-mix(in srgb, var(--sc) 8%, var(--surface)); } }
+.bfree { padding: 12px; border: 1px dashed var(--line-dark); text-align: center; font-size: 12px; color: var(--muted); }
+/* icon flags */
+.cflags { display: inline-flex; gap: 6px; vertical-align: -3px; margin-right: 8px; } .bs .cflags { margin: 0; }
+.fl { display: inline-grid; place-items: center; width: 22px; height: 22px; } .fl svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.fl.good { color: var(--fv); } .fl.warn { color: var(--warn); } .fl.bad { color: var(--danger); } .fl.soft { color: var(--muted); }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3260,10 +3287,64 @@ function codeBoxHtml(comp) {
   if (!ui.codeOpen) return '<div class="codebox"><button type="button" class="linkbtn" data-act="codeopen">Have a code?</button></div>';
   return '<div class="codebox open"><label class="sr" for="m-code">Delivery code</label><div class="coderow"><input id="m-code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Enter your code"><button type="button" class="btn sm" data-act="codeapply">Apply</button></div>' + (ui.codeMsg ? '<p class="hint codemsg">' + esc(ui.codeMsg) + '</p>' : '') + '</div>';
 }
+/* ===== Staff daily flow: one next action, a day board by delivery window, icon flags ===== */
+const firstName = c => String(c.name || 'customer').trim().split(/\s+/)[0];
+const waTo = (c, kind) => 'https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(custMsgTxt(c, kind));
+const winOf = slot => /morning/i.test(slot || '') ? 'm' : /afternoon/i.test(slot || '') ? 'a' : /evening/i.test(slot || '') ? 'e' : 'x';
+const WIN = { m: ['Morning', '10 AM–2 PM'], a: ['Afternoon', '2–6 PM'], e: ['Evening', '6–10 PM'], x: ['Any time', '10 AM–10 PM'] };
+const hasLoc = c => !!(c.pin || mapLinkOf(c));
+const ICO = {
+  cash: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/><path d="M4 4l16 16"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+  pinoff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 11-4.7M18.4 9.2c.1.3.1.5.1.8 0 5.4-6.5 11-6.5 11"/><path d="M4 4l16 16"/></svg>',
+  note: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7"/></svg>',
+  box: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg>',
+  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>'
+};
+/* Small icon flags so the state of an order reads without reading text */
+function flagsHtml(c, comp) { if (cmode || c.status === 'cancelled') return ''; const f = []; const due = dueOf(c);
+  if (due > 0 && c.status === 'delivered') f.push(['bad', ICO.cash, 'Not paid yet']); else if (due > 0) f.push(['soft', ICO.cash, 'Not paid yet']); else f.push(['good', ICO.check, 'Paid']);
+  f.push(hasLoc(c) ? ['good', ICO.pin, 'Has a map pin'] : ['warn', ICO.pinoff, 'No map pin or link']);
+  if (String(c.notes || '').trim() || String(c.hn || '').trim()) f.push(['soft', ICO.note, 'Has a note' + (c.hn ? ': ' + c.hn : '')]);
+  if (comp && c.status === 'ordered') { const ps = packState(c, comp); if (ps.n && ps.done === ps.n) f.push(['good', ICO.box, 'Packed']); }
+  return '<span class="cflags">' + f.map(x => '<i class="fl ' + x[0] + '" title="' + esc(x[2]) + '" role="img" aria-label="' + esc(x[2]) + '">' + x[1] + '</i>').join('') + '</span>'; }
+/* The single most urgent thing to do, with the button that does it */
+function nextAction() {
+  const live = cust.filter(c => c.status !== 'cancelled'); const today = isoOf(baliNow());
+  const unconf = live.filter(c => c.status === 'new' && !c.cf && digitsOf(c.phone)).sort((a, b) => (a.need || '9').localeCompare(b.need || '9') || a.at - b.at);
+  const toOrder = live.filter(c => c.status === 'new' && c.cf && c.inc !== false);
+  const run = live.filter(c => c.status === 'ordered' && c.need && c.need <= today).sort((a, b) => 'maex'.indexOf(winOf(a.slot)) - 'maex'.indexOf(winOf(b.slot)));
+  const unpaid = live.filter(c => c.status === 'delivered' && dueOf(c) > 0 && digitsOf(c.phone));
+  const n = unconf.length + (toOrder.length ? 1 : 0) + run.length + unpaid.length;
+  if (unconf.length) { const c = unconf[0]; return { st: 'new', n, k: 'Confirm order', t: firstName(c) + ' · ' + orderNo(c), sub: (c.need ? shortDate(c.need) + (c.slot ? ', ' + WIN[winOf(c.slot)][1] : '') : 'No date yet') + ' · ' + fmtRp(compute(custState(c), 'sell').grand), btn: 'Send confirmation', href: waTo(c, 'bill'), conf: c.id, id: c.id }; }
+  if (toOrder.length) return { st: 'new', n, k: 'Order from suppliers', t: toOrder.length + ' confirmed order' + (toOrder.length > 1 ? 's' : '') + ' to buy', sub: 'Send each supplier one combined message', btn: 'Open combined order', go: '#combCard' };
+  if (run.length) { const c = run[0]; const late = c.need < today; return { st: late ? 'bad' : 'ordered', n, k: late ? 'Overdue delivery' : 'Deliver today', t: firstName(c) + ' · ' + orderNo(c), sub: WIN[winOf(c.slot)][1] + ' · ' + (zoneLabel(c.zone) || 'no area') + (hasLoc(c) ? '' : ' · no map pin'), btn: 'On our way', href: waTo(c, 'eta'), id: c.id, open: 1 }; }
+  if (unpaid.length) { const c = unpaid[0]; return { st: 'bad', n, k: 'Collect payment', t: fmtRp(dueOf(c)) + ' from ' + firstName(c), sub: orderNo(c) + ' · delivered', btn: 'Send reminder', href: waTo(c, 'pay'), id: c.id }; }
+  return { st: 'delivered', n: 0, k: 'All caught up', t: 'Nothing is waiting on you', sub: live.length ? 'New orders show up here first' : 'Share your link to get your first order', btn: '' };
+}
+function nextBarHtml() { const ns = nextStep(); if (!myWA || !ledger.dl || !cust.length) return '';
+  const a = nextAction();
+  const btn = !a.btn ? '' : a.href ? '<a class="nxbtn" target="_blank" rel="noopener" href="' + esc(a.href) + '"' + (a.conf ? ' data-confsent="' + esc(a.conf) + '"' : '') + '>' + esc(a.btn) + ' <span aria-hidden="true">&rarr;</span></a>' : '<button type="button" class="nxbtn" data-act="goto" data-t="' + a.go + '">' + esc(a.btn) + ' <span aria-hidden="true">&rarr;</span></button>';
+  return '<div class="nxbar s-' + a.st + '" role="status"><div class="nxmain"' + (a.id ? ' data-act="nxopen" data-id="' + esc(a.id) + '" title="Open this order"' : '') + '><span class="nxk">' + esc(a.k) + (a.n > 1 ? ' <em>1 of ' + a.n + '</em>' : '') + '</span><b class="nxt">' + esc(a.t) + '</b><span class="nxs">' + esc(a.sub) + '</span></div>' + btn + '</div>'; }
+/* Delivery day board: the next days with deliveries, split by time window */
+function boardHtml() {
+  const today = isoOf(baliNow()); const live = cust.filter(c => c.status !== 'cancelled' && c.need && (c.status !== 'delivered' || c.need >= today));
+  const overdue = live.filter(c => c.need < today && c.status !== 'delivered');
+  const days = [...new Set(live.filter(c => c.need >= today).map(c => c.need))].sort().slice(0, 3); if (!days.length && !overdue.length) return '';
+  const day = days.includes(ui.bday) ? ui.bday : days[0]; const tm = isoOf(new Date(baliNow().getTime() + 864e5));
+  const lab = d => d === today ? 'Today' : d === tm ? 'Tomorrow' : new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  const tabs = days.map(d => '<button type="button" data-act="bday" data-d="' + d + '" aria-pressed="' + (d === day) + '">' + lab(d) + ' <small>' + live.filter(c => c.need === d).length + '</small></button>').join('');
+  const list = live.filter(c => c.need === day); const wins = ['m', 'a', 'e'].concat(list.some(c => winOf(c.slot) === 'x') ? ['x'] : []);
+  const card = c => { const comp = compute(custState(c), 'sell'); return '<button type="button" class="dcard s-' + (c.status || 'new') + '" data-act="nxopen" data-id="' + esc(c.id) + '"><span class="bt"><b>' + esc(firstName(c)) + '</b><span class="bst">' + ({ new: 'Confirm', ordered: 'Ordered', delivered: 'Delivered' })[c.status || 'new'] + '</span></span><span class="bs">' + esc(zoneLabel(c.zone).split(' / ')[0] || 'No area') + flagsHtml(c, comp) + '</span></button>'; };
+  const col = w => { const cs = list.filter(c => winOf(c.slot) === w); return '<div class="bcol"><div class="bh"><span><b>' + WIN[w][0] + '</b> ' + WIN[w][1] + '</span><em>' + cs.length + '</em></div>' + (cs.length ? cs.map(card).join('') : '<div class="bfree">Free</div>') + '</div>'; };
+  return '<div class="card dayboard"><div class="msg-head"><h3>Deliveries</h3><div class="btabs" role="group" aria-label="Delivery day">' + tabs + '</div></div>' +
+    (overdue.length ? '<div class="bover"><b>' + overdue.length + ' overdue</b> ' + overdue.map(c => '<button type="button" class="linkbtn" data-act="nxopen" data-id="' + esc(c.id) + '">' + esc(firstName(c)) + ' · ' + shortDate(c.need) + '</button>').join(' ') + '</div>' : '') +
+    (days.length ? '<div class="bgrid w' + wins.length + '">' + wins.map(col).join('') + '</div>' : '') + '</div>'; }
 function overviewHtml() {
   const ns = nextStep();
   const nx = '<div class="nextstep"><span><i>Next</i>' + esc(ns.t) + '</span>' + (ns.b ? '<button type="button" class="btn sm" ' + (ns.go ? 'data-act="goto" data-t="' + ns.go + '"' : 'data-act="' + ns.act + '"') + '>' + ns.b + '</button>' : '') + '</div><button type="button" class="btn pastebtn" data-act="pasteorder"' + (canWrite ? '' : ' disabled') + '>Paste order from clipboard</button>';
-  if (!cust.length) return nx;
+  if (!cust.length) return nx.replace(/<button type="button" class="btn pastebtn"[^>]*>Paste order from clipboard<\/button>/, '');
+  if (!myWA || !ledger.dl) return nx.replace(/<button type="button" class="btn pastebtn"[^>]*>Paste order from clipboard<\/button>/, '');
   const n = x => cust.filter(c => c.status === x).length; const toCollect = cust.reduce((t, c) => t + dueOf(c), 0);
   const by = {}; cust.filter(c => c.status !== 'delivered' && c.status !== 'cancelled' && c.zone).forEach(c => { const z = zoneLabel(c.zone); by[z] = (by[z] || 0) + 1; }); const byTxt = Object.keys(by).map(z => esc(z) + ' <b>' + by[z] + '</b>').join(' &middot; ');
   const dayLabel = iso => { const t = isoOf(new Date()), tm = isoOf(new Date(Date.now() + 864e5)); return iso === t ? 'Today' : iso === tm ? 'Tomorrow' : new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); };
@@ -3273,7 +3354,7 @@ function overviewHtml() {
   const areaRows = Object.keys(by).sort((a, b) => by[b] - by[a] || a.localeCompare(b)).map(z => [z, by[z], false]);
   const brkCol = (title, rows) => rows.length ? '<div class="brk"><h4>' + title + '</h4><ul>' + rows.map(r => '<li' + (r[2] ? ' class="neg"' : '') + '><span>' + esc(r[0]) + '</span><b class="num">' + r[1] + '</b></li>').join('') + '</ul></div>' : '';
   const brkHtml = (d, a) => (d.length || a.length) ? '<div class="brkgrid">' + brkCol('Deliveries by day', d) + brkCol('Deliveries by area', a) + '</div>' : '';
-  return nx.replace(/<button type="button" class="btn pastebtn"[^>]*>Paste order from clipboard<\/button>/, '') + (dayRows.length || areaRows.length ? '<div class="card"><h3>Deliveries</h3>' + brkHtml(dayRows, areaRows) + '</div>' : ''); /* counts and Paste live in the Today panel */
+  return boardHtml(); /* the next action sits above everything; counts and Paste live in the Today panel */
 }
 function packState(c, comp) { let n = 0, done = 0; comp.groups.forEach(g => g.lines.forEach(ln => { if (ln.st === 'x') return; n++; if (c.pk && c.pk[ln.key]) done++; })); return { n, done }; }
 const ID_SLOT = { 'Morning (10 AM to 2 PM)': 'Pagi (10.00-14.00)', 'Afternoon (2 to 6 PM)': 'Siang (14.00-18.00)', 'Evening (6 to 10 PM)': 'Malam (18.00-22.00)', 'Late morning (10:30 to 12)': 'Menjelang siang (10.30-12.00)', 'Afternoon (12 to 4)': 'Siang (12.00-16.00)', 'Evening (4 to 7)': 'Sore (16.00-19.00)' };
@@ -3592,7 +3673,7 @@ function compactCard(c, comp, date) { if (c.status === 'cancelled') return '<div
   const ph = digitsOf(c.phone); const keys = STEP_MSGS[st].filter(k => k !== 'pay' || (!c.paid && due > 0)); const k = keys[0]; const x = k && msgDef(k);
   const meta = [repeatTag(c), c.zone ? zoneLabel(c.zone) : '', c.need ? shortDate(c.need) : '', c.paid || due <= 0 ? '<span class="pos">Paid</span>' : '<span class="neg">' + fmtRp(due) + ' to collect</span>', ready ? '<span class="rdy">Ready for driver</span>' : '', c.cf && st === 'new' ? '<span class="pos">Confirmed ✓</span>' : ''].filter(Boolean).join(' · ');
   return '<div class="ccard compact' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(st) + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.lang === 'id' ? '<em class="langtag">ID</em>' : '') + '<i class="leader" aria-hidden="true"></i><span class="ctotw"><span class="num ctot">' + fmtRp(comp.grand) + '</span>' + profitTag(c) + '</span></div>' +
-    '<div class="cmeta">' + meta + '</div><div class="crow3"><span class="stpill st-' + st + '">' + L[cur] + '</span>' +
+    '<div class="cmeta">' + flagsHtml(c, comp) + meta + '</div><div class="crow3"><span class="stpill st-' + st + '">' + L[cur] + '</span>' +
     (x && ph ? '<a class="stepmsg main sm" target="_blank" rel="noopener"' + (k === 'bill' ? ' data-confsent="' + esc(c.id) + '"' : '') + ' href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b></span></a>' : '') +
     '<button type="button" class="cmore" data-act="cexp" data-id="' + esc(c.id) + '" aria-expanded="false">Details</button></div></div>'; }
 function renderCustomers() {
@@ -3660,7 +3741,7 @@ function renderCustomers() {
       (people.length ? '<div class="who">' + people.map(p => '<div class="sumrow"><span>' + esc(p.name) + '</span><span class="num">' + fmtRp(p.total) + '</span></div>').join('') + '<div class="grand"><span>Everyone</span><b class="num">' + fmtRp(cc.total) + '</b></div></div>' : '<p class="hint">Nothing selected yet.</p>') + '</div>' + (sups ? '<div class="supgrid">' + sups + '</div>' : '');
   }
   const invOpen = cardOpen('inviteCard'); const pIx = invite.indexOf('<div class="card"><h3>Payment details</h3>'); const inviteFinal = invOpen ? invite.replace('<h3>Invite customers</h3>', cardHead('inviteCard', 'Invite customers', true).replace(/^<div class="msg-head">|<\/div>$/g, '')) : '<div class="card" id="inviteCard">' + cardHead('inviteCard', 'Invite customers', false) + '<p class="hint">Your customer link, QR code and WhatsApp message.</p></div>' + invite.slice(pIx);
-  host.innerHTML = sideWrap(overviewHtml() + '' + imp + list + comb + driverHtml() + salesHtml() + inviteFinal, custSide());
+  host.innerHTML = nextBarHtml() + sideWrap(overviewHtml() + '' + imp + list + comb + driverHtml() + salesHtml() + inviteFinal, custSide());
   const ta = document.getElementById('importTxt'); if (ta && prevTxt) ta.value = prevTxt;
 }
 async function pasteOrder() {
@@ -4330,6 +4411,8 @@ document.addEventListener('click', e => {
     updCust(id, { status: 'cancelled', cx: { r: a.r, n: (ni ? ni.value : a.n || '').trim().slice(0, 200), at: Date.now(), from: prev } }); delete ui.cxAsk[id]; if (ui.cexp) ui.cexp[id] = false;
     toast('Order ' + orderNo(c) + ' cancelled.', { label: 'Undo', fn: () => updCust(id, { status: prev }) }); }
   else if (act === 'cxreopen') { const c = cust.find(x => x.id === b.dataset.id); if (c) { updCust(c.id, { status: 'new' }); toast('Order ' + orderNo(c) + ' reopened as New.'); } }
+  else if (act === 'nxopen') { const id = b.dataset.id; ui.cexp = ui.cexp || {}; ui.cexp[id] = true; ui.keep = ui.keep || {}; ui.keep[id] = 1; ui.flash = id; renderCustomers(); const el = document.querySelector('#custList [data-cid="' + id + '"]'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); setTimeout(() => { if (ui.flash === id) ui.flash = ''; }, 2500); }
+  else if (act === 'bday') { ui.bday = b.dataset.d; renderCustomers(); }
   else if (act === 'cexp') { ui.cexp = ui.cexp || {}; const id = b.dataset.id; ui.cexp[id] = !ui.cexp[id]; if (!ui.cexp[id]) { ui.custOpen[id] = false; if (ui.cedit) ui.cedit[id] = false; } renderCustomers(); const el = document.querySelector('[data-cid="' + id + '"]'); if (el && ui.cexp[id]) el.scrollIntoView({ block: 'nearest' }); }
   else if (act === 'cfil' && b.closest('.sidep')) { ui.keep = {}; ui.cfil = b.dataset.k; ui.cunpaid = false; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   else if (act === 'cunpaid') { ui.keep = {}; ui.cunpaid = true; ui.cfil = 'all'; ui.showDel = true; renderCustomers(); const el = document.getElementById('custList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
