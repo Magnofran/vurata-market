@@ -1149,6 +1149,25 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .pxhist ol { list-style: none; margin: 6px 0 0; padding: 0; display: grid; } .pxhist li { display: grid; grid-template-columns: 9.5em 1fr; gap: 0 12px; padding: 7px 0; border-top: 1px solid var(--line); } .pxhist li > span:first-child { grid-row: span 2; color: var(--muted); font-size: 12px; } .pxhist li b { font-size: 13px; } .pxhist li > span:last-child { color: var(--muted); font-size: 12px; }
 .cehint { display: block; margin-top: 4px; font-size: 11.5px; color: var(--muted); font-weight: 400; letter-spacing: 0; text-transform: none; }
 .billsub { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .billsub .btn { margin: 0; }
+/* Order status: one colour per step, used everywhere the status shows (step buttons, card edge, filters, today panel).
+   New = amber (needs you), Ordered = blue (in progress), Delivered = green (done). */
+.s-new { --sc: var(--warn); } .s-ordered { --sc: var(--gr); } .s-delivered { --sc: var(--fv); }
+.stsec { box-shadow: inset 0 3px 0 var(--sc); padding-top: 15px; } .stsec .cplab em { color: var(--sc); font-weight: 700; font-style: normal; }
+.cstps { gap: 6px; border: 0; }
+.cstp { flex-direction: row; min-height: 52px; border: 1.5px solid color-mix(in srgb, var(--sc) 35%, var(--line)) !important; background: color-mix(in srgb, var(--sc) 6%, var(--surface)); color: var(--sc); transition: background-color .15s ease, color .15s ease, border-color .15s ease; }
+.cstp + .cstp { border-left-width: 1.5px; }
+.cstp span { display: grid; justify-items: start; line-height: 1.15; } .cstp small { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+.cstp i { border-color: currentColor; color: currentColor; }
+.cstp.now { background: var(--sc); border-color: var(--sc) !important; color: var(--on-sup); } .cstp.now i { background: var(--on-sup); border-color: var(--on-sup); color: var(--sc); }
+.cstp.done { background: color-mix(in srgb, var(--sc) 12%, var(--surface)); color: var(--sc); } .cstp.done i { background: var(--sc); border-color: var(--sc); color: var(--on-sup); }
+.cstp.next { border-color: var(--sc) !important; border-style: dashed !important; background: var(--surface); }
+@media (hover: hover) { .cstp:not(.now):hover { background: color-mix(in srgb, var(--sc) 16%, var(--surface)) !important; color: var(--sc) !important; border-style: solid !important; } }
+/* the same colours on the filters and the today panel */
+[data-act="cfil"][data-k="new"] { --sc: var(--warn); } [data-act="cfil"][data-k="ordered"] { --sc: var(--gr); } [data-act="cfil"][data-k="delivered"] { --sc: var(--fv); }
+.pstat[data-k="new"] b, .pstat[data-k="ordered"] b, .pstat[data-k="delivered"] b { color: var(--sc); }
+.pstat[data-k] { box-shadow: inset 0 3px 0 var(--sc, transparent); }
+.lseg [data-act="cfil"][data-k="new"]::before, .lseg [data-act="cfil"][data-k="ordered"]::before, .lseg [data-act="cfil"][data-k="delivered"]::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50% !important; background: var(--sc); vertical-align: middle; }
+.ccard[data-st="ordered"] { --sa: var(--gr); } .ccard[data-st="delivered"] { --sa: var(--fv); } .ccard[data-st="new"] { --sa: var(--warn); }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3196,9 +3215,9 @@ function stepMsgs(c, st) { const ph = digitsOf(c.phone); const unpaid = !c.paid 
     '<button type="button" class="linkbtn othermsg" data-act="cmsgtog" data-id="' + esc(c.id) + '" aria-expanded="' + mo + '">' + (mo ? 'Hide other messages' : 'Other messages') + '</button>' + (mo ? allMsgsMenu(c) : '') + '</div>'; }
 function statusPanel(c) { const ro = canWrite ? '' : ' disabled'; const order = ['new', 'ordered', 'delivered']; const cur = Math.max(0, order.indexOf(c.status || 'new'));
   const L = { new: 'New', ordered: 'Ordered', delivered: 'Delivered' }; const H = { new: 'Waiting for your confirmation', ordered: 'Confirmed, being packed', delivered: 'With the customer' };
-  const steps = order.map((st, i) => '<button type="button" class="cstp' + (i < cur ? ' done' : i === cur ? ' now' : '') + '" data-act="cstat" data-id="' + esc(c.id) + '" data-v="' + st + '" aria-pressed="' + (i === cur) + '"' + ro + '><i>' + (i < cur ? '✓' : i + 1) + '</i><span>' + L[st] + '</span></button>').join('');
+  const steps = order.map((st, i) => '<button type="button" class="cstp s-' + st + (i < cur ? ' done' : i === cur ? ' now' : i === cur + 1 ? ' next' : '') + '" data-act="cstat" data-id="' + esc(c.id) + '" data-v="' + st + '" aria-pressed="' + (i === cur) + '"' + ro + '><i>' + (i < cur ? '✓' : i + 1) + '</i><span>' + L[st] + (i === cur + 1 ? '<small>Next step</small>' : '') + '</span></button>').join('');
   const due = dueOf(c);
-  return '<div class="cpanel"><div class="cpsec"><div class="cplab"><span>Order status</span><em>' + H[order[cur]] + '</em></div><div class="cstps" role="group" aria-label="Order status">' + steps + '</div>' + stepMsgs(c, order[cur]) + '</div>' +
+  return '<div class="cpanel"><div class="cpsec stsec s-' + order[cur] + '"><div class="cplab"><span>Order status</span><em>' + H[order[cur]] + '</em></div><div class="cstps" role="group" aria-label="Order status">' + steps + '</div>' + stepMsgs(c, order[cur]) + '</div>' +
     '<div class="cpsec"><div class="cplab"><span>Payment</span><em class="' + (c.paid || due <= 0 ? 'pos' : 'neg') + '">' + (c.paid ? 'Paid in full' : 'To collect ' + fmtRp(due)) + '</em></div>' +
       '<div class="cprow">' + paySelect(c) + '<button type="button" class="paidtog" data-act="cpaidtog" data-id="' + esc(c.id) + '" aria-pressed="' + !!c.paid + '"' + ro + '>' + (c.paid ? '✓ Paid' : 'Mark as paid') + '</button></div>' +
       (c.paid ? '' : '<label class="lf dep"><span>Deposit received</span><span class="lpr">Rp <input data-cdep="' + esc(c.id) + '" inputmode="numeric" value="' + (c.dep || '') + '" placeholder="0"' + ro + '></span></label>') + '</div>' +
