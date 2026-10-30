@@ -1169,6 +1169,13 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .lseg [data-act="cfil"][data-k="new"]::before, .lseg [data-act="cfil"][data-k="ordered"]::before, .lseg [data-act="cfil"][data-k="delivered"]::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50% !important; background: var(--sc); vertical-align: middle; }
 .ccard[data-st="ordered"] { --sa: var(--gr); } .ccard[data-st="delivered"] { --sa: var(--fv); } .ccard[data-st="new"] { --sa: var(--warn); }
 .ctotw { display: grid; justify-items: end; gap: 1px; } .pft { font-size: 11.5px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; } .pft.pos { color: var(--fv); } .pft.neg { color: var(--danger); } .pft small { font-weight: 500; opacity: .8; }
+.ccard[data-st="new"] { --sc: var(--warn); } .ccard[data-st="ordered"] { --sc: var(--gr); } .ccard[data-st="delivered"] { --sc: var(--fv); }
+/* the messages under each status take that status's colour, so step and messages read as one block */
+.stsec .stepmsgs { border-top-color: color-mix(in srgb, var(--sc) 45%, transparent); } .stsec .stepmsgs > .cplab > span:first-child { color: var(--sc); }
+.ccard[data-st] .stepmsg.main { background: var(--sc); border-color: var(--sc); color: var(--on-sup); }
+.ccard[data-st] .stepmsg.main .ct small { color: color-mix(in srgb, var(--on-sup) 80%, transparent); } .ccard[data-st] .stepmsg.main .go svg { stroke: var(--on-sup); }
+.ccard[data-st] .stepmsg:not(.main) { border-color: color-mix(in srgb, var(--sc) 35%, var(--line)); } .ccard[data-st] .stepmsg:not(.main) .go svg { stroke: var(--sc); }
+@media (hover: hover) { .ccard[data-st] .stepmsg:not(.main):hover { background: color-mix(in srgb, var(--sc) 12%, var(--surface)); border-color: var(--sc); } }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
