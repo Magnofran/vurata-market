@@ -927,6 +927,22 @@ html { scroll-padding-top: 96px; } .card[id] { scroll-margin-top: 96px; }
 .custgrid > .ccard.compact { align-self: start; } .custgrid:not(:has(.cfull)) > .ccard.compact { align-self: stretch; }
 .cadv.ghost { color: var(--muted); }
 
+/* customer details: contact sheet */
+.obody.cdx { padding: 4px 0 0; gap: 0; }
+.cdlist { display: grid; }
+.cdrow { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 16px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); font: inherit; text-align: left; text-decoration: none; width: 100%; }
+a.cdrow, button.cdrow { cursor: pointer; } @media (hover: hover) { a.cdrow:hover, button.cdrow:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); } }
+.cdic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 7%, transparent); color: var(--ink); }
+.cdic svg, .cdch { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cdch { color: var(--muted); }
+.cdtx { display: grid; gap: 2px; min-width: 0; } .cdtx b { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; } .cdtx small { font-size: 12.5px; color: var(--muted); }
+.cdtx b.cdq { font-weight: 500; font-style: italic; }
+.cdrow.warn .cdic { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); } .cdrow.warn small { color: var(--warn); }
+.cdrow.bad .cdic { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); } .cdrow.bad b { color: var(--danger); }
+.cdnote { cursor: text; } .cdnote input { border: 0; background: none; padding: 0; min-height: 22px; font: inherit; font-size: 15px; color: var(--ink); width: 100%; min-width: 0; outline: 0; } .cdnote input::placeholder { color: var(--muted); }
+.cdnote:focus-within { box-shadow: inset 2px 0 0 var(--gold); }
+.cdfoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 16px 12px; font-size: 12.5px; color: var(--muted); }
+.obody.cdx .repcard { margin: 0 16px 14px; }
 /* ---- product photos ---- */
 .thumb.img, .fth.img { padding: 0; overflow: hidden; background: var(--surface-2); cursor: zoom-in; }
 .thumb.gen, .fth.gen { cursor: default; } .thumb.gen img, .fth.gen img { pointer-events: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
@@ -3520,7 +3536,7 @@ function fullCard(c, comp, date, open, det) {
   const rows = '<div class="orows">' + pay + cmdBar(c, open).replace('class="csec crow"', 'class="orowwrap"').replace('class="csum"', 'class="orow"').replace('<span class="csl">', '<span>').replace('<span class="csv">', '<span class="ov">') + (open ? det : '') +
     (st !== 'new' ? dcostHtml(c).replace('class="cpsec crow"', 'class="orowwrap"').replace('class="csum"', 'class="orow"').replace('<span class="csl">', '<span>').replace('<span class="csv">', '<span class="ov">') : '') +
     row('cust', 'Customer details', esc(addrOnly(c.addr).split('\n')[0] || (c.zone ? zoneLabel(c.zone).split(' / ')[0] : 'Add details'))) +
-    (sec === 'cust' ? '<div class="obody">' + ccardHead(c, comp, date).replace(/^[\s\S]*?<div class="csec"><div class="csl">Customer<\/div>/, '').replace(/<\/div>$/, '') + repeatInfo(c) + '</div>' : '') +
+    (sec === 'cust' ? '<div class="obody cdx">' + custDetails(c, date) + repeatInfo(c) + '</div>' : '') +
     row('more', 'More actions', 'Messages, status, cancel') + (sec === 'more' ? '<div class="obody"><div class="cplab"><span>Change status</span></div><div class="cstps" role="group" aria-label="Order status">' + order.map((o, i) => '<button type="button" class="cstp s-' + o + (i < cur ? ' done' : i === cur ? ' now' : '') + '" data-act="cstat" data-id="' + id + '" data-v="' + o + '" aria-pressed="' + (i === cur) + '"' + ro + '><i>' + (i < cur ? '✓' : i + 1) + '</i><span>' + ['New', 'Ordered', 'Delivered'][i] + '</span></button>').join('') + '</div>' +
       (ph ? '<div class="cplab" style="margin-top:6px"><span>All messages</span></div>' + allMsgsMenu(c) : '') + '<label class="check cinc"><input type="checkbox" data-cinc="' + id + '"' + (c.inc !== false ? ' checked' : '') + ro + '> Include in the combined supplier order</label>' + cancelBox(c) + '</div>' : '') + '</div>';
   /* one main action at the bottom, in the step colour */
@@ -3762,6 +3778,21 @@ function ccardHead(c, comp, date) {
     '<div class="csec"><div class="csl">Customer</div>' + (ed ? ceditHtml(c) : '<dl class="cinfo">' + rows + '</dl>') +
     '<div class="cbtns">' + (canWrite ? '<button type="button" class="edbtn" data-act="cedit" data-id="' + esc(c.id) + '" aria-expanded="' + !!ed + '">' + (ed ? '✓ Done editing' : 'Edit details') + '</button>' : '') + '</div>' +
     '<label class="hnote"><span>Private note</span><input data-chn="' + esc(c.id) + '" value="' + esc(c.hn || '') + '" placeholder="Gate code, allergies" maxlength="200"' + (canWrite ? '' : ' disabled') + '></label></div>';
+}
+/* Customer details as a contact sheet: each line is the thing you tap */
+const fmtPhone = p => { const d = digitsOf(p); if (!/^62\d{8,}$/.test(d)) return p; const r = d.slice(2); return '+62 ' + r.slice(0, 3) + ' ' + r.slice(3, 7) + ' ' + r.slice(7); };
+const CHEV_R = '<svg class="cdch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+function custDetails(c, date) {
+  const id = esc(c.id); const ph = digitsOf(c.phone || ''); const addr = addrOnly(c.addr); const ro = canWrite ? '' : ' disabled';
+  const line = (tag, attrs, ico, tone, main, sub, end) => '<' + tag + ' class="cdrow' + (tone ? ' ' + tone : '') + '"' + attrs + '><span class="cdic">' + ico + '</span><span class="cdtx"><b>' + main + '</b><small>' + sub + '</small></span>' + (end || '') + '</' + tag + '>';
+  const phone = ph ? line('a', ' href="https://wa.me/' + ph + '" target="_blank" rel="noopener"', ICO_CHAT, '', esc(fmtPhone(c.phone)), 'WhatsApp', CHEV_R)
+    : line('button', ' type="button" data-act="cedit" data-id="' + id + '"', ICO_PHONE, 'bad', 'No WhatsApp number', 'Add one to send messages', CHEV_R);
+  const loc = c.pin ? 'Exact pin' : mapLinkOf(c) ? 'Their Maps link' : 'No pin yet · search the address';
+  const place = (addr || c.pin) ? line('a', ' href="' + mapUrl(c) + '" target="_blank" rel="noopener"', c.pin || mapLinkOf(c) ? ICO.pin : ICO.pinoff, c.pin || mapLinkOf(c) ? '' : 'warn', esc(addr || 'Map pin'), loc, CHEV_R)
+    : line('button', ' type="button" data-act="cedit" data-id="' + id + '"', ICO.pinoff, 'bad', 'No address', 'Add one before delivery', CHEV_R);
+  const said = String(c.notes || '').trim() ? '<div class="cdrow quiet"><span class="cdic">' + ICO.note + '</span><span class="cdtx"><b class="cdq">' + esc(c.notes) + '</b><small>From the customer</small></span></div>' : '';
+  const own = '<label class="cdrow cdnote"><span class="cdic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span class="cdtx"><input data-chn="' + id + '" value="' + esc(c.hn || '') + '" placeholder="Private note: gate code, allergies" maxlength="200" aria-label="Private note, only staff see it"' + ro + '><small>Only staff see this</small></span></label>';
+  return '<div class="cdlist">' + phone + place + said + own + '</div><div class="cdfoot"><span>Received ' + esc(date) + '</span>' + (canWrite ? '<button type="button" class="linkbtn" data-act="cedit" data-id="' + id + '">Edit details</button>' : '') + '</div>';
 }
 /* Staff can correct anything the customer typed. Order number and received date stay as they arrived. */
 function ceditHtml(c) { const k = f => esc(c.id) + '|' + f; const zs = dlNow().zones.map(z => z.n);
