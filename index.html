@@ -1313,7 +1313,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .ccard.r2 .cmore.less { border: 0; color: var(--muted); background: none; margin: 0 16px 10px; width: calc(100% - 32px); }
 .ccard.r2 .obody .csec, .ccard.r2 .obody .cinfo { padding: 0; border: 0; }
 /* staff card shell: the order card's system on every staff card. Tinted band, quiet rows, one main button. */
-.kcard { padding-top: 0 !important; overflow: hidden; border-color: color-mix(in srgb, var(--sc, var(--line-dark)) 35%, var(--line)) !important; border-top-width: 1px !important; background: var(--surface) !important; }
+.kcard { padding-top: 0 !important; overflow: clip; border-radius: 0 !important; border-color: color-mix(in srgb, var(--sc, var(--line-dark)) 35%, var(--line)) !important; border-top-width: 1px !important; background: var(--surface) !important; }
 .kband { display: grid; gap: 4px; margin: 0 -16px 14px; padding: 14px 16px 12px; background: color-mix(in srgb, var(--sc, var(--line-dark)) 11%, var(--surface)); border-bottom: 1px solid color-mix(in srgb, var(--sc, var(--line-dark)) 35%, var(--line)); }
 .kb1 { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; } .kb1 h3 { margin: 0 !important; font-size: 17px; line-height: 1.3; } .kfig { flex: none; font-size: 17px; font-weight: 700; white-space: nowrap; } .kfig.quiet { font-size: 13px; font-weight: 600; color: var(--muted); }
 .kb2 { font-size: 13px; color: var(--muted); } .kb2 b { color: var(--ink); font-weight: 600; } .kb2 .neg { color: var(--danger); }
@@ -1360,6 +1360,11 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .dzfs { grid-area: fs; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .dzf { display: grid; gap: 5px; min-width: 0; } .dzf > span:first-child { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .lsec .dzrow .lpr { display: flex; align-items: center; gap: 6px; min-height: 44px; padding-left: 12px; border: 1px solid var(--line-dark); background: var(--surface); font-size: 14px; color: var(--muted); } .lsec .dzrow .lpr:focus-within { border-color: var(--ink); }
 .lsec .dzrow input { width: 100%; min-width: 0; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line-dark); border-radius: 0; background: var(--surface); font: inherit; font-size: 15px; color: var(--ink); } .lsec .dzrow .lpr input { min-height: 42px; border: 0; padding-left: 0; text-align: right; font-variant-numeric: tabular-nums; outline: none; }
+/* An open section: its header becomes a solid ink band that stays in view while you work in it */
+.kcard .lblock.open { box-shadow: none; border-bottom: 0; } .kcard .lblock.open > .lbhead { position: sticky; top: var(--barh, 0px); z-index: 3; background: var(--ink); color: var(--bg); } .kcard .lbhead, .kcard .lblock { border-radius: 0 !important; }
+.kcard .lblock.open > .lbhead .lbt b { color: var(--bg); } .kcard .lblock.open > .lbhead .lbt span { color: color-mix(in srgb, var(--bg) 72%, var(--ink)); } .kcard .lblock.open > .lbhead .lbchev { color: var(--bg); }
+@media (hover: hover) { .kcard .lblock.open > .lbhead:hover { background: color-mix(in srgb, var(--ink) 88%, var(--bg)); } }
+.kcard .lblock.open > .lbbody { border-top: 0; border-bottom: 1px solid var(--line-dark); }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
