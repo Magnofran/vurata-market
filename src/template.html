@@ -1365,6 +1365,10 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .kcard .lblock.open > .lbhead .lbt b { color: var(--bg); } .kcard .lblock.open > .lbhead .lbt span { color: color-mix(in srgb, var(--bg) 72%, var(--ink)); } .kcard .lblock.open > .lbhead .lbchev { color: var(--bg); }
 @media (hover: hover) { .kcard .lblock.open > .lbhead:hover { background: color-mix(in srgb, var(--ink) 88%, var(--bg)); } }
 .kcard .lblock.open > .lbbody { border-top: 0; border-bottom: 1px solid var(--line-dark); }
+/* customer item notes: when it arrives, and why a price moved */
+.restnote { margin: 4px 0 0; font-size: 12.5px; font-weight: 600; color: var(--gr); }
+.pinfo { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-left: 6px; padding: 0; border: 1.5px solid currentColor; border-radius: 50%; background: none; color: var(--muted); font: 700 11px/1 var(--f-body, inherit); font-style: italic; vertical-align: 2px; cursor: pointer; } .pinfo[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-style: normal; }
+.item .pnote { grid-column: 1 / -1; } .pnote { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--gold); background: color-mix(in srgb, var(--gold) 9%, var(--surface)); font-size: 13px; line-height: 1.5; color: var(--ink); }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -2248,7 +2252,24 @@ const codeFee = (cd, f0) => cd.t === 'free' ? 0 : cd.t === 'pct' ? Math.max(0, M
 const codeWhy = (raw, total) => { const cd = codeFind(raw); if (!cd || !cd.on) return "That code isn't valid."; if (cd.until && cd.until < isoOf(baliNow())) return 'That code has expired.'; if (cd.min && total < cd.min) return 'This code needs an order of at least ' + fmtRp(cd.min) + '.'; return ''; };
 const codeWhat = cd => cd.t === 'free' ? 'free delivery' : cd.t === 'pct' ? fmtQty(cd.v) + '% off delivery' : fmtRp(cd.v) + ' off delivery';
 const isoOf = d => { const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); };
-const isClosed = iso => dlNow().closed.some(x => x.d === iso);
+/* ===== Supplier rest days: Dineta (frozen & pantry) and An Boga (meat) are closed on Sunday. An order with their items never lands on a
+   closed day: the day is skipped and a chosen date moves to the next open day, with a short note. One order, one delivery, one payment. ===== */
+const REST_DEF = { gr: [0], mt: [0] };
+const restOf = () => (ledger.dl && ledger.dl.rest) || REST_DEF;
+const REST_WHAT = { gr: ['pantry supplier', 'pemasok produk beku & dapur'], mt: ['butcher', 'pemasok daging'] };
+const LID = () => typeof LANG !== 'undefined' && LANG === 'id';
+const wdOf = iso => new Date(iso + 'T12:00:00').getDay();
+const restSids = (iso, sids) => { const r = restOf(), wd = wdOf(iso); return sids.filter(x => (r[x] || []).includes(wd)); };
+const basketSids = () => [...new Set(Object.keys(S.lines || {}).filter(k => S.lines[k] && S.lines[k].q > 0).map(k => BY_ID[k.split('|')[0]]).filter(Boolean).map(it => it.s))];
+const restWhat = sids => sids.map(x => (REST_WHAT[x] || ['', ''])[LID() ? 1 : 0]).filter(Boolean).join(LID() ? ' dan ' : ' and ');
+const restSay = (sids, day) => LID() ? (sids.length > 1 ? 'Pemasok daging dan produk beku kami' : (sids[0] === 'mt' ? 'Pemasok daging kami' : 'Pemasok produk beku & dapur kami')) + ' libur hari ' + day : 'Our ' + restWhat(sids) + (sids.length > 1 ? ' rest' : ' rests') + ' on ' + day;
+const dayName = iso => new Date(iso + 'T12:00:00').toLocaleDateString(LID() ? 'id-ID' : 'en-GB', { weekday: 'long' });
+const isClosed = iso => dlNow().closed.some(x => x.d === iso) || (cmode && restSids(iso, basketSids()).length > 0);
+/* first day this item can arrive, counted from the earliest delivery day */
+function itemFrom(it) { let d = minNeed(); for (let i = 0; i < 7 && restSids(d, [it.s]).length; i++) d = isoOf(new Date(new Date(d + 'T12:00:00').getTime() + 864e5)); return d; }
+function restCheck() { if (!cmode || !S.meta.need || !isClosed(S.meta.need)) return; const was = S.meta.need, why = restSids(was, basketSids()); const nx = nextOpen(was);
+  patch({ meta: { need: nx } }); fixSlot();
+  toast(why.length ? restSay(why, dayName(was)) + (LID() ? '. Pindah ke ' + fmtDate(nx) + ' agar semuanya tiba bersama, tetap segar.' : '. Moved to ' + fmtDate(nx) + ' so everything arrives together, fresh.') : 'Moved to ' + fmtDate(nx) + '.'); }
 function nextOpen(iso) { const d = new Date(iso + 'T12:00:00'); for (let i = 0; i < 60 && isClosed(isoOf(d)); i++) d.setDate(d.getDate() + 1); return isoOf(d); }
 function quickDates() {
   if (!cmode) return ''; const out = []; const d = new Date(minNeed() + 'T12:00:00'); const tm = isoOf(new Date(baliNow().getTime() + 864e5));
@@ -2259,6 +2280,8 @@ function needHint() {
   if (!cmode) return ''; const dl = dlNow(); const today = isoOf(baliNow());
   const days = dl.closed.filter(x => x.d >= today).slice(0, 3).map(x => new Date(x.d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (x.n ? ' (' + x.n + ')' : ''));
   const parts = [pastNoon() ? 'It is past 12 PM, so tomorrow\'s delivery is from 2 PM.' : 'Order before 12 PM to choose a morning delivery tomorrow.']; if (days.length) parts.push('No delivery on ' + days.join(', ') + '.');
+  const rs = basketSids().filter(x => (restOf()[x] || []).length); if (rs.length) { const wd = [...new Set(rs.flatMap(x => restOf()[x]))].map(n => new Date(2026, 10, 1 + n).toLocaleDateString(LID() ? 'id-ID' : 'en-GB', { weekday: 'long' })).join(', ');
+    parts.push(restSay(rs, wd) + (LID() ? ', jadi pesanan ini dikirim di hari lain.' : ', so this order comes on another day.')); }
   return parts.length ? '<p class="hint">' + esc(parts.join(' ')) + '</p>' : '';
 }
 const zoneLabel = z => z === '__other' ? 'Another area' : (z || '');
@@ -2551,7 +2574,7 @@ function applyLedger() {
     if (o) {
       if (Array.isArray(o.pr)) o.pr.forEach((p, i) => { if (p !== null && p !== undefined && it.o[i]) it.o[i].pr = p > 0 ? p : null; });
       if (o.d && DEPTS.includes(o.d)) it.d = o.d; if (o.s && SUPS[o.s]) it.s = o.s;
-      if (o.n) it.n = o.n; if (o.e !== undefined && o.e !== null) it.e = o.e; if (o.c) it.c = o.c; if (o.hid) it.hidden = true; if (o.so) it.so = true; if (o.ft) it.ft = true; if (o.img !== undefined && o.img !== null) it.img = o.img ? String(o.img) : '';
+      if (o.n) it.n = o.n; if (o.e !== undefined && o.e !== null) it.e = o.e; if (o.c) it.c = o.c; if (o.hid) it.hidden = true; if (o.so) it.so = true; if (o.ft) it.ft = true; if (o.pn) it.pn = String(o.pn); if (o.pi) it.pi = String(o.pi); if (o.img !== undefined && o.img !== null) it.img = o.img ? String(o.img) : '';
     }
     
     if (it.n) it.n = it.n.charAt(0).toUpperCase() + it.n.slice(1);
@@ -2630,6 +2653,7 @@ function patch(p) {
   clearTimeout(flushTimer); flushTimer = setTimeout(flush, 350);
   if (!db) LS.set('mumu-order', JSON.stringify(S));
   if (p.meta) updateOrderProg();
+  if (cmode && p.lines && !p.meta) setTimeout(() => { restCheck(); if (ui.view === 'order') renderOrder(compute(S)); }, 0);
 }
 function flush() {
   if (!db) { setSync('local', localTxt()); return; }
@@ -2722,23 +2746,27 @@ function askLink(it, o) {
   return '<a class="ask" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + hw + '&text=' + encodeURIComponent(q) + '">Request price</a>';
 }
 function itemHtml(it, showSup) {
-  const flags = it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : '';
+  const from = cmode ? itemFrom(it) : ''; const later = cmode && from !== minNeed();
+  const note = (later ? '<p class="restnote">' + (LID() ? 'Tiba ' + dayName(from) + ', dikemas segar' : 'Arrives ' + dayName(from) + ', freshly packed') + '</p>' : '');
+  const pnote = (cmode && (it.pn || it.pi) ? '<p class="pnote" id="pn-' + it.id + '" hidden>' + esc(LID() && it.pi ? it.pi : it.pn || it.pi) + '</p>' : '');
+  const flags = (it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : '') + note;
   const pk = it.k && it.k.length < 70 && it.o.length > 1 ? '<p class="meta">Listed as: ' + esc(it.k) + '</p>' : '';
   const picked = itemPicked(it);
   const thumb = '<span class="thw"><span class="thumb s-' + gs(it) + thumbCls(it) + '">' + thumbIn(it) + '</span><button type="button" class="fav" data-act="fav" data-id="' + it.id + '" aria-pressed="' + !!favs[it.id] + '" aria-label="Favorite ' + esc(it.n) + '">&#9733;</button></span>';
   const title = (showSup ? '<div class="tagrow"><span class="tag ' + gs(it) + '">' + SUPS[gs(it)].short + '</span></div>' : '') + '<div class="nmrow"><h4>' + esc(nm(it).m) + '</h4>' + (nm(it).s ? '<p class="en">' + esc(nm(it).s) + '</p>' : '') + '</div>';
-  const priceLine = (o) => ((cmode ? o.sp : o.pr) ? '<b>' + fmtRp(cmode ? o.sp : o.pr) + '</b>' : (cmode ? askLink(it, o) : '<b class="ask">Ask for price</b>')) + '<span>' + esc(optLabel(o)) + (o.mn ? ' - min ' + o.mn : '') + '</span>';
+  const pin = cmode && (it.pn || it.pi) ? '<button type="button" class="pinfo" data-act="pinfo" data-id="' + it.id + '" aria-expanded="false" aria-controls="pn-' + it.id + '" aria-label="' + (LID() ? 'Kenapa harga ini' : 'Why this price') + '">i</button>' : '';
+  const priceLine = (o) => ((cmode ? o.sp : o.pr) ? '<b>' + fmtRp(cmode ? o.sp : o.pr) + '</b>' + pin : (cmode ? askLink(it, o) : '<b class="ask">Ask for price</b>')) + '<span>' + esc(optLabel(o)) + (o.mn ? ' - min ' + o.mn : '') + '</span>';
   if (it.o.length === 1) {
     const o = it.o[0]; const key = keyOf(it.id, 0); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
     return '<article class="item single s-' + gs(it) + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '">' + thumb + '<div class="main">' + title + flags + '</div>' +
       '<div class="opt' + (q ? ' on' : '') + '" data-key="' + esc(key) + '">' + stepperHtml(it, o, 0, q) + '</div>' +
-      '<div class="price line">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div></article>';
+      '<div class="price line">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div>' + pnote + '</article>';
   }
   const opts = it.o.map((o, i) => {
     const key = keyOf(it.id, i); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
     return '<div class="opt multi' + (q ? ' on' : '') + '" data-key="' + esc(key) + '"><div class="price">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div>' + stepperHtml(it, o, i, q) + '</div>';
   }).join('');
-  return '<article class="item s-' + gs(it) + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '"><div class="head">' + thumb + '<div>' + title + pk + flags + '</div></div>' + opts + '</article>';
+  return '<article class="item s-' + gs(it) + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '"><div class="head">' + thumb + '<div>' + title + pk + flags + '</div></div>' + opts + pnote + '</article>';
 }
 function filteredItems() {
   const toks = ui.q.trim().split(/\s+/).filter(Boolean);
@@ -4180,7 +4208,7 @@ function publicLedger() {
   const ov = {}, srcOv = ledger.ov || {};
   CATALOG.forEach(it => {
     const s = srcOv[it.id] || {}, o = {}; const sp = it.o.map(op => (op.sp > 0 ? op.sp : null)); if (sp.some(v => v)) o.sp = sp;
-    ['n', 'c', 'e', 'hid', 'so', 'ft', 'img', 'd'].forEach(k => { if (s[k] !== undefined && s[k] !== null && s[k] !== '' && s[k] !== false) o[k] = s[k]; }); if (it.alt) o.hid = true;
+    ['n', 'c', 'e', 'hid', 'so', 'ft', 'img', 'd', 'pn', 'pi'].forEach(k => { if (s[k] !== undefined && s[k] !== null && s[k] !== '' && s[k] !== false) o[k] = s[k]; }); if (it.alt) o.hid = true;
     if (Object.keys(o).length) ov[it.id] = o;
   });
   const add = {}; Object.keys(ledger.add || {}).forEach(id => { const a = clone(ledger.add[id]); (a.o || []).forEach(op => { delete op.pr; delete op.sp; }); delete a.x; add[id] = a; });
@@ -4362,7 +4390,8 @@ function ledgerRowHtml(it) {
       (prof !== null ? '<div class="lprofit ' + (prof > 0 ? 'pos' : 'neg') + '">Profit ' + fmtRp(prof) + ' per ' + esc(UNIT_EN[o.u] || o.u) + ' · +' + mg + '% markup</div>' : '<div class="lprofit">Add the supplier price to see profit</div>') +
       (priceChanged(it, i) ? '<div class="lwas">supplier price was ' + (BASE_BY[it.id].o[i].pr ? fmtRp(BASE_BY[it.id].o[i].pr) : 'not listed') + ' <button type="button" class="linkbtn" data-act="lreset" data-id="' + esc(it.id) + '" data-i="' + i + '">reset</button></div>' : '') + '</div>';
   }).join('');
-  const det = ed ? '<div class="ldet grid2 s-' + it.s + '"><div class="ldet-h span-all">Edit details</div><div class="field span-all"><label>Name</label><input data-ld="' + esc(it.id) + '|n" value="' + esc(it.n) + '"' + ro + '></div><div class="field"><label>English name</label><input data-ld="' + esc(it.id) + '|e" value="' + esc(it.e || '') + '"' + ro + '></div><div class="field"><label>Category</label><input data-ld="' + esc(it.id) + '|c" value="' + esc(it.c) + '"' + ro + '></div><div class="field"><label>Customers find it under</label><select data-lds="' + esc(it.id) + '|d"' + (canWrite ? '' : ' disabled') + '>' + DEPTS.map(x => '<option value="' + x + '"' + (it.d === x ? ' selected' : '') + '>' + esc(SUPS[x].tag) + '</option>').join('') + '</select></div></div>' : '';
+  const det = ed ? '<div class="ldet grid2 s-' + it.s + '"><div class="ldet-h span-all">Edit details</div><div class="field span-all"><label>Name</label><input data-ld="' + esc(it.id) + '|n" value="' + esc(it.n) + '"' + ro + '></div><div class="field"><label>English name</label><input data-ld="' + esc(it.id) + '|e" value="' + esc(it.e || '') + '"' + ro + '></div><div class="field"><label>Category</label><input data-ld="' + esc(it.id) + '|c" value="' + esc(it.c) + '"' + ro + '></div><div class="field"><label>Customers find it under</label><select data-lds="' + esc(it.id) + '|d"' + (canWrite ? '' : ' disabled') + '>' + DEPTS.map(x => '<option value="' + x + '"' + (it.d === x ? ' selected' : '') + '>' + esc(SUPS[x].tag) + '</option>').join('') + '</select></div>' +
+    '<div class="field span-all"><label>Price note for customers (English)</label><input data-ld="' + esc(it.id) + '|pn" value="' + esc(it.pn || '') + '" placeholder="Optional. Shows as an i next to the price, e.g. why it went up"' + ro + '></div><div class="field span-all"><label>Price note (Bahasa)</label><input data-ld="' + esc(it.id) + '|pi" value="' + esc(it.pi || '') + '" placeholder="Opsional"' + ro + '></div></div>' : '';
   const why = fixWhy(it);
   return '<div class="lrow' + (it.hidden ? ' hid' : '') + (why.length ? ' needfix' : '') + '">' + (why.length ? '<div class="fixbar' + (it.hidden ? ' held' : '') + '"><i class="blinkdot" aria-hidden="true"></i><b>' + (it.hidden ? 'Hidden until fixed:' : 'Fix before customers see it:') + '</b> ' + why.join(' · ') + '</div>' : '') + '<div class="lhead"><span class="thumb sm s-' + it.s + thumbCls(it) + '">' + thumbIn(it) + '</span><div class="lname"><b>' + esc(it.n) + '</b>' + (it.e ? '<span class="en">' + esc(it.e) + '</span>' : '') +
     '<small><i class="dot2 sup-' + (it.sOwn || it.s) + '"></i>' + esc(SUPS[it.sOwn || it.s].name) + ' - ' + esc(it.c) + '</small>' + ltags(it) + '</div></div>' + linkNote(it) + opts + det +
@@ -4629,6 +4658,7 @@ document.addEventListener('click', e => {
   else if (act === 'qclear') { const qi = document.getElementById('q'); ui.q = ''; ui.limit = 80; if (qi) { qi.value = ''; } renderPick(); if (qi) qi.focus(); }
   else if (act === 'dym') { ui.q = b.dataset.q || ''; const qi = document.getElementById('q'); if (qi) qi.value = ui.q; ui.limit = 80; renderPick(); }
   else if (act === 'clearf') { ui.q = ''; ui.cat = 'all'; const qi = document.getElementById('q'); if (qi) qi.value = ''; setListMode('browse'); }
+  else if (act === 'pinfo') { const n = document.getElementById('pn-' + b.dataset.id); if (n) { n.hidden = !n.hidden; b.setAttribute('aria-expanded', String(!n.hidden)); } }
   else if (act === 'fav') {
     const id = b.dataset.id; if (favs[id]) delete favs[id]; else favs[id] = 1; saveFavs();
     document.querySelectorAll('.fav[data-id="' + id + '"]').forEach(x => x.setAttribute('aria-pressed', String(!!favs[id])));
@@ -4914,7 +4944,7 @@ document.addEventListener('change', e => {
   else if (t.id === 'm-addr' && cmode) { /* handled on input; keeps the hidden Maps link */ }
   else if (t.matches('[data-meta]')) {
     if (t.dataset.meta === 'need' && t.value && t.value < minNeed()) { t.value = minNeed(); toast('Orders need 24 hours notice, so your date moved to the earliest available day.'); }
-    if (cmode && t.dataset.meta === 'need' && t.value && isClosed(t.value)) { const cd = dlNow().closed.find(x => x.d === t.value); const nx = nextOpen(t.value); toast('No delivery on ' + fmtDate(t.value) + (cd && cd.n ? ' (' + cd.n + ')' : '') + '. Moved to ' + fmtDate(nx) + '.'); t.value = nx; }
+    if (cmode && t.dataset.meta === 'need' && t.value && isClosed(t.value)) { const cd = dlNow().closed.find(x => x.d === t.value); const why = cd ? [] : restSids(t.value, basketSids()); const nx = nextOpen(t.value); toast(why.length ? restSay(why, dayName(t.value)) + (LID() ? '. Pindah ke ' + fmtDate(nx) + ' agar semuanya tiba bersama, tetap segar.' : '. Moved to ' + fmtDate(nx) + ' so everything arrives together, fresh.') : 'No delivery on ' + fmtDate(t.value) + (cd && cd.n ? ' (' + cd.n + ')' : '') + '. Moved to ' + fmtDate(nx) + '.'); t.value = nx; }
     patch({ meta: { [t.dataset.meta]: t.value } }); if (t.dataset.meta === 'need' && fixSlot()) renderOrder(compute(S));
     if (t.dataset.meta === 'zone') { const cz = compute(S); renderOrder(cz); chrome(cz); }
     if (cmode && REQ_FIELDS[t.dataset.meta]) { const fd = t.closest('.field'); if (fd) fd.classList.toggle('miss', !reqOk(t.dataset.meta, { [t.dataset.meta]: t.value })); }
