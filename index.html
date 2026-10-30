@@ -5132,7 +5132,9 @@ async function confirmSent() {
     '<div class="actions full"><button type="button" class="btn" data-act="sentdone">Start a new order</button>' + (hw ? '<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/' + hw + '">Chat with us</a>' : '') + '</div></div>';
   el.hidden = false; const b = el.querySelector('button'); if (b) b.focus();
 }
-function setBarH() { const b = document.getElementById('bar'); if (b) document.documentElement.style.setProperty('--barh', b.offsetHeight + 'px'); }
+/* the sticky search and pinned bands sit right under the header; follow its height live (the status line can change it), rounding down so no sliver shows through */
+function setBarH() { const b = document.getElementById('bar'); if (b) document.documentElement.style.setProperty('--barh', Math.floor(b.getBoundingClientRect().height) + 'px'); }
+if (window.ResizeObserver) { const bo = new ResizeObserver(() => setBarH()); const bb = document.getElementById('bar'); if (bb) bo.observe(bb); }
 window.addEventListener('resize', setBarH); if (window.ResizeObserver) { try { new ResizeObserver(setBarH).observe(document.getElementById('bar')); } catch (e) {} }
 document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('input[data-act="qty"]')) setTimeout(() => { try { e.target.select(); } catch (er) {} }, 0); });
 function restoreUi() { setBarH(); if (cmode && INIT_LEDGER && (INIT_LEDGER.ov || INIT_LEDGER.add)) ledger = ledgerFrom(INIT_LEDGER); if (!cmode) { try { const l = JSON.parse(LS.get('mumu-ledger') || 'null'); if (l && (l.ov || l.add)) ledger = ledgerFrom(l); } catch (e) {} } setMode(); applyLedger(); myWA = LS.get('mumu-mywa') || ''; bankTxt = LS.get('mumu-bank') || ''; try { cust = JSON.parse(LS.get('mumu-cust') || '[]') || []; } catch (e) { cust = []; } updateCBadge(); const t = LS.get('mumu-theme'); if (THEMES.includes(t)) theme = t; applyTheme(); try { const j = JSON.parse(LS.get('mumu-ui') || '{}'); if (j.lang) ui.lang = j.lang; } catch (e) {} }
