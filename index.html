@@ -1257,7 +1257,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .supcard .actions { margin-top: auto !important; }
 .msg-head .seg button { padding: 7px 14px !important; min-width: 74px; text-align: center; }
 /* ===== Open order card: band, then sections with one rhythm ===== */
-#custList .ccard.cfull { padding: 0 !important; gap: 0 !important; overflow: hidden; container-type: inline-size; }
+#custList .ccard.cfull { padding: 0 !important; gap: 0 !important; overflow: clip; container-type: inline-size; }
 .cband { display: grid; gap: 6px; padding: 14px 16px 12px; background: color-mix(in srgb, var(--sa, var(--line-dark)) 11%, var(--surface)); border-bottom: 1px solid color-mix(in srgb, var(--sa, var(--line-dark)) 35%, var(--line)); }
 .cb1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .cbst { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--sa, var(--muted)); }
 .cb2 { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; } .cb2 .cname { font-size: 18px; line-height: 1.25; overflow-wrap: anywhere; white-space: normal; overflow: visible; } .cb2 .ctot { font-size: 18px; font-weight: 800; white-space: nowrap; }
@@ -1370,6 +1370,10 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .pinfo { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-left: 6px; padding: 0; border: 1.5px solid currentColor; border-radius: 50%; background: none; color: var(--muted); font: 700 11px/1 var(--f-body, inherit); font-style: italic; vertical-align: 2px; cursor: pointer; } .pinfo[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-style: normal; }
 .item .pnote { grid-column: 1 / -1; } .pnote { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--gold); background: color-mix(in srgb, var(--gold) 9%, var(--surface)); font-size: 13px; line-height: 1.5; color: var(--ink); }
 .coldnote { display: flex; align-items: center; gap: 5px; margin: 4px 0 0; font-size: 12px; font-weight: 600; color: var(--gr); } .coldnote span { font-size: 12px; line-height: 1; }
+/* order card: an open row becomes a solid ink band pinned under the tabs, same as the Ledger */
+.orow[aria-expanded="true"] { position: sticky; top: var(--barh, 0px); z-index: 3; background: var(--ink); color: var(--bg); border-bottom-color: var(--ink); }
+.orow[aria-expanded="true"] > span:first-child, .orow[aria-expanded="true"] .ov { color: var(--bg); } .orow[aria-expanded="true"] .ov b.pos { color: color-mix(in srgb, var(--fv) 55%, var(--bg)); } .orow[aria-expanded="true"] .ov b.neg { color: color-mix(in srgb, var(--danger) 55%, var(--bg)); } .orow[aria-expanded="true"] .chev { border-color: var(--bg); }
+@media (hover: hover) { .orow[aria-expanded="true"]:hover { background: color-mix(in srgb, var(--ink) 88%, var(--bg)); } }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3473,6 +3477,10 @@ function statusPanel(c) { const ro = canWrite ? '' : ' disabled'; const order = 
 /* ===== Open order card, round two: progress line, contact icons, a Now section, quiet rows, one main button ===== */
 const ICO_PHONE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>';
 const ICO_CHAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9 10h.01M12 10h.01M15 10h.01"/></svg>';
+/* group an open row with its body so its band can stay pinned while you scroll through that section */
+function pinOpenRows(root) { root.querySelectorAll('.orows .orow[aria-expanded="true"]').forEach(b => { const ww = b.parentElement.classList.contains('orowwrap') ? b.parentElement : null; if (ww && ww.children.length > 1) return;
+  const start = ww || b, w = document.createElement('div'); w.className = 'osecw'; start.before(w); let n = start.nextElementSibling; w.appendChild(b); if (ww) ww.remove();
+  while (n && !n.matches('.orow, .orowwrap')) { const nx = n.nextElementSibling; w.appendChild(n); n = nx; } }); }
 function fullCard(c, comp, date, open, det) {
   const id = esc(c.id), ro = canWrite ? '' : ' disabled', st = c.status || 'new', order = ['new', 'ordered', 'delivered'], cur = Math.max(0, order.indexOf(st)), due = dueOf(c), ph = digitsOf(c.phone);
   const sec = (ui.osec || {})[c.id] || ''; const row = (k, label, val, cls) => '<button type="button" class="orow' + (cls ? ' ' + cls : '') + '" data-act="osec" data-id="' + id + '" data-k="' + k + '" aria-expanded="' + (sec === k) + '"><span>' + label + '</span><span class="ov">' + val + '</span><i class="chev" aria-hidden="true"></i></button>';
@@ -3928,7 +3936,9 @@ function billText(c, comp) {
   /* WhatsApp strikethrough: ~text~ with no spaces just inside the tildes */
   const goneTxt = r => '- ~' + nameIn(r.it, id ? 'id' : 'en') + ': ' + fmtQty(r.oq) + ' ' + (id ? unitId(UNIT_EN[r.o.u] || r.o.u) : (UNIT_EN[r.o.u] || r.o.u)) + '~ Rp 0';
   Object.keys(secs).sort((a, b) => DEPTS.indexOf(a) - DEPTS.indexOf(b)).forEach(d => { out.push('', '*' + tr((SUPS[d] && SUPS[d].tag) || 'Items') + '*'); secs[d].forEach(ln => out.push('- ' + lineText(ln, true, id ? 'id' : 'en'))); (gone[d] || []).forEach(r => out.push(goneTxt(r))); });
-  if (rm.length) { const names = rm.map(r => nameIn(r.it, id ? 'id' : 'en')).join(', '); out.push('', id ? '_' + names + (rm.length > 1 ? ' sedang' : ' sedang') + ' tidak tersedia dari pemasok kami, jadi kami hapus dan tidak ditagih. Mohon maaf._' : '_' + names + (rm.length > 1 ? ' are' : ' is') + ' not available from our suppliers today, so we removed ' + (rm.length > 1 ? 'them' : 'it') + ' and you are not charged. Sorry about that._'); }
+  /* removed items: one plain sentence built from what was taken off, plus an easy way to ask for a replacement */
+  if (rm.length) { const ns = [...new Set(rm.map(r => nameIn(r.it, id ? 'id' : 'en')))]; const names = ns.length > 1 ? ns.slice(0, -1).join(', ') + (id ? ' dan ' : ' and ') + ns[ns.length - 1] : ns[0];
+    out.push('', id ? '_' + names + ' sedang tidak tersedia dari pemasok kami hari ini, jadi tidak kami kirim dan tidak ditagih. Mau diganti dengan yang lain? Balas saja di sini._' : '_' + names + (ns.length > 1 ? ' aren\'t' : ' isn\'t') + ' available from our suppliers today, so we left ' + (ns.length > 1 ? 'them' : 'it') + ' out and you\'re not charged. Want something else instead? Just reply here._'); }
   out.push('');
   if (hasDel(comp)) out.push('🚚 ' + (id ? 'Ongkir' : 'Delivery') + (c.zone && c.zone !== '__other' ? ' (' + zoneLabel(c.zone) + ')' : '') + ': ' + tr(delLine(comp)) + (c.dcode ? ' (' + (id ? 'kode ' : 'code ') + c.dcode + ')' : ''));
   out.push('*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? (id ? ' + ongkir' : ' + delivery') : '') + (comp.unpriced ? (id ? ' (+ ' + comp.unpriced + ' barang belum ada harga)' : ' (+ ' + comp.unpriced + ' item(s) still to be priced)') : ''));
@@ -4072,7 +4082,7 @@ function renderCustomers() {
     (cust.length ? lbOpen('salesCard', 'Sales', delv.length + ' delivered · ' + fmtRp(delRev)) + (sOpen ? '<section class="lsec">' + sOpen.slice(('<div class="card" id="salesCard">' + cardHead('salesCard', 'Sales', true)).length, -6) + '</section>' : '') + lbClose('salesCard') : '') +
     lbOpen('inviteCard', 'Invite customers', myWA ? 'Link, QR and message' : '<span class="neg">Add your WhatsApp first</span>') + (invOpen ? '<section class="lsec">' + invite.slice(0, pIx).replace('<div class="card" id="inviteCard"><h3>Invite customers</h3>', '').slice(0, -6) + '</section>' : '') + lbClose('inviteCard') +
     lbOpen('payCard', 'Payment details', bankTxt ? 'Added' : 'Not added yet') + (cardOpen('payCard') ? '<section class="lsec">' + invite.slice(pIx).replace('<div class="card"><h3>Payment details</h3>', '').slice(0, -6) + '</section>' : '') + lbClose('payCard') + '</div>';
-  host.innerHTML = nextBarHtml() + sideWrap(overviewHtml() + '' + imp + list + comb + driverHtml() + inviteFinal, custSide());
+  host.innerHTML = nextBarHtml() + sideWrap(overviewHtml() + '' + imp + list + comb + driverHtml() + inviteFinal, custSide()); pinOpenRows(host);
   const ta = document.getElementById('importTxt'); if (ta && prevTxt) ta.value = prevTxt;
 }
 async function pasteOrder() {
