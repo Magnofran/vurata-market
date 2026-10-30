@@ -3771,7 +3771,7 @@ function custEdit(id, f, v) { const c = cust.find(x => x.id === id); if (!c) ret
   updCust(id, p); toast('Saved.'); }
 /* ===== People: every customer once (grouped by WhatsApp number), with their history and a one-tap repeat order ===== */
 const personKey = c => digitsOf(c.phone) || 'n:' + plNorm(c.name);
-const viewSeg = () => '<span class="seg" role="group" aria-label="Show"><button type="button" data-act="cview" data-v="orders" aria-pressed="' + (ui.cview !== 'people') + '">Orders</button><button type="button" data-act="cview" data-v="people" aria-pressed="' + (ui.cview === 'people') + '">People</button></span>';
+const viewSeg = () => '<span class="seg" role="group" aria-label="Show"><button type="button" data-act="pview" data-v="orders" aria-pressed="' + (ui.cview !== 'people') + '">Orders</button><button type="button" data-act="pview" data-v="people" aria-pressed="' + (ui.cview === 'people') + '">People</button></span>';
 function peopleData() { const m = {}; cust.forEach(c => { if (c.status === 'cancelled') return; const k = personKey(c); (m[k] = m[k] || { k, orders: [] }).orders.push(c); });
   return Object.values(m).map(p => { p.orders.sort((a, b) => (b.at || 0) - (a.at || 0)); const L = p.last = p.orders[0]; p.name = L.name || 'Customer';
     p.spent = p.orders.reduce((t, c) => t + compute(custState(c), 'sell').grand, 0); p.due = p.orders.reduce((t, c) => t + dueOf(c), 0);
@@ -4870,7 +4870,7 @@ document.addEventListener('click', e => {
   else if (act === 'osec') { ui.osec = ui.osec || {}; const k = b.dataset.k; ui.osec[b.dataset.id] = ui.osec[b.dataset.id] === k ? '' : k; renderCustomers(); }
   else if (act === 'dcopen') { ui.dcOpen = ui.dcOpen || {}; ui.dcOpen[b.dataset.id] = !ui.dcOpen[b.dataset.id]; renderCustomers(); }
   else if (act === 'dcset') { const c = cust.find(x => x.id === b.dataset.id); const v = +b.dataset.v; updCust(b.dataset.id, { dc: c && +c.dc === v ? 0 : v, dcs: 0, dcn: 0 }); }
-  else if (act === 'cview') { ui.cview = b.dataset.v; ui.person = ''; renderCustomers(); }
+  else if (act === 'pview') { ui.cview = b.dataset.v; ui.person = ''; renderCustomers(); }
   else if (act === 'person') { ui.person = ui.person === b.dataset.k ? '' : b.dataset.k; renderCustomers(); }
   else if (act === 'prepeat') { b.disabled = true; repeatOrder(b.dataset.id); }
   else if (act === 'pgo') { const id = b.dataset.id, c = cust.find(x => x.id === id); ui.cview = 'orders'; ui.cfil = 'all'; ui.cq = ''; if (c && c.status === 'delivered') ui.showDel = true; ui.cexp = ui.cexp || {}; ui.cexp[id] = true; ui.keep = ui.keep || {}; ui.keep[id] = 1; ui.flash = id; renderCustomers(); const el = document.querySelector('#custList [data-cid="' + id + '"]'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); setTimeout(() => { if (ui.flash === id) ui.flash = ''; }, 2500); }
