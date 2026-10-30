@@ -940,7 +940,10 @@ a.cdrow, button.cdrow { cursor: pointer; } @media (hover: hover) { a.cdrow:hover
 .cdrow.warn .cdic { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); } .cdrow.warn small { color: var(--warn); }
 .cdrow.bad .cdic { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); } .cdrow.bad b { color: var(--danger); }
 .cdnote { cursor: text; } .cdnote input { border: 0; background: none; padding: 0; min-height: 22px; font: inherit; font-size: 15px; color: var(--ink); width: 100%; min-width: 0; outline: 0; } .cdnote input::placeholder { color: var(--muted); }
-.cdnote:focus-within { box-shadow: inset 2px 0 0 var(--gold); }
+.cdnote input { min-height: 38px; padding: 0 10px; margin-left: -10px; width: calc(100% + 10px); border: 1px solid transparent; border-radius: 8px; transition: border-color .12s, background-color .12s; }
+.cdnote input:placeholder-shown { background: var(--surface); border-color: var(--line-dark); }
+.cdnote input:focus { background: var(--surface); border-color: var(--gold); }
+@media (hover: hover) { .cdnote input:not(:focus):hover { border-color: var(--line-dark); } }
 .cdfoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 16px 12px; font-size: 12.5px; color: var(--muted); }
 .obody.cdx .repcard { margin: 0 16px 14px; }
 /* ---- product photos ---- */
