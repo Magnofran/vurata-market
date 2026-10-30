@@ -928,7 +928,7 @@ html { scroll-padding-top: 96px; } .card[id] { scroll-margin-top: 96px; }
 .cadv.ghost { color: var(--muted); }
 
 /* customer details: contact sheet */
-.obody.cdx { padding: 4px 0 0; gap: 0; }
+.obody.cdx { padding: 0 0 6px; gap: 0; }
 .cdlist { display: grid; }
 .cdrow { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 16px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); font: inherit; text-align: left; text-decoration: none; width: 100%; }
 a.cdrow, button.cdrow { cursor: pointer; } @media (hover: hover) { a.cdrow:hover, button.cdrow:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); } }
@@ -947,7 +947,9 @@ a.cdrow, button.cdrow { cursor: pointer; } @media (hover: hover) { a.cdrow:hover
 @media (hover: hover) { .cdnote input:not(:focus):hover { border-color: var(--line-dark); } }
 .cdfoot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 16px 12px; font-size: 12.5px; color: var(--muted); }
 .obody.cdx .repcard { margin: 0 16px 14px; }
-.obody.cdx .cdrow { background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; margin: 0; box-shadow: none; } .obody.cdx .cdrow:last-child { border-bottom: 0; } .obody.cdx .cdfoot { margin: 0; padding: 4px 16px 14px; }
+.obody.cdx .cdrow { background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; margin: 0; box-shadow: none; } .obody.cdx .cdrow:last-child { border-bottom: 0; } .obody.cdx .cdfoot { margin: 0; padding: 10px 16px 4px; }
+.cded { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 1px solid var(--line-dark); background: transparent; color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; } .cded svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+@media (hover: hover) { .cded:hover { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); } }
 @media (hover: hover) { .obody.cdx a.cdrow:hover, .obody.cdx button.cdrow:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); } }
 /* ---- product photos ---- */
 .thumb.img, .fth.img { padding: 0; overflow: hidden; background: var(--surface-2); cursor: zoom-in; }
@@ -3798,7 +3800,7 @@ function custDetails(c, date) {
     : line('button', ' type="button" data-act="cedit" data-id="' + id + '"', ICO.pinoff, 'bad', 'No address', 'Add one before delivery', CHEV_R);
   const said = String(c.notes || '').trim() ? '<div class="cdrow quiet"><span class="cdic">' + ICO.note + '</span><span class="cdtx"><b class="cdq">' + esc(c.notes) + '</b><small>From the customer</small></span></div>' : '';
   const own = '<label class="cdrow cdnote"><span class="cdic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span class="cdtx"><input data-chn="' + id + '" value="' + esc(c.hn || '') + '" placeholder="Private note: gate code, allergies" maxlength="200" aria-label="Private note, only staff see it"' + ro + '><small>Only staff see this</small></span></label>';
-  return '<div class="cdlist">' + phone + place + said + own + '</div><div class="cdfoot"><span>Received ' + esc(date) + '</span>' + (canWrite ? '<button type="button" class="linkbtn" data-act="cedit" data-id="' + id + '">Edit details</button>' : '') + '</div>';
+  return '<div class="cdfoot"><span>Received ' + esc(date) + '</span>' + (canWrite ? '<button type="button" class="cded" data-act="cedit" data-id="' + id + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>Edit</button>' : '') + '</div><div class="cdlist">' + phone + place + said + own + '</div>';
 }
 /* Staff can correct anything the customer typed. Order number and received date stay as they arrived. */
 function ceditHtml(c) { const k = f => esc(c.id) + '|' + f; const zs = dlNow().zones.map(z => z.n);
