@@ -116,6 +116,7 @@
     async resetPassword(email) { const r = await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://market.vurata.com' }); if (r.error) throw r.error; },
     async setPassword(pw) { const r = await sb.auth.updateUser({ password: pw }); if (r.error) throw r.error; },
     async signOut() { try { await sb.auth.signOut(); } catch (e) {} },
+    async rpc(name, args) { if (!/^backup_(list|now|get|restore)$/.test(name)) throw new Error('rpc'); const r = await sb.rpc(name, args || {}); if (r.error) throw new Error(r.error.message); return r.data; },
     hasStoredSession() { try { return Object.keys(localStorage).some(k => /^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)); } catch (e) { return false; } }
   };
 
