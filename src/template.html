@@ -5101,7 +5101,7 @@ function phoneRead(w) { const sel = w.querySelector('.phcc'); const inp = w.quer
 function phoneApply(w, full) { if (w.dataset.ph === 'm-phone') { patch({ meta: { phone: full } }); const fd = w.closest('.field'); if (fd) fd.classList.toggle('miss', !reqOk('phone', { phone: full })); } }
 document.addEventListener('input', e => { const t = e.target; if (!t.matches || !t.matches('.phnum')) return; const w = t.closest('.phf'); phoneApply(w, phoneRead(w)); });
 document.addEventListener('change', e => { const t = e.target; if (!t.matches || !(t.matches('.phnum') || t.matches('.phcc'))) return; const w = t.closest('.phf'); const full = phoneRead(w); if (w.dataset.ph === 'mywa') setMyWA(full); else phoneApply(w, full); });
-const MONEY_SEL = '#dl-min, #dl-free, #la-price, input[data-dz$="|f"], input[data-dz$="|fr"], input[data-lp], input[data-sp], input[data-cdep], input[data-cfee], input[data-price]';
+const MONEY_SEL = '#dl-min, #dl-free, #la-price, input[data-dz$="|f"], input[data-dz$="|fr"], input[data-dz$="|lf"], input[data-dz$="|lu"], input[data-lp], input[data-sp], input[data-cdep], input[data-cfee], input[data-price]';
 const fmtDots = v => String(v == null ? '' : v).replace(/,\d{1,2}$/, '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 function moneyInit(root) {
   if (!root || !root.querySelectorAll) return;
