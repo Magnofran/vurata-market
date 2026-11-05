@@ -1,5 +1,5 @@
 /* Vurata Market service worker: opens fast and keeps working on weak signal. Never touches Supabase. */
-const VERSION = '20261106010614';
+const VERSION = '20261106012052';
 const CORE = `vm-core-${VERSION}`;
 const RUNTIME = 'vm-runtime';
 const SHELL = ['./', 'index.html', 'shim.js', 'vendor/supabase.js', 'favicon.png', 'manifest.webmanifest', 'assets/wordmark-light.svg', 'assets/wordmark-dark.svg'];
