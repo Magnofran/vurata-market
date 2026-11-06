@@ -2680,6 +2680,10 @@ let ledgerRef = null, ledgerChain = Promise.resolve(), ledgerExists = false;
 ui.lq = ''; ui.lsup = 'all'; ui.lfil = 'all'; ui.llimit = 40; ui.ladd = false; ui.ledit = {};
 ui.custOpen = {}; ui.custDel = {}; ui.combMine = true; ui.cfil = 'all'; ui.cunpaid = false; ui.srep = 'week';
 const LS = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+/* where a customer first came from (?src=threads|facebook|instagram on the link), kept 30 days and shown on their order */
+const SRC_NAME = { threads: 'Threads', facebook: 'Facebook', instagram: 'Instagram' };
+(() => { const q = new URLSearchParams(location.search).get('src'); if (!q) return; if (SRC_NAME[q]) LS.set('vurata-src', q + '|' + Date.now()); try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {} })();
+const srcLabel = () => { const [k, at] = String(LS.get('vurata-src') || '').split('|'); return SRC_NAME[k] && Date.now() - Number(at) < 30 * 864e5 ? SRC_NAME[k] : ''; };
 
 function setSync(s, txt) { const el = document.getElementById('sync'); el.dataset.s = s; document.getElementById('syncTxt').textContent = txt; }
 function orderProg() { const keys = Object.keys(REQ_FIELDS).filter(k => k !== 'zone' || (cmode && dlNow().zones.length)); return { done: keys.filter(k => reqOk(k, S.meta)).length, total: keys.length }; }
@@ -3927,6 +3931,7 @@ function customerMessage(state, comp) {
   row('Location', 'Lokasi', m.pin ? 'https://maps.google.com/?q=' + m.pin + (pinRough(m) ? L(' (approximate, about ', ' (perkiraan, sekitar ') + pinRough(m) + ' m)' : '') : link);
   row('Payment', 'Pembayaran', m.pay ? tr(m.pay) : '');
   row('Notes', 'Catatan', m.notes);
+  row('Found us on', 'Tahu dari', srcLabel());
   const many = comp.groups.length > 1;
   comp.groups.forEach(g => { out.push('', '*' + tr(SUPS[g.sid].name).toUpperCase() + '*'); g.lines.forEach((ln, i) => { out.push((i + 1) + '. ' + lineText(ln, true, id ? 'id' : 'en')); if (ln.note) out.push('   ' + L('Note: ', 'Catatan: ') + ln.note); }); if (many) out.push('Subtotal: ' + fmtRp(g.subtotal)); });
   out.push('');
