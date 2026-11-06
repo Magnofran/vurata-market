@@ -2682,7 +2682,9 @@ ui.custOpen = {}; ui.custDel = {}; ui.combMine = true; ui.cfil = 'all'; ui.cunpa
 const LS = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 /* where a customer first came from (?src=threads|facebook|instagram on the link), kept 30 days and shown on their order */
 const SRC_NAME = { threads: 'Threads', facebook: 'Facebook', instagram: 'Instagram' };
-(() => { const q = new URLSearchParams(location.search).get('src'); if (!q) return; if (SRC_NAME[q]) LS.set('vurata-src', q + '|' + Date.now()); try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {} })();
+// Links stay plain: the app a visitor tapped from is read from the referrer; ?src still works as a fallback.
+const refSrc = () => { try { const h = new URL(document.referrer).hostname; return /(^|\.)threads\.(net|com)$/.test(h) ? 'threads' : /(^|\.)(facebook|fb)\.com$/.test(h) ? 'facebook' : /(^|\.)instagram\.com$/.test(h) ? 'instagram' : ''; } catch (e) { return ''; } };
+(() => { const p = new URLSearchParams(location.search).get('src'); const q = p || refSrc(); if (SRC_NAME[q]) LS.set('vurata-src', q + '|' + Date.now()); if (p) try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {} })();
 const srcLabel = () => { const [k, at] = String(LS.get('vurata-src') || '').split('|'); return SRC_NAME[k] && Date.now() - Number(at) < 30 * 864e5 ? SRC_NAME[k] : ''; };
 
 function setSync(s, txt) { const el = document.getElementById('sync'); el.dataset.s = s; document.getElementById('syncTxt').textContent = txt; }
