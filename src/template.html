@@ -2396,7 +2396,7 @@ function delStripHtml() {
     const sp = asideSplit(rs), mn = dlNow().min || 0, can = sp.fv > 0 && sp.fv >= mn && sp.n > 0;
     return ttl + row('var(--gr)', id ? 'Seluruh pesanan Anda' : 'Your whole order', bT) +
       '<p class="ds">' + esc(can ? (id ? 'Perlu buah & sayur lebih cepat?' : 'Need your fruit & veg sooner?') : (id ? 'Satu pengantaran, semua tiba bersama.' : 'One delivery, everything arrives together.')) + '</p>' +
-      (can ? '<button type="button" class="dsbtn" data-act="aside">' + esc((id ? 'Simpan daging, beku & dapur untuk nanti' : 'Set aside meat, frozen & grocery') + ' (' + sp.n + ')') + '</button><p class="ds dsc">' + esc(id ? 'Disimpan untuk pesanan berikutnya. Atau abaikan, dan semuanya tiba bersama pada ' + bT + '.' : 'Saved for your next order. Or ignore this, and everything arrives together on ' + bT + '.') + '</p>' : '') + note;
+      (can ? '<button type="button" class="dsbtn" data-act="aside">' + esc((id ? 'Simpan daging, beku & dapur untuk nanti' : 'Set aside meat, frozen & grocery') + ' (' + sp.n + ')') + '</button><p class="ds dsc">' + esc(id ? 'Abaikan ini jika ingin semuanya tiba bersama pada ' + bT + '.' : 'Ignore this to keep everything together on ' + bT + '.') + '</p>' : '') + note;
   }
   if (bs.length) return ttl + row('var(--fv)', id ? 'Seluruh pesanan Anda' : 'Your whole order', aT) + '<p class="ds">' + esc(id ? 'Menambah daging, beku atau kebutuhan dapur memindahkan seluruh pesanan ke ' + fd(b) + '.' : 'Adding meat, frozen or grocery moves the whole order to ' + fd(b) + '.') + '</p>' + note;
   return ttl + row('var(--fv)', id ? 'Buah & sayur saja' : 'Fruit & veg only', aT) + row('var(--gr)', id ? 'Dengan daging, beku, dapur' : 'With meat, frozen or grocery', bT) + note;
