@@ -1410,7 +1410,13 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .coldnote { display: flex; align-items: center; gap: 5px; margin: 4px 0 0; font-size: 12px; font-weight: 600; color: var(--gr); } .coldnote span { font-size: 12px; line-height: 1; }
 .dstrip { margin: 0 0 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font-size: 13px; line-height: 1.4; } .dstrip[hidden] { display: none; }
 .dstrip small { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
-.dstrip .dr { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 2px 0; } .dstrip .dr span:last-child { font-weight: 600; text-align: right; } .dstrip .ds { margin: 4px 0 0; font-size: 12px; color: var(--muted); } .dstrip .dd { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; }
+.dstrip .dr { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 2px 0; } .dstrip .dr span:last-child { font-weight: 600; text-align: right; } .dstrip .ds { margin: 4px 0 0; font-size: 12px; color: var(--muted); } .dstrip .dsc { text-align: center; }
+.dstrip small { display: flex; align-items: center; gap: 7px; }
+.dsi { width: 18px; height: 18px; padding: 0; border: 1px solid var(--muted); border-radius: 50%; background: transparent; color: var(--muted); font: italic 600 11px/1 var(--f-body, inherit); text-transform: none; letter-spacing: 0; display: inline-grid; place-items: center; } .dsi::after { content: ''; position: absolute; } .dsi { position: relative; } .dsi::before { content: ''; position: absolute; inset: -12px; }
+.dsnote { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+.dsbtn { display: block; width: 100%; margin-top: 9px; min-height: 40px; padding: 9px 12px; border: 1px solid var(--ink); border-radius: 8px; background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 600; }
+.asidecard { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--line); border-top: 2px solid var(--gold, #C9A96E); border-radius: var(--r); background: var(--surface); font-size: 13.5px; } .asidecard[hidden] { display: none; } .asidecard .ds { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); }
+.asact { display: flex; align-items: center; gap: 14px; margin-top: 10px; } .dsbtn2 { flex: 1; min-height: 40px; padding: 9px 12px; border: 1px solid var(--line-dark, var(--line)); border-radius: 8px; background: transparent; color: var(--ink); font-size: 13px; font-weight: 600; } .asact .linkbtn { width: auto; color: var(--muted); font-size: 13px; } .dstrip .dd { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; }
 .ln > .ln-nt { grid-column: 2; min-width: 0; margin-top: -4px; } .ln-nt p { margin: 0; } .ln-nt p + p { margin-top: 4px; } .ln-nt .restnote { font-size: 12px; } .ln.has-nt > .thumb { grid-row: 1 / span 3; }
 /* order card: an open row becomes a solid ink band pinned under the tabs, same as the Ledger */
 .orow, .osecw { border-radius: 0 !important; }
@@ -2007,6 +2013,7 @@ body { margin: 0; padding-inline: 8px; }
       <div>
         <div class="how" id="howCard" hidden></div>
         <div class="dstrip" id="dlInfo" hidden></div>
+        <div class="asidecard" id="asideCard" hidden></div>
         <button type="button" class="howlink" id="cNote" data-act="showhow" hidden aria-label="Show how it works"><span>How it works</span><i aria-hidden="true">+</i></button>
         <ul class="trust" id="trustRow" hidden></ul>
         <div class="chips" id="supChips"></div>
@@ -2359,21 +2366,59 @@ function quickDates() {
   return '<div class="qdates">' + out.map(iso => '<button type="button" class="chip" data-act="setneed" data-d="' + iso + '" aria-pressed="' + (S.meta.need === iso) + '">' + (iso === tm ? 'Tomorrow' : new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + '</button>').join('') + '</div>';
 }
 /* One quiet strip on the Pick page: the day each group arrives. Only shown when a supplier rest day exists. */
-function delStripHtml() {
-  if (!cmode) return ''; const rs = Object.keys(restOf()).filter(x => (restOf()[x] || []).length); if (!rs.length) return '';
-  const id = LID(), loc = id ? 'id-ID' : 'en-GB', fd = iso => new Date(iso + 'T12:00:00').toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'short' });
+/* Fruit & veg alone vs the whole order, from the supplier rest days. Shared by the strip and the set-aside action. */
+function delDays() {
+  const rs = Object.keys(restOf()).filter(x => (restOf()[x] || []).length); if (!rs.length) return null;
   const closed = iso => dlNow().closed.some(x => x.d === iso);
   const first = ok => { const d = new Date(minNeed() + 'T12:00:00'); for (let i = 0; i < 30; i++) { const iso = isoOf(d); if (!closed(iso) && ok(iso)) return iso; d.setDate(d.getDate() + 1); } return minNeed(); };
   const a = first(() => true), b = first(iso => !restBlocked(iso, rs)), tom = isoOf(new Date(baliNow().getTime() + 864e5));
+  return { rs, a, b, aPm: a === tom && pastNoon(), bPm: restLim(b, rs) === 'pm' || (b === tom && pastNoon()) };
+}
+/* What the fruit & veg alone come to, and how many meat/frozen/grocery lines would be set aside */
+function asideSplit(rs) {
+  const comp = compute(S); let fv = 0, n = 0; comp.groups.forEach(g => g.lines.forEach(ln => { if (!(ln.q > 0)) return; if (rs.includes(ln.it.s)) n++; else fv += ln.total || 0; }));
+  return { fv, n };
+}
+const restDayNames = () => { const wd = [...new Set(Object.values(restOf()).flat())]; return wd.map(n => new Date(2026, 10, 1 + n).toLocaleDateString(LID() ? 'id-ID' : 'en-GB', { weekday: 'long' })).join(LID() ? ' dan ' : ' and '); };
+function delStripHtml() {
+  if (!cmode) return ''; const dd = delDays(); if (!dd) return ''; const { rs, a, b } = dd;
+  const id = LID(), loc = id ? 'id-ID' : 'en-GB', fd = iso => new Date(iso + 'T12:00:00').toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'short' });
   const sfx = pm => pm ? (id ? ', mulai pukul 14.00' : ', from 2 PM') : '';
-  const aT = fd(a) + sfx(a === tom && pastNoon()), bT = fd(b) + sfx(restLim(b, rs) === 'pm' || (b === tom && pastNoon()));
+  const aT = fd(a) + sfx(dd.aPm), bT = fd(b) + sfx(dd.bPm);
   const row = (c, l, t) => '<div class="dr"><span><i class="dd" style="background:' + c + '"></i>' + l + '</span><span>' + esc(t) + '</span></div>';
-  const ttl = '<small>' + (id ? 'Pengantaran Anda' : 'Your delivery') + '</small>';
+  const gap = a !== b;
+  const info = gap ? '<button type="button" class="dsi" data-act="dsinfo" aria-expanded="' + !!ui.dsOpen + '" aria-label="' + (id ? 'Kenapa ada dua tanggal' : 'Why two dates') + '">i</button>' : '';
+  const ttl = '<small>' + (id ? 'Pengantaran Anda' : 'Your delivery') + info + '</small>';
+  const note = gap && ui.dsOpen ? '<p class="dsnote">' + esc(id ? 'Pemasok daging, beku dan kebutuhan dapur kami libur hari ' + restDayNames() + ', jadi barang dari mereka diambil di hari kerja berikutnya. Dipesan sekarang, tiba ' + bT + '. Buah & sayur saja bisa tiba ' + aT + '. Di hari lain, semuanya tiba keesokan harinya.' : 'Our meat, frozen and grocery suppliers rest on ' + restDayNames() + 's, so their items are collected the next working day. Ordered now, they arrive ' + bT + '. Fruit & veg only can arrive ' + aT + '. On other days, everything arrives the next day.') + '</p>' : '';
   const bs = basketSids(), hasRest = bs.some(x => rs.includes(x));
-  if (a === b) return ttl + row('var(--fv)', id ? 'Semua barang' : 'Everything', aT);
-  if (hasRest) return ttl + row('var(--gr)', id ? 'Seluruh pesanan Anda' : 'Your whole order', bT) + '<p class="ds">' + esc(id ? 'Satu pengantaran, semua tiba bersama. Buah & sayur saja: ' + aT + '.' : 'One delivery, everything arrives together. Fruit & veg alone: ' + aT + '.') + '</p>';
-  if (bs.length) return ttl + row('var(--fv)', id ? 'Seluruh pesanan Anda' : 'Your whole order', aT) + '<p class="ds">' + esc(id ? 'Menambah daging, beku atau kebutuhan dapur memindahkan seluruh pesanan ke ' + fd(b) + '.' : 'Adding meat, frozen or grocery moves the whole order to ' + fd(b) + '.') + '</p>';
-  return ttl + row('var(--fv)', id ? 'Buah & sayur saja' : 'Fruit & veg only', aT) + row('var(--gr)', id ? 'Dengan daging, beku, dapur' : 'With meat, frozen or grocery', bT);
+  if (!gap) return ttl + row('var(--fv)', id ? 'Semua barang' : 'Everything', aT);
+  if (hasRest) {
+    const sp = asideSplit(rs), mn = dlNow().min || 0, can = sp.fv > 0 && sp.fv >= mn && sp.n > 0;
+    return ttl + row('var(--gr)', id ? 'Seluruh pesanan Anda' : 'Your whole order', bT) +
+      '<p class="ds">' + esc(can ? (id ? 'Semua tiba bersama. Mau buah & sayur besok?' : 'Everything arrives together. Want your fruit & veg tomorrow?') : (id ? 'Satu pengantaran, semua tiba bersama.' : 'One delivery, everything arrives together.')) + '</p>' +
+      (can ? '<button type="button" class="dsbtn" data-act="aside">' + esc((id ? 'Simpan daging, beku & dapur untuk nanti' : 'Set aside meat, frozen & grocery') + ' (' + sp.n + ')') + '</button><p class="ds dsc">' + esc(id ? 'Disimpan untuk pesanan berikutnya. Tidak ada yang hilang.' : 'Saved for your next order. Nothing is lost.') + '</p>' : '') + note;
+  }
+  if (bs.length) return ttl + row('var(--fv)', id ? 'Seluruh pesanan Anda' : 'Your whole order', aT) + '<p class="ds">' + esc(id ? 'Menambah daging, beku atau kebutuhan dapur memindahkan seluruh pesanan ke ' + fd(b) + '.' : 'Adding meat, frozen or grocery moves the whole order to ' + fd(b) + '.') + '</p>' + note;
+  return ttl + row('var(--fv)', id ? 'Buah & sayur saja' : 'Fruit & veg only', aT) + row('var(--gr)', id ? 'Dengan daging, beku, dapur' : 'With meat, frozen or grocery', bT) + note;
+}
+/* ===== Set aside: moves meat/frozen/grocery lines out of the cart into a saved list, so the fruit & veg can go out first ===== */
+const asideGet = () => { try { return JSON.parse(LS.get('mumu-aside') || '{}') || {}; } catch (e) { return {}; } };
+const asideSet = o => LS.set('mumu-aside', JSON.stringify(o));
+function setAside() {
+  const dd = delDays(); if (!dd) return; const sp = asideSplit(dd.rs); if (!(sp.n > 0 && sp.fv > 0 && sp.fv >= (dlNow().min || 0))) return;
+  const snap = {}; Object.keys(S.lines).forEach(k => { const L = S.lines[k]; const it = BY_ID[k.split('|')[0]]; if (L && L.q > 0 && it && dd.rs.includes(it.s)) snap[k] = { q: L.q, n: L.n || '', s: L.s || '', p: L.p || 0 }; });
+  const keys = Object.keys(snap); if (!keys.length) return;
+  const prev = asideGet(); asideSet(Object.assign({}, prev, snap)); keys.forEach(k => setQty(k, 0, true));
+  if (S.meta.need) { patch({ meta: { need: dd.a } }); fixSlot(true); }
+  const id = LID(), fd = new Date(dd.a + 'T12:00:00').toLocaleDateString(id ? 'id-ID' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
+  renderPick(); renderAll(false);
+  toast(id ? 'Disimpan untuk berikutnya. Buah & sayur Anda tiba ' + fd + '.' : 'Saved for next time. Your fruit & veg arrive ' + fd + '.', { label: id ? 'Batal' : 'Undo', fn: () => { const cur = asideGet(); keys.forEach(k => delete cur[k]); asideSet(cur); patch({ lines: snap }); renderPick(); renderAll(false); } });
+}
+function asideHtml() {
+  if (!cmode) return ''; const a = asideGet(), keys = Object.keys(a).filter(k => a[k] && a[k].q > 0 && BY_ID[k.split('|')[0]]); if (!keys.length) return '';
+  const lines = {}; keys.forEach(k => { lines[k] = { q: a[k].q }; }); let tot = 0; try { tot = compute({ meta: S.meta, lines, sup: {} }).total; } catch (e) {}
+  const id = LID(); return '<b>' + (id ? 'Untuk pesanan berikutnya' : 'For your next order') + '</b><p class="ds">' + keys.length + (id ? ' barang' : (keys.length > 1 ? ' items' : ' item')) + (tot ? ' · ' + fmtRp(tot) : '') + '</p>' +
+    '<div class="asact"><button type="button" class="dsbtn2" data-act="asideadd">' + (id ? 'Tambah ke pesanan' : 'Add to order') + '</button><button type="button" class="linkbtn" data-act="asideclr">' + (id ? 'Hapus' : 'Clear') + '</button></div>';
 }
 function needHint() {
   if (!cmode) return ''; const dl = dlNow(); const today = isoOf(baliNow());
@@ -2974,7 +3019,7 @@ function renderFilters() {
     const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
     if (show) hw.innerHTML = BASK_ART + '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span><b>Pick</b> what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().map(x => '<span class="snt">' + x + '</span>').join(' ') + '</p>' : '') + (cmode ? '<p class="hownote howcut"><span class="snt">We deliver the next day, <b>10 AM to 10 PM</b>.</span> <span class="snt">Order before <b>12 PM</b> for a morning delivery.</span></p>' : '');
   }
-  const di = document.getElementById('dlInfo'); if (di) { const h = delStripHtml(); di.innerHTML = h; di.hidden = !h; }
+  const di = document.getElementById('dlInfo'); if (di) { const h = delStripHtml(); di.innerHTML = h; di.hidden = !h; } const ac = document.getElementById('asideCard'); if (ac) { const h = asideHtml(); ac.innerHTML = h; ac.hidden = !h; }
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; supVisible().forEach(s => { counts[s] = CATALOG.filter(i => gs(i) === s && !i.hidden).length; });
   const chipHost = document.getElementById('supChips'); if (!chipHost.dataset.bound) { chipHost.dataset.bound = '1'; chipHost.addEventListener('scroll', chipsFade, { passive: true }); window.addEventListener('resize', chipsFade); }
   document.getElementById('supChips').innerHTML = '<div class="chipgrp' + (supVisible().length > 3 ? ' many' : '') + '">' + ['all'].concat(supVisible()).map(s =>
@@ -3002,7 +3047,7 @@ function renderSide(comp) {
     '<div class="actions full"><button class="btn" data-view="order">Review order</button><button type="button" class="btn ghost" data-act="savedraft">Save for later</button><button type="button" class="btn ghost" data-act="clearall">Clear all</button></div></div>';
 }
 function chrome(comp) {
-  const dsx = document.getElementById('dlInfo'); if (dsx && cmode) { const h = delStripHtml(); if (dsx.innerHTML !== h) dsx.innerHTML = h; dsx.hidden = !h; }
+  const dsx = document.getElementById('dlInfo'); if (dsx && cmode) { const h = delStripHtml(); if (dsx.innerHTML !== h) dsx.innerHTML = h; dsx.hidden = !h; } const acx = document.getElementById('asideCard'); if (acx && cmode) { const h = asideHtml(); if (acx.innerHTML !== h) acx.innerHTML = h; acx.hidden = !h; }
   document.getElementById('bbTotal').textContent = fmtRp(comp.total);
   document.getElementById('bbSub').textContent = comp.count ? comp.count + ' line' + (comp.count > 1 ? 's' : '') + (fmtMeasure(comp.w, comp.v) ? ' - about ' + fmtMeasure(comp.w, comp.v) : '') : 'Nothing picked yet';
   const b = document.getElementById('nBadge'); const prevN = +b.dataset.n || 0; b.textContent = comp.count; b.dataset.n = comp.count; if (comp.count > prevN) { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
@@ -4825,6 +4870,10 @@ document.addEventListener('click', e => {
   else if (act === 'qclear') { const qi = document.getElementById('q'); ui.q = ''; ui.limit = 80; if (qi) { qi.value = ''; } renderPick(); if (qi) qi.focus(); }
   else if (act === 'dym') { ui.q = b.dataset.q || ''; const qi = document.getElementById('q'); if (qi) qi.value = ui.q; ui.limit = 80; renderPick(); }
   else if (act === 'clearf') { ui.q = ''; ui.cat = 'all'; const qi = document.getElementById('q'); if (qi) qi.value = ''; setListMode('browse'); }
+  else if (act === 'aside') setAside();
+  else if (act === 'dsinfo') { ui.dsOpen = !ui.dsOpen; const di = document.getElementById('dlInfo'); if (di) di.innerHTML = delStripHtml(); }
+  else if (act === 'asideadd') { const a = asideGet(); const add = {}; Object.keys(a).forEach(k => { if (a[k] && a[k].q > 0 && BY_ID[k.split('|')[0]]) add[k] = { q: ((S.lines[k] || {}).q || 0) + a[k].q }; }); asideSet({}); if (Object.keys(add).length) patch({ lines: add }); renderPick(); renderAll(false); toast(LID() ? 'Ditambahkan ke pesanan Anda.' : 'Added to your order.'); }
+  else if (act === 'asideclr') { asideSet({}); renderPick(); }
   else if (act === 'pinfo') { const n = document.getElementById('pn-' + b.dataset.id); if (n) { n.hidden = !n.hidden; b.setAttribute('aria-expanded', String(!n.hidden)); } }
   else if (act === 'fav') {
     const id = b.dataset.id; if (favs[id]) delete favs[id]; else favs[id] = 1; saveFavs();
