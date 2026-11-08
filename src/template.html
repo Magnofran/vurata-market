@@ -2352,12 +2352,14 @@ function needHint() {
   const all = basketSids(), rs = all.filter(x => (restOf()[x] || []).length);
   if (rs.length) { let d = new Date(minNeed() + 'T12:00:00'), late = null; for (let i = 0; i < 14 && restBlocked(isoOf(d), all); i++) { if (!late && restLim(isoOf(d), all) === 'late') late = isoOf(d); d.setDate(d.getDate() + 1); }
     const first = isoOf(d), pm = restLim(first, all) === 'pm', base = minNeed();
-    if (first !== base || pm) { const dn = dayName(first), q = late && restQ(late, all);
-      let m = pm ? (LID() ? 'Daging dan produk beku tiba hari ' + dn + ' mulai pukul 14.00.' : 'Meat and frozen items arrive ' + dn + ' from 2 PM.')
-        : late ? (LID() ? 'Daging dan produk beku harus dipesan sebelum ' + dayName(isoOf(q)) + ' pukul 12.00 untuk hari ' + dayName(late) + ', jadi pesanan Anda tiba hari ' + dn + '.' : 'Meat and frozen items need an order by ' + dayName(isoOf(q)) + ' 12 PM for ' + dayName(late) + ', so yours arrives ' + dn + '.')
-        : (LID() ? restSay(rs, dayName(isoOf(new Date(base + 'T12:00:00')))) + ', jadi pesanan tiba hari ' + dn + '.' : restSay(rs, dayName(base)) + ', so your order arrives ' + dn + '.');
-      if (rs.length < all.length && !restBlocked(base, all.filter(x => !rs.includes(x)))) m += LID() ? ' Tanpa itu, hari ' + dayName(base) + ' tersedia.' : ' Without them, ' + dayName(base) + ' is available.';
-      parts.push(m); } }
+    if (first !== base || pm) { const id = LID(), loc = id ? 'id-ID' : 'en-GB', fd = iso => new Date(iso + 'T12:00:00').toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'short' }), h = baliNow().getHours();
+      const tod = id ? (h < 12 ? 'pagi ini' : h < 17 ? 'sore ini' : 'malam ini') : (h < 12 ? 'this morning' : h < 17 ? 'this afternoon' : 'this evening');
+      const alt = rs.length < all.length && !restBlocked(base, all.filter(x => !rs.includes(x))), later = pastNoon() && base === isoOf(new Date(baliNow().getTime() + 864e5)), rd = late ? isoOf(new Date(new Date(late + 'T12:00:00').getTime() - 864e5)) : '';
+      const m = (pm ? (id ? 'Daging dan produk beku yang dipesan ' + tod + ' tiba ' + fd(first) + ' mulai pukul 14.00, diambil segar hari itu.' : 'Meat and frozen items ordered ' + tod + ' arrive ' + fd(first) + ' from 2 PM, collected fresh that day.')
+        : late ? (id ? 'Pemasok kami libur hari ' + dayName(rd) + ', jadi daging dan produk beku yang dipesan ' + tod + ' diambil hari ' + dayName(late) + ' dan tiba ' + fd(first) + '.' : 'Our suppliers rest on ' + dayName(rd) + ', so meat and frozen items ordered ' + tod + ' are collected ' + dayName(late) + ' and arrive ' + fd(first) + '.')
+        : (id ? restSay(rs, dayName(base)) + ', jadi pesanan tiba ' + fd(first) + '.' : restSay(rs, dayName(base)) + ', so your order arrives ' + fd(first) + '.'))
+        + (alt ? (id ? ' Tanpa itu, hari ' + dayName(base) + ' tersedia' + (later ? ' mulai pukul 14.00' : '') + '.' : ' Without them, ' + dayName(base) + ' is available' + (later ? ' from 2 PM' : '') + '.') : '');
+      parts[0] = m; } }
   return parts.length ? '<p class="hint">' + esc(parts.join(' ')) + '</p>' : '';
 }
 const zoneLabel = z => z === '__other' ? 'Another area' : (z || '');
