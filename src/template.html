@@ -2149,8 +2149,8 @@ const SLOT_M = 'Morning (10 AM to 2 PM)', SLOT_A = 'Afternoon (2 to 6 PM)', SLOT
 const SLOTS = ['', SLOT_M, SLOT_A, SLOT_E];
 const slotName = o => o || 'Any time (10 AM to 10 PM)';
 const pastNoon = () => baliNow().getHours() >= 12;
-const morningShut = need => cmode && pastNoon() && need === isoOf(new Date(baliNow().getTime() + 864e5));
-function fixSlot(quiet) { if (S.meta.slot === SLOT_M && morningShut(S.meta.need)) { patch({ meta: { slot: '' } }); if (!quiet) toast('Ordered after 12 PM, so tomorrow\'s delivery is from 2 PM. Choose the afternoon or evening.'); return true; } return false; }
+const morningShut = need => cmode && ((pastNoon() && need === isoOf(new Date(baliNow().getTime() + 864e5))) || restLim(need, basketSids()) === 'pm');
+function fixSlot(quiet) { if (S.meta.slot === SLOT_M && morningShut(S.meta.need)) { patch({ meta: { slot: '' } }); if (!quiet) toast(restLim(S.meta.need, basketSids()) === 'pm' ? (LID() ? 'Daging dan produk beku tiba mulai pukul 14.00. Pilih sore atau malam.' : 'Meat and frozen items arrive from 2 PM. Choose the afternoon or evening.') : 'Ordered after 12 PM, so tomorrow\'s delivery is from 2 PM. Choose the afternoon or evening.'); return true; } return false; }
 function fmtDate(iso, loc) {
   if (!iso) return '';
   const d = new Date(iso + 'T12:00:00');
@@ -2316,7 +2316,14 @@ const basketSids = () => [...new Set(Object.keys(S.lines || {}).filter(k => S.li
 const restWhat = sids => sids.map(x => (REST_WHAT[x] || ['', ''])[LID() ? 1 : 0]).filter(Boolean).join(LID() ? ' dan ' : ' and ');
 const restSay = (sids, day) => LID() ? (sids.length > 1 ? 'Pemasok daging dan produk beku kami' : (sids[0] === 'mt' ? 'Pemasok daging kami' : 'Pemasok produk beku & dapur kami')) + ' libur hari ' + day : 'Our ' + restWhat(sids) + (sids.length > 1 ? ' rest' : ' rests') + ' on ' + day;
 const dayName = iso => new Date(iso + 'T12:00:00').toLocaleDateString(LID() ? 'id-ID' : 'en-GB', { weekday: 'long' });
-const isClosed = iso => dlNow().closed.some(x => x.d === iso) || (cmode && restSids(iso, basketSids()).length > 0);
+/* The day after a rest day: the supplier needs our order by 12 PM on the last open day before it (Saturday for Monday), we collect on the
+   delivery day itself and pack, so that delivery starts at 2 PM ('pm'). An order placed after that deadline cannot make the day ('late'). */
+const REST_CUT = 12;
+function restQ(iso, sids) { const pv = new Date(iso + 'T12:00:00'); pv.setDate(pv.getDate() - 1); if (!restSids(isoOf(pv), sids).length) return null;
+  const q = new Date(pv); for (let i = 0; i < 7 && restSids(isoOf(q), sids).length; i++) q.setDate(q.getDate() - 1); q.setHours(REST_CUT, 0, 0, 0); return q; }
+function restLim(iso, sids) { if (!sids.length) return ''; if (restSids(iso, sids).length) return 'closed'; const q = restQ(iso, sids); return q ? (baliNow() > q ? 'late' : 'pm') : ''; }
+const restBlocked = (iso, sids) => { const l = restLim(iso, sids); return l === 'closed' || l === 'late'; };
+const isClosed = iso => dlNow().closed.some(x => x.d === iso) || (cmode && restBlocked(iso, basketSids()));
 /* first day this item can arrive, counted from the earliest delivery day */
 /* ===== Cold chain: fresh meat and seafood travel chilled, frozen goods frozen, both in a cooler with ice packs.
    Worked out from the category and name; staff can set it per product (Temperature in Edit details). ===== */
@@ -2324,10 +2331,14 @@ const FZ_RX = /frozen|beku|prozen|fries|dim sum|dumpling|nugget/i;
 function tempOf(it) { if (it.tz) return it.tz === 'rt' ? '' : it.tz; if (FZ_RX.test(it.n + ' ' + (it.e || '') + ' ' + it.c)) return 'fz'; return it.s === 'mt' || (it.s === 'gr' && /seafood/i.test(it.c)) ? 'ch' : ''; }
 const coldKinds = lines => { const k = {}; lines.forEach(ln => { const t = tempOf(ln.it); if (t) k[t] = 1; }); return k; };
 const coldHtml = it => { const t = tempOf(it); if (!t) return ''; const id = LID(); return '<p class="coldnote ' + t + '"><span aria-hidden="true">❄</span>' + (t === 'fz' ? (id ? 'Beku · dikirim dalam cooler dengan ice pack' : 'Frozen · delivered in a cooler with ice packs') : (id ? 'Dingin · dikirim dalam cooler dengan ice pack' : 'Chilled · delivered in a cooler with ice packs')) + '</p>'; };
-function itemFrom(it) { let d = minNeed(); for (let i = 0; i < 7 && restSids(d, [it.s]).length; i++) d = isoOf(new Date(new Date(d + 'T12:00:00').getTime() + 864e5)); return d; }
-function restCheck() { if (!cmode || !S.meta.need || !isClosed(S.meta.need)) return; const was = S.meta.need, why = restSids(was, basketSids()); const nx = nextOpen(was);
+function itemFrom(it) { let d = minNeed(); for (let i = 0; i < 7 && restBlocked(d, [it.s]); i++) d = isoOf(new Date(new Date(d + 'T12:00:00').getTime() + 864e5)); return d; }
+/* Why a day is unavailable for this basket: names the supplier's rest day, or the order deadline for the day after it. */
+function restWhy(iso) { const sids = basketSids(), lim = restLim(iso, sids); if (lim === 'closed') return restSay(restSids(iso, sids), dayName(iso));
+  if (lim === 'late') { const q = restQ(iso, sids); return LID() ? 'Daging dan produk beku untuk hari ' + dayName(iso) + ' harus dipesan sebelum ' + dayName(isoOf(q)) + ' pukul 12.00' : 'Meat and frozen items for ' + dayName(iso) + ' need an order by ' + dayName(isoOf(q)) + ' 12 PM'; }
+  return ''; }
+function restCheck() { if (!cmode || !S.meta.need || !isClosed(S.meta.need)) return; const was = S.meta.need, why = restWhy(was); const nx = nextOpen(was);
   patch({ meta: { need: nx } }); fixSlot();
-  toast(why.length ? restSay(why, dayName(was)) + (LID() ? '. Pindah ke ' + fmtDate(nx) + ' agar semuanya tiba bersama, tetap segar.' : '. Moved to ' + fmtDate(nx) + ' so everything arrives together, fresh.') : 'Moved to ' + fmtDate(nx) + '.'); }
+  toast(why ? why + (LID() ? '. Pindah ke ' + fmtDate(nx) + ' agar semuanya tiba bersama, tetap segar.' : '. Moved to ' + fmtDate(nx) + ' so everything arrives together, fresh.') : 'Moved to ' + fmtDate(nx) + '.'); }
 function nextOpen(iso) { const d = new Date(iso + 'T12:00:00'); for (let i = 0; i < 60 && isClosed(isoOf(d)); i++) d.setDate(d.getDate() + 1); return isoOf(d); }
 function quickDates() {
   if (!cmode) return ''; const out = []; const d = new Date(minNeed() + 'T12:00:00'); const tm = isoOf(new Date(baliNow().getTime() + 864e5));
@@ -2338,8 +2349,15 @@ function needHint() {
   if (!cmode) return ''; const dl = dlNow(); const today = isoOf(baliNow());
   const days = dl.closed.filter(x => x.d >= today).slice(0, 3).map(x => new Date(x.d + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (x.n ? ' (' + x.n + ')' : ''));
   const parts = [pastNoon() ? 'It is past 12 PM, so tomorrow\'s delivery is from 2 PM.' : 'Order before 12 PM to choose a morning delivery tomorrow.']; if (days.length) parts.push('No delivery on ' + days.join(', ') + '.');
-  const rs = basketSids().filter(x => (restOf()[x] || []).length); if (rs.length) { const wd = [...new Set(rs.flatMap(x => restOf()[x]))].map(n => new Date(2026, 10, 1 + n).toLocaleDateString(LID() ? 'id-ID' : 'en-GB', { weekday: 'long' })).join(', ');
-    parts.push(restSay(rs, wd) + (LID() ? ', jadi pesanan ini dikirim di hari lain.' : ', so this order comes on another day.')); }
+  const all = basketSids(), rs = all.filter(x => (restOf()[x] || []).length);
+  if (rs.length) { let d = new Date(minNeed() + 'T12:00:00'), late = null; for (let i = 0; i < 14 && restBlocked(isoOf(d), all); i++) { if (!late && restLim(isoOf(d), all) === 'late') late = isoOf(d); d.setDate(d.getDate() + 1); }
+    const first = isoOf(d), pm = restLim(first, all) === 'pm', base = minNeed();
+    if (first !== base || pm) { const dn = dayName(first), q = late && restQ(late, all);
+      let m = pm ? (LID() ? 'Daging dan produk beku tiba hari ' + dn + ' mulai pukul 14.00.' : 'Meat and frozen items arrive ' + dn + ' from 2 PM.')
+        : late ? (LID() ? 'Daging dan produk beku harus dipesan sebelum ' + dayName(isoOf(q)) + ' pukul 12.00 untuk hari ' + dayName(late) + ', jadi pesanan Anda tiba hari ' + dn + '.' : 'Meat and frozen items need an order by ' + dayName(isoOf(q)) + ' 12 PM for ' + dayName(late) + ', so yours arrives ' + dn + '.')
+        : (LID() ? restSay(rs, dayName(isoOf(new Date(base + 'T12:00:00')))) + ', jadi pesanan tiba hari ' + dn + '.' : restSay(rs, dayName(base)) + ', so your order arrives ' + dn + '.');
+      if (rs.length < all.length && !restBlocked(base, all.filter(x => !rs.includes(x)))) m += LID() ? ' Tanpa itu, hari ' + dayName(base) + ' tersedia.' : ' Without them, ' + dayName(base) + ' is available.';
+      parts.push(m); } }
   return parts.length ? '<p class="hint">' + esc(parts.join(' ')) + '</p>' : '';
 }
 const zoneLabel = z => z === '__other' ? 'Another area' : (z || '');
@@ -2813,7 +2831,7 @@ function askLink(it, o) {
 }
 function itemHtml(it, showSup) {
   const from = cmode ? itemFrom(it) : ''; const later = cmode && from !== minNeed();
-  const note = coldHtml(it) + (later ? '<p class="restnote">' + (LID() ? 'Tiba ' + dayName(from) + ', dikemas segar' : 'Arrives ' + dayName(from) + ', freshly packed') + '</p>' : '');
+  const note = coldHtml(it) + (later ? '<p class="restnote">' + (restLim(from, [it.s]) === 'pm' ? (LID() ? 'Tiba ' + dayName(from) + ' mulai pukul 14.00, dikemas segar' : 'Arrives ' + dayName(from) + ' from 2 PM, freshly packed') : (LID() ? 'Tiba ' + dayName(from) + ', dikemas segar' : 'Arrives ' + dayName(from) + ', freshly packed')) + '</p>' : '');
   const pnote = (cmode && (it.pn || it.pi) ? '<p class="pnote" id="pn-' + it.id + '" hidden>' + esc(LID() && it.pi ? it.pi : it.pn || it.pi) + '</p>' : '');
   const xflag = it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : ''; const flags = xflag + note;
   const pk = it.k && it.k.length < 70 && it.o.length > 1 ? '<p class="meta">Listed as: ' + esc(it.k) + '</p>' : '';
@@ -2978,7 +2996,7 @@ function renderOrder(comp) {
     (cmode ? '<div class="field span-all' + (!reqOk('phone', m) ? ' miss' : '') + '"><label for="m-phone-n">Your WhatsApp, so your host can reach you <i class="req" aria-hidden="true">*</i></label>' + phoneField('m-phone', m.phone, ro) + '</div>' : '') +
     (() => { const dlc = dlNow(); if (!cmode) return ''; const cp = compute(S);
       return (dlc.zones.length ? '<div class="field span-all' + (!reqOk('zone', m) ? ' miss' : '') + '"><label for="m-zone">Delivery area <i class="req" aria-hidden="true">*</i></label><div class="areabox"><div class="areaq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="m-zone" type="search" autocomplete="off" enterkeyhint="search" role="combobox" aria-expanded="false" aria-controls="areaList" data-areaq="1" placeholder="Type your area, e.g. Berawa or Ubud" value="' + esc(m.zone ? zoneLabel(m.zone) : '') + '"' + ro + '>' + (m.zone && canWrite ? '<button type="button" class="areaclr" data-act="areaclr" aria-label="Change area"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' : '') + '</div><div class="arealist" id="areaList" role="listbox" hidden></div>' + dlBreak(cp) + '</div></div>' : '') +
-        '<div class="field span-all"><label for="m-slot">Delivery time</label><select id="m-slot" data-meta="slot"' + ro + '>' + SLOTS.map(o => { const shut = o === SLOT_M && morningShut(m.need); return '<option value="' + o + '"' + (o === (m.slot || '') && !shut ? ' selected' : '') + (shut ? ' disabled' : '') + '>' + (!o && morningShut(m.need) ? 'Any time (2 PM to 10 PM)' : slotName(o)) + (shut ? ' (order before 12 PM)' : '') + '</option>'; }).join('') + '</select></div>'; })() +
+        '<div class="field span-all"><label for="m-slot">Delivery time</label><select id="m-slot" data-meta="slot"' + ro + '>' + SLOTS.map(o => { const shut = o === SLOT_M && morningShut(m.need); return '<option value="' + o + '"' + (o === (m.slot || '') && !shut ? ' selected' : '') + (shut ? ' disabled' : '') + '>' + (!o && morningShut(m.need) ? 'Any time (2 PM to 10 PM)' : slotName(o)) + (shut ? (restLim(m.need, basketSids()) === 'pm' ? ' (meat & frozen arrive from 2 PM)' : ' (order before 12 PM)') : '') + '</option>'; }).join('') + '</select></div>'; })() +
     '<div class="field span-all delivf' + (cmode && !reqOk('addr', m) ? ' miss' : '') + '"><label for="m-addr">Deliver to' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label>' + delBoxHtml(m, ro) + '</div>' +
     '<div class="field span-all"><label for="m-notes">' + (cmode ? 'Notes for your host' : 'Internal note for the order manager') + '</label><textarea id="m-notes" data-meta="notes" placeholder="' + (cmode ? 'Anything we should know before delivery' : 'For us only, never sent to suppliers. E.g. check stock on the salmon first') + '"' + ro + '>' + esc(m.notes) + '</textarea></div></div>' : '') + '</div>';
   if (!comp.groups.length) {
@@ -5057,7 +5075,7 @@ document.addEventListener('change', e => {
   else if (t.id === 'm-addr' && cmode) { /* handled on input; keeps the hidden Maps link */ }
   else if (t.matches('[data-meta]')) {
     if (t.dataset.meta === 'need' && t.value && t.value < minNeed()) { t.value = minNeed(); toast('Orders need 24 hours notice, so your date moved to the earliest available day.'); }
-    if (cmode && t.dataset.meta === 'need' && t.value && isClosed(t.value)) { const cd = dlNow().closed.find(x => x.d === t.value); const why = cd ? [] : restSids(t.value, basketSids()); const nx = nextOpen(t.value); toast(why.length ? restSay(why, dayName(t.value)) + (LID() ? '. Pindah ke ' + fmtDate(nx) + ' agar semuanya tiba bersama, tetap segar.' : '. Moved to ' + fmtDate(nx) + ' so everything arrives together, fresh.') : 'No delivery on ' + fmtDate(t.value) + (cd && cd.n ? ' (' + cd.n + ')' : '') + '. Moved to ' + fmtDate(nx) + '.'); t.value = nx; }
+    if (cmode && t.dataset.meta === 'need' && t.value && isClosed(t.value)) { const cd = dlNow().closed.find(x => x.d === t.value); const why = cd ? '' : restWhy(t.value); const nx = nextOpen(t.value); toast(why ? why + (LID() ? '. Pindah ke ' + fmtDate(nx) + ' agar semuanya tiba bersama, tetap segar.' : '. Moved to ' + fmtDate(nx) + ' so everything arrives together, fresh.') : 'No delivery on ' + fmtDate(t.value) + (cd && cd.n ? ' (' + cd.n + ')' : '') + '. Moved to ' + fmtDate(nx) + '.'); t.value = nx; }
     patch({ meta: { [t.dataset.meta]: t.value } }); if (t.dataset.meta === 'need' && fixSlot()) renderOrder(compute(S));
     if (t.dataset.meta === 'zone') { const cz = compute(S); renderOrder(cz); chrome(cz); }
     if (cmode && REQ_FIELDS[t.dataset.meta]) { const fd = t.closest('.field'); if (fd) fd.classList.toggle('miss', !reqOk(t.dataset.meta, { [t.dataset.meta]: t.value })); }
