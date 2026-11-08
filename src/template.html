@@ -1067,6 +1067,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .custgrid > * { min-width: 0; }
 .cline2.th { grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; align-items: center; } .cline2.th > .thumb { grid-row: span 2; width: 48px; height: 48px; font-size: 24px; }
 .cline2.gone > .thumb { opacity: .4; filter: grayscale(1); }
+.cline2.th.nt > .thumb { grid-row: span 3; } .cl-nt { min-width: 0; } .cl-nt p { margin: 0; font-size: 12px; font-weight: 600; color: var(--gr); } .cl-nt p + p { margin-top: 2px; }
 .cline2.gone .cl-name, .cline2.gone .cl-t, .cline2.gone .cl-meta { color: var(--muted); opacity: .6; } .cline2.gone .cl-name { text-decoration: line-through; text-decoration-thickness: 1px; }
 .backbtn { flex: none; min-height: 30px; padding: 0 10px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--surface)); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .qsteps { margin: 0 0 8px; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; line-height: 1.45; color: var(--ink); }
@@ -1407,6 +1408,9 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .pinfo { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-left: 6px; padding: 0; border: 1.5px solid currentColor; border-radius: 50%; background: none; color: var(--muted); font: 700 11px/1 var(--f-body, inherit); font-style: italic; vertical-align: 2px; cursor: pointer; } .pinfo[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-style: normal; }
 .item .pnote { grid-column: 1 / -1; } .pnote { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--gold); background: color-mix(in srgb, var(--gold) 9%, var(--surface)); font-size: 13px; line-height: 1.5; color: var(--ink); }
 .coldnote { display: flex; align-items: center; gap: 5px; margin: 4px 0 0; font-size: 12px; font-weight: 600; color: var(--gr); } .coldnote span { font-size: 12px; line-height: 1; }
+.dstrip { margin: 0 0 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font-size: 13px; line-height: 1.4; } .dstrip[hidden] { display: none; }
+.dstrip small { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.dstrip .dr { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 2px 0; } .dstrip .dr span:last-child { font-weight: 600; text-align: right; } .dstrip .dd { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; }
 .ln > .ln-nt { grid-column: 2; min-width: 0; margin-top: -4px; } .ln-nt p { margin: 0; } .ln-nt p + p { margin-top: 4px; } .ln-nt .restnote { font-size: 12px; } .ln.has-nt > .thumb { grid-row: 1 / span 3; }
 /* order card: an open row becomes a solid ink band pinned under the tabs, same as the Ledger */
 .orow, .osecw { border-radius: 0 !important; }
@@ -2002,7 +2006,7 @@ body { margin: 0; padding-inline: 8px; }
     <div class="cols two">
       <div>
         <div class="how" id="howCard" hidden></div>
-        <div class="dlinfo" id="dlInfo" hidden></div>
+        <div class="dstrip" id="dlInfo" hidden></div>
         <button type="button" class="howlink" id="cNote" data-act="showhow" hidden aria-label="Show how it works"><span>How it works</span><i aria-hidden="true">+</i></button>
         <ul class="trust" id="trustRow" hidden></ul>
         <div class="chips" id="supChips"></div>
@@ -2151,7 +2155,7 @@ const SLOTS = ['', SLOT_M, SLOT_A, SLOT_E];
 const slotName = o => o || 'Any time (10 AM to 10 PM)';
 const pastNoon = () => baliNow().getHours() >= 12;
 const morningShut = need => cmode && ((pastNoon() && need === isoOf(new Date(baliNow().getTime() + 864e5))) || restLim(need, basketSids()) === 'pm');
-function fixSlot(quiet) { if (S.meta.slot === SLOT_M && morningShut(S.meta.need)) { patch({ meta: { slot: '' } }); if (!quiet) toast(restLim(S.meta.need, basketSids()) === 'pm' ? (LID() ? 'Daging dan produk beku tiba mulai pukul 14.00. Pilih sore atau malam.' : 'Meat and frozen items arrive from 2 PM. Choose the afternoon or evening.') : 'Ordered after 12 PM, so tomorrow\'s delivery is from 2 PM. Choose the afternoon or evening.'); return true; } return false; }
+function fixSlot(quiet) { if (S.meta.slot === SLOT_M && morningShut(S.meta.need)) { patch({ meta: { slot: '' } }); if (!quiet) toast(restLim(S.meta.need, basketSids()) === 'pm' ? (LID() ? 'Daging, produk beku dan kebutuhan dapur tiba mulai pukul 14.00. Pilih sore atau malam.' : 'Meat, frozen and grocery items arrive from 2 PM. Choose the afternoon or evening.') : 'Ordered after 12 PM, so tomorrow\'s delivery is from 2 PM. Choose the afternoon or evening.'); return true; } return false; }
 function fmtDate(iso, loc) {
   if (!iso) return '';
   const d = new Date(iso + 'T12:00:00');
@@ -2334,15 +2338,16 @@ const coldKinds = lines => { const k = {}; lines.forEach(ln => { const t = tempO
 const coldTxt = (it, id) => { const t = tempOf(it); return !t ? '' : t === 'fz' ? (id ? 'Beku · dikirim dalam cooler dengan ice pack' : 'Frozen · delivered in a cooler with ice packs') : (id ? 'Dingin · dikirim dalam cooler dengan ice pack' : 'Chilled · delivered in a cooler with ice packs'); };
 const coldHtml = it => { const t = tempOf(it); return t ? '<p class="coldnote ' + t + '"><span aria-hidden="true">❄</span>' + coldTxt(it, LID()) + '</p>' : ''; };
 /* On an order line: when this product arrives (supplier-rest items follow the chosen day, with the 2 PM start where it applies) */
-function arrTxt(it, need, id) { if (!(restOf()[it.s] || []).length) return ''; const d = need || (itemFrom(it) !== minNeed() ? itemFrom(it) : ''); if (!d) return ''; const pm = restLim(d, [it.s]) === 'pm';
+function arrTxt(it, need, id) { const rest = (restOf()[it.s] || []).length > 0; const d = need || (rest && itemFrom(it) !== minNeed() ? itemFrom(it) : ''); if (!d) return '';
+  const pm = rest ? restLim(d, [it.s]) === 'pm' : morningShut(d);
   const fd = new Date(d + 'T12:00:00').toLocaleDateString(id ? 'id-ID' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
-  return id ? 'Tiba ' + fd + (pm ? ' mulai pukul 14.00' : '') + ', dikemas segar' : 'Arrives ' + fd + (pm ? ' from 2 PM' : '') + ', freshly packed'; }
+  return id ? 'Tiba ' + fd + (pm ? (rest ? ' mulai pukul 14.00' : ', mulai pukul 14.00') : '') + (rest ? ', dikemas segar' : '') : 'Arrives ' + fd + (pm ? (rest ? ' from 2 PM' : ', from 2 PM') : '') + (rest ? ', freshly packed' : ''); }
 const lineNotes = (it, need, id) => [coldTxt(it, id), arrTxt(it, need, id)].filter(Boolean);
 const lineWa = (it, need, id) => [coldTxt(it, id) && '   ❄️ ' + coldTxt(it, id), arrTxt(it, need, id) && '   📅 ' + arrTxt(it, need, id)].filter(Boolean);
 function itemFrom(it) { let d = minNeed(); for (let i = 0; i < 7 && restBlocked(d, [it.s]); i++) d = isoOf(new Date(new Date(d + 'T12:00:00').getTime() + 864e5)); return d; }
 /* Why a day is unavailable for this basket: names the supplier's rest day, or the order deadline for the day after it. */
 function restWhy(iso) { const sids = basketSids(), lim = restLim(iso, sids); if (lim === 'closed') return restSay(restSids(iso, sids), dayName(iso));
-  if (lim === 'late') { const q = restQ(iso, sids); return LID() ? 'Daging dan produk beku untuk hari ' + dayName(iso) + ' harus dipesan sebelum ' + dayName(isoOf(q)) + ' pukul 12.00' : 'Meat and frozen items for ' + dayName(iso) + ' need an order by ' + dayName(isoOf(q)) + ' 12 PM'; }
+  if (lim === 'late') { const q = restQ(iso, sids); return LID() ? 'Daging, produk beku dan kebutuhan dapur untuk hari ' + dayName(iso) + ' harus dipesan sebelum ' + dayName(isoOf(q)) + ' pukul 12.00' : 'Meat, frozen and grocery items for ' + dayName(iso) + ' need an order by ' + dayName(isoOf(q)) + ' 12 PM'; }
   return ''; }
 function restCheck() { if (!cmode || !S.meta.need || !isClosed(S.meta.need)) return; const was = S.meta.need, why = restWhy(was); const nx = nextOpen(was);
   patch({ meta: { need: nx } }); fixSlot();
@@ -2352,6 +2357,19 @@ function quickDates() {
   if (!cmode) return ''; const out = []; const d = new Date(minNeed() + 'T12:00:00'); const tm = isoOf(new Date(baliNow().getTime() + 864e5));
   for (let i = 0; i < 14 && out.length < 3; i++) { const iso = isoOf(d); if (!isClosed(iso)) out.push(iso); d.setDate(d.getDate() + 1); }
   return '<div class="qdates">' + out.map(iso => '<button type="button" class="chip" data-act="setneed" data-d="' + iso + '" aria-pressed="' + (S.meta.need === iso) + '">' + (iso === tm ? 'Tomorrow' : new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + '</button>').join('') + '</div>';
+}
+/* One quiet strip on the Pick page: the day each group arrives. Only shown when a supplier rest day exists. */
+function delStripHtml() {
+  if (!cmode) return ''; const rs = Object.keys(restOf()).filter(x => (restOf()[x] || []).length); if (!rs.length) return '';
+  const id = LID(), loc = id ? 'id-ID' : 'en-GB', fd = iso => new Date(iso + 'T12:00:00').toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'short' });
+  const closed = iso => dlNow().closed.some(x => x.d === iso);
+  const first = ok => { const d = new Date(minNeed() + 'T12:00:00'); for (let i = 0; i < 30; i++) { const iso = isoOf(d); if (!closed(iso) && ok(iso)) return iso; d.setDate(d.getDate() + 1); } return minNeed(); };
+  const a = first(() => true), b = first(iso => !restBlocked(iso, rs)), tom = isoOf(new Date(baliNow().getTime() + 864e5));
+  const sfx = pm => pm ? (id ? ', mulai pukul 14.00' : ', from 2 PM') : '';
+  const aT = fd(a) + sfx(a === tom && pastNoon()), bT = fd(b) + sfx(restLim(b, rs) === 'pm' || (b === tom && pastNoon()));
+  const row = (c, l, t) => '<div class="dr"><span><i class="dd" style="background:' + c + '"></i>' + l + '</span><span>' + esc(t) + '</span></div>';
+  return '<small>' + (id ? 'Pengantaran Anda' : 'Your delivery') + '</small>' + (a === b ? row('var(--fv)', id ? 'Semua barang' : 'Everything', aT)
+    : row('var(--fv)', id ? 'Buah & sayur saja' : 'Fruit & veg only', aT) + row('var(--gr)', id ? 'Dengan daging, beku, dapur' : 'With meat, frozen or grocery', bT));
 }
 function needHint() {
   if (!cmode) return ''; const dl = dlNow(); const today = isoOf(baliNow());
@@ -2363,8 +2381,8 @@ function needHint() {
     if (first !== base || pm) { const id = LID(), loc = id ? 'id-ID' : 'en-GB', fd = iso => new Date(iso + 'T12:00:00').toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'short' }), h = baliNow().getHours();
       const tod = id ? (h < 12 ? 'pagi ini' : h < 17 ? 'sore ini' : 'malam ini') : (h < 12 ? 'this morning' : h < 17 ? 'this afternoon' : 'this evening');
       const alt = rs.length < all.length && !restBlocked(base, all.filter(x => !rs.includes(x))), later = pastNoon() && base === isoOf(new Date(baliNow().getTime() + 864e5)), rd = late ? isoOf(new Date(new Date(late + 'T12:00:00').getTime() - 864e5)) : '';
-      const m = (pm ? (id ? 'Daging dan produk beku yang dipesan ' + tod + ' tiba ' + fd(first) + ' mulai pukul 14.00, diambil segar hari itu.' : 'Meat and frozen items ordered ' + tod + ' arrive ' + fd(first) + ' from 2 PM, collected fresh that day.')
-        : late ? (id ? 'Pemasok kami libur hari ' + dayName(rd) + ', jadi daging dan produk beku yang dipesan ' + tod + ' diambil hari ' + dayName(late) + ' dan tiba ' + fd(first) + '.' : 'Our suppliers rest on ' + dayName(rd) + ', so meat and frozen items ordered ' + tod + ' are collected ' + dayName(late) + ' and arrive ' + fd(first) + '.')
+      const m = (pm ? (id ? 'Daging, produk beku dan kebutuhan dapur yang dipesan ' + tod + ' tiba ' + fd(first) + ' mulai pukul 14.00, diambil segar hari itu.' : 'Meat, frozen and grocery items ordered ' + tod + ' arrive ' + fd(first) + ' from 2 PM, collected fresh that day.')
+        : late ? (id ? 'Pemasok kami libur hari ' + dayName(rd) + ', jadi daging, produk beku dan kebutuhan dapur yang dipesan ' + tod + ' diambil hari ' + dayName(late) + ' dan tiba ' + fd(first) + '.' : 'Our suppliers rest on ' + dayName(rd) + ', so meat, frozen and grocery items ordered ' + tod + ' are collected ' + dayName(late) + ' and arrive ' + fd(first) + '.')
         : (id ? restSay(rs, dayName(base)) + ', jadi pesanan tiba ' + fd(first) + '.' : restSay(rs, dayName(base)) + ', so your order arrives ' + fd(first) + '.'))
         + (alt ? (id ? ' Tanpa itu, hari ' + dayName(base) + ' tersedia' + (later ? ' mulai pukul 14.00' : '') + '.' : ' Without them, ' + dayName(base) + ' is available' + (later ? ' from 2 PM' : '') + '.') : '');
       parts[0] = m; } }
@@ -2841,7 +2859,7 @@ function askLink(it, o) {
 }
 function itemHtml(it, showSup) {
   const from = cmode ? itemFrom(it) : ''; const later = cmode && from !== minNeed();
-  const note = coldHtml(it) + (later ? '<p class="restnote">' + (restLim(from, [it.s]) === 'pm' ? (LID() ? 'Tiba ' + dayName(from) + ' mulai pukul 14.00, dikemas segar' : 'Arrives ' + dayName(from) + ' from 2 PM, freshly packed') : (LID() ? 'Tiba ' + dayName(from) + ', dikemas segar' : 'Arrives ' + dayName(from) + ', freshly packed')) + '</p>' : '');
+  const note = coldHtml(it) + (later ? '<p class="restnote">' + esc(arrTxt(it, from, LID())) + '</p>' : '');
   const pnote = (cmode && (it.pn || it.pi) ? '<p class="pnote" id="pn-' + it.id + '" hidden>' + esc(LID() && it.pi ? it.pi : it.pn || it.pi) + '</p>' : '');
   const xflag = it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : ''; const flags = xflag + note;
   const pk = it.k && it.k.length < 70 && it.o.length > 1 ? '<p class="meta">Listed as: ' + esc(it.k) + '</p>' : '';
@@ -2952,7 +2970,7 @@ function renderFilters() {
     const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
     if (show) hw.innerHTML = BASK_ART + '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span><b>Pick</b> what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().map(x => '<span class="snt">' + x + '</span>').join(' ') + '</p>' : '') + (cmode ? '<p class="hownote howcut"><span class="snt">We deliver the next day, <b>10 AM to 10 PM</b>.</span> <span class="snt">Order before <b>12 PM</b> for a morning delivery.</span></p>' : '');
   }
-  const di = document.getElementById('dlInfo'); if (di) { di.innerHTML = ''; di.hidden = true; }
+  const di = document.getElementById('dlInfo'); if (di) { const h = delStripHtml(); di.innerHTML = h; di.hidden = !h; }
   const counts = { all: CATALOG.filter(i => !i.hidden).length }; supVisible().forEach(s => { counts[s] = CATALOG.filter(i => gs(i) === s && !i.hidden).length; });
   const chipHost = document.getElementById('supChips'); if (!chipHost.dataset.bound) { chipHost.dataset.bound = '1'; chipHost.addEventListener('scroll', chipsFade, { passive: true }); window.addEventListener('resize', chipsFade); }
   document.getElementById('supChips').innerHTML = '<div class="chipgrp' + (supVisible().length > 3 ? ' many' : '') + '">' + ['all'].concat(supVisible()).map(s =>
@@ -3006,7 +3024,7 @@ function renderOrder(comp) {
     (cmode ? '<div class="field span-all' + (!reqOk('phone', m) ? ' miss' : '') + '"><label for="m-phone-n">Your WhatsApp, so your host can reach you <i class="req" aria-hidden="true">*</i></label>' + phoneField('m-phone', m.phone, ro) + '</div>' : '') +
     (() => { const dlc = dlNow(); if (!cmode) return ''; const cp = compute(S);
       return (dlc.zones.length ? '<div class="field span-all' + (!reqOk('zone', m) ? ' miss' : '') + '"><label for="m-zone">Delivery area <i class="req" aria-hidden="true">*</i></label><div class="areabox"><div class="areaq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="m-zone" type="search" autocomplete="off" enterkeyhint="search" role="combobox" aria-expanded="false" aria-controls="areaList" data-areaq="1" placeholder="Type your area, e.g. Berawa or Ubud" value="' + esc(m.zone ? zoneLabel(m.zone) : '') + '"' + ro + '>' + (m.zone && canWrite ? '<button type="button" class="areaclr" data-act="areaclr" aria-label="Change area"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' : '') + '</div><div class="arealist" id="areaList" role="listbox" hidden></div>' + dlBreak(cp) + '</div></div>' : '') +
-        '<div class="field span-all"><label for="m-slot">Delivery time</label><select id="m-slot" data-meta="slot"' + ro + '>' + SLOTS.map(o => { const shut = o === SLOT_M && morningShut(m.need); return '<option value="' + o + '"' + (o === (m.slot || '') && !shut ? ' selected' : '') + (shut ? ' disabled' : '') + '>' + (!o && morningShut(m.need) ? 'Any time (2 PM to 10 PM)' : slotName(o)) + (shut ? (restLim(m.need, basketSids()) === 'pm' ? ' (meat & frozen arrive from 2 PM)' : ' (order before 12 PM)') : '') + '</option>'; }).join('') + '</select></div>'; })() +
+        '<div class="field span-all"><label for="m-slot">Delivery time</label><select id="m-slot" data-meta="slot"' + ro + '>' + SLOTS.map(o => { const shut = o === SLOT_M && morningShut(m.need); return '<option value="' + o + '"' + (o === (m.slot || '') && !shut ? ' selected' : '') + (shut ? ' disabled' : '') + '>' + (!o && morningShut(m.need) ? 'Any time (2 PM to 10 PM)' : slotName(o)) + (shut ? (restLim(m.need, basketSids()) === 'pm' ? ' (meat, frozen & grocery arrive from 2 PM)' : ' (order before 12 PM)') : '') + '</option>'; }).join('') + '</select></div>'; })() +
     '<div class="field span-all delivf' + (cmode && !reqOk('addr', m) ? ' miss' : '') + '"><label for="m-addr">Deliver to' + (cmode ? ' <i class="req" aria-hidden="true">*</i>' : '') + '</label>' + delBoxHtml(m, ro) + '</div>' +
     '<div class="field span-all"><label for="m-notes">' + (cmode ? 'Notes for your host' : 'Internal note for the order manager') + '</label><textarea id="m-notes" data-meta="notes" placeholder="' + (cmode ? 'Anything we should know before delivery' : 'For us only, never sent to suppliers. E.g. check stock on the salmon first') + '"' + ro + '>' + esc(m.notes) + '</textarea></div></div>' : '') + '</div>';
   if (!comp.groups.length) {
@@ -3022,7 +3040,7 @@ function renderOrder(comp) {
       const unitTxt = ln.price ? fmtQty(ln.q) + ' x ' + fmtRp(ln.price) + (ln.listPrice && ln.price !== ln.listPrice ? ' (list ' + fmtRp(ln.listPrice) + ')' : '') : '';
       const priceBlock = cmode ? '<span class="pbtn" style="cursor:default">' + esc(unitTxt || 'price to be confirmed') + '</span>' : pe ? '<span class="pedit">Rp <input data-price="1" inputmode="numeric" value="' + (ln.price || '') + '" placeholder="list price" aria-label="Price per unit"></span>'
         : '<button type="button" class="pbtn" data-act="price"' + (canWrite ? '' : ' disabled') + '>' + (ln.st === 'x' ? 'not counted' : unitTxt ? esc(unitTxt) + ' <u>edit</u>' : '<u>Set price</u>') + '</button>';
-      const lnn = cmode ? coldHtml(ln.it) + (arrTxt(ln.it, S.meta.need, LID()) ? '<p class="restnote">' + esc(arrTxt(ln.it, S.meta.need, LID())) + '</p>' : '') : '';
+      const lnn = coldHtml(ln.it) + (arrTxt(ln.it, S.meta.need, LID()) ? '<p class="restnote">' + esc(arrTxt(ln.it, S.meta.need, LID())) + '</p>' : '');
       return '<div class="ln' + (ln.st === 'x' ? ' out' : '') + (lnn ? ' has-nt' : '') + '" data-key="' + esc(ln.key) + '"><span class="ln-n" aria-hidden="true">' + (idx + 1) + '</span><span class="thumb sm s-' + gs(ln.it) + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="ln-a">' +
         '<div class="ln-name"><div class="nmrow"><b>' + esc(nm(ln.it).m) + '</b>' + (nm(ln.it).s ? '<p class="en">' + esc(nm(ln.it).s) + '</p>' : '') + '</div><p>' + esc(lb) + (ln.it.k && ln.it.k.length < 60 && !/pack|box|carton/.test(lb) ? ' - listed as ' + esc(ln.it.k) : '') + (o.est ? ' - sold by weight' : '') + '</p>' +
         (ln.it.x ? '<p class="' + (needsCheck(ln.it) ? 'chk' : '') + '">' + esc(ln.it.x) + '</p>' : '') +
@@ -4147,7 +4165,7 @@ function renderCustomers() {
       const gone = removedLines(c); const shown = new Set();
       const goneHtml = list => list.map(r => { shown.add(r.key); return '<div class="cline2 gone th">' + clThumb(r.it) + '<div class="cl-top"><span class="cl-name">' + esc(nmBoth(r.it)) + '</span><span class="num cl-t">' + fmtRp(0) + '</span></div><div class="cl-sub"><span class="cl-meta">Removed · was ' + fmtQty(r.oq) + ' ' + esc(UNIT_EN[r.o.u] || r.o.u) + '</span><button type="button" class="backbtn" data-act="cqback" data-id="' + esc(c.id) + '" data-key="' + esc(r.key) + '"' + (canWrite ? '' : ' disabled') + '>↺ Bring back</button></div></div>'; }).join('');
       det = '<div class="cdet">' + comp.groups.map(g => '<div class="hsup sup-' + g.sid + '">' + SUPS[g.sid].name + '</div>' + g.lines.map(ln => ({ k: ln.key, h:
-        '<div class="cline2 th">' + clThumb(ln.it) + '<div class="cl-top"><span class="cl-name">' + esc(nmBoth(ln.it)) + '</span><span class="num cl-t">' + (ln.total != null ? fmtRp(ln.total) : 'ask') + '</span></div><div class="cl-sub"><span class="cl-meta">' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + (ln.price ? ' &times; ' + fmtRp(ln.price) : '') + (ln.q0 != null && ln.q0 !== ln.q ? ' (ordered ' + fmtQty(ln.q0) + ')' : '') + (ln.note ? '<em>' + esc(ln.note) + '</em>' : '') + '</span><div class="qmini"><button type="button" data-act="cq" data-d="-1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="Less">&minus;</button><span class="cq">' + fmtQty(ln.q0 != null ? ln.q0 : ln.q) + '</span><button type="button" data-act="cq" data-d="1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="More">+</button></div></div></div>' })).concat(gone.filter(r => r.sid === g.sid).map(r => ({ k: r.key, h: goneHtml([r]) }))).sort((a, b) => (ORDER_IX[a.k.split('|')[0]] - ORDER_IX[b.k.split('|')[0]]) || a.k.localeCompare(b.k)).map(x => x.h).join('')).join('') +
+        '<div class="cline2 th' + (lineNotes(ln.it, c.need, false).length ? ' nt' : '') + '">' + clThumb(ln.it) + '<div class="cl-top"><span class="cl-name">' + esc(nmBoth(ln.it)) + '</span><span class="num cl-t">' + (ln.total != null ? fmtRp(ln.total) : 'ask') + '</span></div><div class="cl-sub"><span class="cl-meta">' + fmtQty(ln.q) + ' ' + esc(UNIT_EN[ln.o.u] || ln.o.u) + (ln.price ? ' &times; ' + fmtRp(ln.price) : '') + (ln.q0 != null && ln.q0 !== ln.q ? ' (ordered ' + fmtQty(ln.q0) + ')' : '') + (ln.note ? '<em>' + esc(ln.note) + '</em>' : '') + '</span><div class="qmini"><button type="button" data-act="cq" data-d="-1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="Less">&minus;</button><span class="cq">' + fmtQty(ln.q0 != null ? ln.q0 : ln.q) + '</span><button type="button" data-act="cq" data-d="1" data-id="' + esc(c.id) + '" data-key="' + esc(ln.key) + '" aria-label="More">+</button></div></div>' + (lineNotes(ln.it, c.need, false).length ? '<div class="cl-nt">' + lineNotes(ln.it, c.need, false).map(t => '<p>' + esc(t) + '</p>').join('') + '</div>' : '') + '</div>' })).concat(gone.filter(r => r.sid === g.sid).map(r => ({ k: r.key, h: goneHtml([r]) }))).sort((a, b) => (ORDER_IX[a.k.split('|')[0]] - ORDER_IX[b.k.split('|')[0]]) || a.k.localeCompare(b.k)).map(x => x.h).join('')).join('') +
         (gone.some(r => !shown.has(r.key)) ? '<div class="hsup">Removed items</div>' + goneHtml(gone.filter(r => !shown.has(r.key))) : '') +
         addItemHtml(c) +
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
