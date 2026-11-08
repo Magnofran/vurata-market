@@ -1407,7 +1407,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .pinfo { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-left: 6px; padding: 0; border: 1.5px solid currentColor; border-radius: 50%; background: none; color: var(--muted); font: 700 11px/1 var(--f-body, inherit); font-style: italic; vertical-align: 2px; cursor: pointer; } .pinfo[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-style: normal; }
 .item .pnote { grid-column: 1 / -1; } .pnote { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--gold); background: color-mix(in srgb, var(--gold) 9%, var(--surface)); font-size: 13px; line-height: 1.5; color: var(--ink); }
 .coldnote { display: flex; align-items: center; gap: 5px; margin: 4px 0 0; font-size: 12px; font-weight: 600; color: var(--gr); } .coldnote span { font-size: 12px; line-height: 1; }
-.ln-name p.coldnote, .ln-name p.restnote { color: var(--gr); font-size: 12px; font-weight: 600; margin-top: 4px; }
+.ln > .ln-nt { grid-column: 2; min-width: 0; margin-top: -4px; } .ln-nt p { margin: 0; } .ln-nt p + p { margin-top: 4px; } .ln-nt .restnote { font-size: 12px; } .ln.has-nt > .thumb { grid-row: 1 / span 3; }
 /* order card: an open row becomes a solid ink band pinned under the tabs, same as the Ledger */
 .orow, .osecw { border-radius: 0 !important; }
 .orow[aria-expanded="true"] { position: sticky; top: var(--barh, 0px); z-index: 3; background: var(--ink); color: var(--bg); border-bottom-color: var(--ink); }
@@ -1836,7 +1836,7 @@ body { margin: 0; padding-inline: 8px; }
 .ln > .thumb { grid-column: 1; grid-row: 1 / span 2; width: 50px; height: auto; min-height: 50px; max-height: 100px; align-self: stretch; border-radius: 12px; font-size: 25px; }
 .ln > .ln-a { grid-column: 2; grid-template-columns: minmax(0, 1fr) auto; }
 .ln > .ln-b { grid-column: 2; padding-left: 0; }
-.ln > :not(.ln-n):not(.thumb):not(.ln-a):not(.ln-b) { grid-column: 1 / -1; }
+.ln > :not(.ln-n):not(.thumb):not(.ln-a):not(.ln-b):not(.ln-nt) { grid-column: 1 / -1; }
 /* Ledger rows: bigger photo that stretches over the name rows, up to about three rows */
 .lhead { align-items: stretch; }
 .lhead .lname { align-content: center; }
@@ -3022,12 +3022,12 @@ function renderOrder(comp) {
       const unitTxt = ln.price ? fmtQty(ln.q) + ' x ' + fmtRp(ln.price) + (ln.listPrice && ln.price !== ln.listPrice ? ' (list ' + fmtRp(ln.listPrice) + ')' : '') : '';
       const priceBlock = cmode ? '<span class="pbtn" style="cursor:default">' + esc(unitTxt || 'price to be confirmed') + '</span>' : pe ? '<span class="pedit">Rp <input data-price="1" inputmode="numeric" value="' + (ln.price || '') + '" placeholder="list price" aria-label="Price per unit"></span>'
         : '<button type="button" class="pbtn" data-act="price"' + (canWrite ? '' : ' disabled') + '>' + (ln.st === 'x' ? 'not counted' : unitTxt ? esc(unitTxt) + ' <u>edit</u>' : '<u>Set price</u>') + '</button>';
-      return '<div class="ln' + (ln.st === 'x' ? ' out' : '') + '" data-key="' + esc(ln.key) + '"><span class="ln-n" aria-hidden="true">' + (idx + 1) + '</span><span class="thumb sm s-' + gs(ln.it) + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="ln-a">' +
+      const lnn = cmode ? coldHtml(ln.it) + (arrTxt(ln.it, S.meta.need, LID()) ? '<p class="restnote">' + esc(arrTxt(ln.it, S.meta.need, LID())) + '</p>' : '') : '';
+      return '<div class="ln' + (ln.st === 'x' ? ' out' : '') + (lnn ? ' has-nt' : '') + '" data-key="' + esc(ln.key) + '"><span class="ln-n" aria-hidden="true">' + (idx + 1) + '</span><span class="thumb sm s-' + gs(ln.it) + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="ln-a">' +
         '<div class="ln-name"><div class="nmrow"><b>' + esc(nm(ln.it).m) + '</b>' + (nm(ln.it).s ? '<p class="en">' + esc(nm(ln.it).s) + '</p>' : '') + '</div><p>' + esc(lb) + (ln.it.k && ln.it.k.length < 60 && !/pack|box|carton/.test(lb) ? ' - listed as ' + esc(ln.it.k) : '') + (o.est ? ' - sold by weight' : '') + '</p>' +
         (ln.it.x ? '<p class="' + (needsCheck(ln.it) ? 'chk' : '') + '">' + esc(ln.it.x) + '</p>' : '') +
-        (cmode ? coldHtml(ln.it) + (arrTxt(ln.it, S.meta.need, LID()) ? '<p class="restnote">' + esc(arrTxt(ln.it, S.meta.need, LID())) + '</p>' : '') : '') +
         (cmode ? '' : '<button type="button" class="stbtn st-' + (ln.st || 'n') + '" data-act="status"' + (canWrite ? '' : ' disabled') + '>' + stl + '</button>') + '</div>' +
-        '<button type="button" class="x" data-act="rm" aria-label="Remove ' + esc(ln.it.n) + '">&times;</button></div>' +
+        '<button type="button" class="x" data-act="rm" aria-label="Remove ' + esc(ln.it.n) + '">&times;</button></div>' + (lnn ? '<div class="ln-nt">' + lnn + '</div>' : '') +
         '<div class="ln-b"><div class="ln-total"><b>' + (ln.st === 'x' ? 'Out of stock' : ln.total != null ? fmtRp(ln.total) : 'Ask price') + '</b>' + priceBlock + '</div>' +
         '<div class="stepper"><button type="button" class="minus" data-act="dec" aria-label="Less">&minus;</button><input type="text" inputmode="decimal" data-act="qty" value="' + fmtStep(ln.q, o) + '" aria-label="Quantity of ' + esc(ln.it.n) + '"><button type="button" data-act="inc" aria-label="More">+</button><span class="u">' + esc(UNIT_EN[o.u] || o.u) + '</span></div></div>' +
         (ln.note || ui.noteOpen[ln.key] ? '<input class="note" data-note="1" value="' + esc(ln.note) + '" placeholder="Add a note for your host" aria-label="Note for ' + esc(ln.it.n) + '"' + ro + '>' + (ln.o.u === 'kg' && canWrite ? '<div class="nchips">' + ['Ripe', 'Not too ripe', 'Small', 'Large'].map(t => '<button type="button" data-act="noteadd" data-t="' + t + '">' + t + '</button>').join('') + '</div>' : '') : (canWrite ? '<button type="button" class="linkbtn" data-act="note">+ Add a note</button>' : '')) + '</div>';
