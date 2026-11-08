@@ -1410,7 +1410,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .coldnote { display: flex; align-items: center; gap: 5px; margin: 4px 0 0; font-size: 12px; font-weight: 600; color: var(--gr); } .coldnote span { font-size: 12px; line-height: 1; }
 .dstrip { margin: 0 0 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font-size: 13px; line-height: 1.4; } .dstrip[hidden] { display: none; }
 .dstrip small { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
-.dstrip .dr { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 2px 0; } .dstrip .dr span:last-child { font-weight: 600; text-align: right; } .dstrip .dd { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; }
+.dstrip .dr { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 2px 0; } .dstrip .dr span:last-child { font-weight: 600; text-align: right; } .dstrip .ds { margin: 4px 0 0; font-size: 12px; color: var(--muted); } .dstrip .dd { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; }
 .ln > .ln-nt { grid-column: 2; min-width: 0; margin-top: -4px; } .ln-nt p { margin: 0; } .ln-nt p + p { margin-top: 4px; } .ln-nt .restnote { font-size: 12px; } .ln.has-nt > .thumb { grid-row: 1 / span 3; }
 /* order card: an open row becomes a solid ink band pinned under the tabs, same as the Ledger */
 .orow, .osecw { border-radius: 0 !important; }
@@ -2368,8 +2368,12 @@ function delStripHtml() {
   const sfx = pm => pm ? (id ? ', mulai pukul 14.00' : ', from 2 PM') : '';
   const aT = fd(a) + sfx(a === tom && pastNoon()), bT = fd(b) + sfx(restLim(b, rs) === 'pm' || (b === tom && pastNoon()));
   const row = (c, l, t) => '<div class="dr"><span><i class="dd" style="background:' + c + '"></i>' + l + '</span><span>' + esc(t) + '</span></div>';
-  return '<small>' + (id ? 'Pengantaran Anda' : 'Your delivery') + '</small>' + (a === b ? row('var(--fv)', id ? 'Semua barang' : 'Everything', aT)
-    : row('var(--fv)', id ? 'Buah & sayur saja' : 'Fruit & veg only', aT) + row('var(--gr)', id ? 'Dengan daging, beku, dapur' : 'With meat, frozen or grocery', bT));
+  const ttl = '<small>' + (id ? 'Pengantaran Anda' : 'Your delivery') + '</small>';
+  const bs = basketSids(), hasRest = bs.some(x => rs.includes(x));
+  if (a === b) return ttl + row('var(--fv)', id ? 'Semua barang' : 'Everything', aT);
+  if (hasRest) return ttl + row('var(--gr)', id ? 'Seluruh pesanan Anda' : 'Your whole order', bT) + '<p class="ds">' + esc(id ? 'Satu pengantaran, semua tiba bersama. Buah & sayur saja: ' + aT + '.' : 'One delivery, everything arrives together. Fruit & veg alone: ' + aT + '.') + '</p>';
+  if (bs.length) return ttl + row('var(--fv)', id ? 'Seluruh pesanan Anda' : 'Your whole order', aT) + '<p class="ds">' + esc(id ? 'Menambah daging, beku atau kebutuhan dapur memindahkan seluruh pesanan ke ' + fd(b) + '.' : 'Adding meat, frozen or grocery moves the whole order to ' + fd(b) + '.') + '</p>';
+  return ttl + row('var(--fv)', id ? 'Buah & sayur saja' : 'Fruit & veg only', aT) + row('var(--gr)', id ? 'Dengan daging, beku, dapur' : 'With meat, frozen or grocery', bT);
 }
 function needHint() {
   if (!cmode) return ''; const dl = dlNow(); const today = isoOf(baliNow());
@@ -2998,6 +3002,7 @@ function renderSide(comp) {
     '<div class="actions full"><button class="btn" data-view="order">Review order</button><button type="button" class="btn ghost" data-act="savedraft">Save for later</button><button type="button" class="btn ghost" data-act="clearall">Clear all</button></div></div>';
 }
 function chrome(comp) {
+  const dsx = document.getElementById('dlInfo'); if (dsx && cmode) { const h = delStripHtml(); if (dsx.innerHTML !== h) dsx.innerHTML = h; dsx.hidden = !h; }
   document.getElementById('bbTotal').textContent = fmtRp(comp.total);
   document.getElementById('bbSub').textContent = comp.count ? comp.count + ' line' + (comp.count > 1 ? 's' : '') + (fmtMeasure(comp.w, comp.v) ? ' - about ' + fmtMeasure(comp.w, comp.v) : '') : 'Nothing picked yet';
   const b = document.getElementById('nBadge'); const prevN = +b.dataset.n || 0; b.textContent = comp.count; b.dataset.n = comp.count; if (comp.count > prevN) { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
