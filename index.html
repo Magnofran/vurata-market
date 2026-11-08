@@ -310,6 +310,8 @@ body { font-size: 15px; letter-spacing: -.003em; }
 /* ---- compact right-aligned stepper, tidy order lines, totals actions ---- */
 .item.single { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: "t m o" "t p p"; column-gap: 12px; row-gap: 6px; align-items: start; }
 .item.single > .opt { justify-content: flex-end; align-self: start; }
+.item.single.has-nt { grid-template-areas: "t m o" "t n n" "t p p"; }
+.item.single > .nt { grid-area: n; min-width: 0; margin-top: -2px; } .item.single > .nt p { margin: 0; } .item.single > .nt p + p { margin-top: 4px; }
 .opt.multi { flex-direction: row; align-items: center; gap: 12px; padding-top: 10px; }
 .opt.multi .price { width: auto; flex: 1 1 auto; min-width: 0; }
 .stepper { gap: 2px; flex: none; }
@@ -2813,7 +2815,7 @@ function itemHtml(it, showSup) {
   const from = cmode ? itemFrom(it) : ''; const later = cmode && from !== minNeed();
   const note = coldHtml(it) + (later ? '<p class="restnote">' + (LID() ? 'Tiba ' + dayName(from) + ', dikemas segar' : 'Arrives ' + dayName(from) + ', freshly packed') + '</p>' : '');
   const pnote = (cmode && (it.pn || it.pi) ? '<p class="pnote" id="pn-' + it.id + '" hidden>' + esc(LID() && it.pi ? it.pi : it.pn || it.pi) + '</p>' : '');
-  const flags = (it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : '') + note;
+  const xflag = it.x ? '<p class="meta">' + (needsCheck(it) ? '<b>Check: </b>' : '') + esc(it.x) + '</p>' : ''; const flags = xflag + note;
   const pk = it.k && it.k.length < 70 && it.o.length > 1 ? '<p class="meta">Listed as: ' + esc(it.k) + '</p>' : '';
   const picked = itemPicked(it);
   const thumb = '<span class="thw"><span class="thumb s-' + gs(it) + thumbCls(it) + '">' + thumbIn(it) + '</span><button type="button" class="fav" data-act="fav" data-id="' + it.id + '" aria-pressed="' + !!favs[it.id] + '" aria-label="Favorite ' + esc(it.n) + '">&#9733;</button></span>';
@@ -2822,7 +2824,7 @@ function itemHtml(it, showSup) {
   const priceLine = (o) => ((cmode ? o.sp : o.pr) ? '<b>' + fmtRp(cmode ? o.sp : o.pr) + '</b>' + pin : (cmode ? askLink(it, o) : '<b class="ask">Ask for price</b>')) + '<span>' + esc(optLabel(o)) + (o.mn ? ' - min ' + o.mn : '') + '</span>';
   if (it.o.length === 1) {
     const o = it.o[0]; const key = keyOf(it.id, 0); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
-    return '<article class="item single s-' + gs(it) + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '">' + thumb + '<div class="main">' + title + flags + '</div>' +
+    return '<article class="item single' + (note ? ' has-nt' : '') + ' s-' + gs(it) + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '">' + thumb + '<div class="main">' + title + xflag + '</div>' + (note ? '<div class="nt">' + note + '</div>' : '') +
       '<div class="opt' + (q ? ' on' : '') + '" data-key="' + esc(key) + '">' + stepperHtml(it, o, 0, q) + '</div>' +
       '<div class="price line">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div>' + pnote + '</article>';
   }
