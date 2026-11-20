@@ -865,7 +865,10 @@ input::-webkit-contacts-auto-fill-button, input::-webkit-credentials-auto-fill-b
 .feat { margin: 14px 0 4px; } .feath { font-size: 15px; margin: 0 0 8px; }
 .featrow { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 10px; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; } .featrow::-webkit-scrollbar { display: none; }
 .fcard { flex: 0 0 150px; scroll-snap-align: start; display: grid; gap: 4px; align-content: start; padding: 12px; border: 1px solid var(--line-dark); border-radius: 12px; background: var(--surface); }
-.fcard.in { border-color: var(--fv); box-shadow: inset 0 0 0 1px var(--fv); }
+.fcard.in { border-color: color-mix(in srgb, var(--fv) 38%, var(--line-dark)); background: color-mix(in srgb, var(--fv) 5%, var(--surface)); }
+/* picked: a quiet tint and a small check on the photo instead of a heavy ring */
+.fcard .fth { position: relative; }
+.fcard.in .fth::after { content: ""; position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50% !important; background: var(--fv) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-6.5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 20px no-repeat; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
 .fth { font-size: 26px; line-height: 1; } .fcard b { font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; } .fcard small { color: var(--muted); font-size: 12px; line-height: 1.2; }
 .fpr { font-size: 13px; font-weight: 600; } .fpr em { font-style: normal; font-weight: 400; color: var(--muted); font-size: 11.5px; }
 .fcard button { appearance: none; margin-top: 6px; min-height: 36px; border: 1px solid var(--ink); border-radius: 10px; background: var(--ink); color: var(--bg); font-weight: 600; font-size: 13px; }
@@ -915,7 +918,7 @@ html { scroll-padding-top: 96px; } .card[id] { scroll-margin-top: 96px; }
 #toTop { bottom: 20px !important; } body.has-bar #toTop { bottom: 88px !important; }
 
 /* ---- picks stepper, areas toggle, collapsed cards, recap, swipe fade ---- */
-.fstep { margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 38px; border: 1px solid var(--fv); border-radius: 10px; background: color-mix(in srgb, var(--fv) 10%, var(--surface)); padding: 0 4px; }
+.fstep { margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 38px; border: 1px solid color-mix(in srgb, var(--fv) 30%, transparent); border-radius: 10px; background: color-mix(in srgb, var(--fv) 9%, var(--surface)); padding: 0 4px; }
 .fstep button { appearance: none; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font-size: 20px; line-height: 1; font-weight: 600; position: relative; } .fstep button::after { content: ""; position: absolute; inset: -4px; }
 .fstep span { font-family: var(--f-mono); font-weight: 600; font-size: 13px; }
 .fcard .fadd { margin-top: 6px; }
