@@ -1679,6 +1679,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .brow { align-items: stretch; }
 .bcard { flex: 0 0 min(264px, 80%); scroll-snap-align: start; display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--surface); border: 1px solid var(--line-dark); border-top: 2px solid var(--gold); }
 .bhead { display: flex; align-items: center; gap: 10px; min-height: 40px; } .bhead b, .bhead h3 { font-size: 15.5px; font-weight: 700; margin: 0; line-height: 1.25; }
+.bcard.hasph { padding-top: 0; } .bph { display: block; width: calc(100% + 32px); max-width: none; margin: 0 -16px 4px; aspect-ratio: 16 / 9; object-fit: cover; background: var(--surface-2); }
 .bic { flex: none; width: 40px; height: 40px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--line); color: var(--gold-text); }
 .bdesc { font-size: 13px; line-height: 1.45; color: var(--muted); min-height: 2.9em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .bfoot { margin-top: auto; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
@@ -2297,6 +2298,7 @@ const DEFAULT_BASKETS = [
   { id: 'd-protein', ic: 'steak', n: 'Low-carb protein box', d: 'Meat, fish, cheese and low-carb veg, for keto and high-protein diets.', l: { 'mt-030|0': 1, 'gr-090|0': 0.5, 'mt-055|0': 0.5, 'mt-022|0': 0.5, 'gr-119|0': 0.5, 'gr-102|0': 1, 'fv-007|0': 1, 'fv-064|0': 0.5, 'fv-083|0': 1, 'fv-011|0': 0.5, 'fv-076|0': 0.5 } },
   { id: 'd-family', ic: 'basket', n: 'Fresh family box', d: 'Fruit, vegetables and meat for everyday cooking.', l: { 'mt-029|0': 1, 'mt-023|0': 0.5, 'fv-010|0': 1, 'fv-048|0': 1, 'fv-071|0': 1, 'fv-069|0': 0.5, 'fv-053|0': 0.5, 'fv-007|0': 0.5, 'fv-105|0': 1, 'fv-082|0': 1, 'fv-088|0': 1, 'fv-109|0': 1 } }
 ];
+const BASKET_PHOTOS = { 'd-plant': 'basket-plant.jpg', 'd-protein': 'basket-protein.jpg', 'd-family': 'basket-family.jpg' };
 const basketsNow = () => (Array.isArray(ledger.baskets) ? ledger.baskets : DEFAULT_BASKETS).filter(b => b && b.n && b.l).map(b => ({ id: String(b.id || ''), h: !!b.h, l0: b.l0 || null, ic: BASKET_ICONS[b.ic] ? b.ic : 'basket', n: String(b.n).slice(0, 40), d: String(b.d || '').slice(0, 90), l: b.l }));
 function basketInfo(b) {
   const keys = Object.keys(b.l).filter(k => { const p = k.split('|'); const it = BY_ID[p[0]]; return it && !it.hidden && !it.so && it.o[+p[1]] && b.l[k] > 0; });
@@ -2306,7 +2308,8 @@ function basketInfo(b) {
 function basketsHtml() {
   const list = basketsNow().filter(b => !b.h); if (!list.length) return ''; const dl = dlNow();
   const cards = list.map(b => { const i = basketInfo(b); if (!i.n) return ''; const fa = freeAt(S.meta.zone); const free = fa > 0 && i.total >= fa && dl.zones.some(z => z.fee > 0);
-    return '<div class="bcard"><div class="bhead"><span class="bic">' + bIcon(b.ic) + '</span><b>' + esc(b.n) + '</b></div><span class="bdesc">' + esc(b.d || '') + '</span><div class="bfoot"><span class="bmeta">' + i.n + ' item' + (i.n === 1 ? '' : 's') + (free ? ' &middot; <em>Free delivery</em>' : '') + '</span><span class="bprice num">' + fmtRp(i.total) + '</span></div><div class="bbtns"><button type="button" class="btn ghost sm" data-act="basketview" data-id="' + esc(b.id) + '">View basket</button><button type="button" class="btn sm" data-act="basketadd" data-id="' + esc(b.id) + '">Add to order</button></div></div>'; }).join('');
+    const ph = BASKET_PHOTOS[b.id];
+    return '<div class="bcard' + (ph ? ' hasph' : '') + '">' + (ph ? '<img class="bph" src="assets/' + ph + '" alt="" loading="lazy" decoding="async" draggable="false">' : '') + '<div class="bhead"><span class="bic">' + bIcon(b.ic) + '</span><b>' + esc(b.n) + '</b></div><span class="bdesc">' + esc(b.d || '') + '</span><div class="bfoot"><span class="bmeta">' + i.n + ' item' + (i.n === 1 ? '' : 's') + (free ? ' &middot; <em>Free delivery</em>' : '') + '</span><span class="bprice num">' + fmtRp(i.total) + '</span></div><div class="bbtns"><button type="button" class="btn ghost sm" data-act="basketview" data-id="' + esc(b.id) + '">View basket</button><button type="button" class="btn sm" data-act="basketadd" data-id="' + esc(b.id) + '">Add to order</button></div></div>'; }).join('');
   const nCards = (cards.match(/class="bcard"/g) || []).length;
   return cards ? '<div class="baskets"><h3 class="feath">Ready-made baskets</h3><div class="brow">' + cards + '</div>' + (nCards > 1 ? '<div class="bdots">' + Array.from({ length: nCards }, (_, n) => '<button type="button" class="bdot' + (n ? '' : ' on') + '" data-act="bdot" data-bi="' + n + '" aria-label="Basket ' + (n + 1) + ' of ' + nCards + '"></button>').join('') + '</div>' : '') + '</div>' : '';
 }
