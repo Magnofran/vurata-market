@@ -2001,6 +2001,9 @@ body { margin: 0; padding-inline: 8px; }
 .hero p { font-size: 14.5px; line-height: 1.45; color: rgba(255,255,255,.88); text-wrap: pretty; max-width: 30em; }
 .hero-go { justify-self: start; margin-top: 6px; display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 20px; border: 0; background: #fff; color: #0F172A; font-weight: 600; font-size: 15px; }
 .hero-go svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hero-trust { list-style: none; margin: 10px 0 0; padding: 12px 0 0; display: flex; flex-wrap: wrap; gap: 6px 16px; border-top: 1px solid rgba(255,255,255,.16); }
+.hero-trust li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,.86); white-space: nowrap; }
+.hero-trust svg { width: 15px; height: 15px; flex: none; fill: none; stroke: #E7D3AE; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .hero-go:hover { background: #F3EBDD; } .hero-go:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 @media (max-width: 699.98px) {
   .hero { display: block; min-height: 0; background: #121915; }
@@ -3039,20 +3042,22 @@ function setListMode(m) {
   if (m === 'saved') { ui.q = ''; const qi = document.getElementById('q'); if (qi) qi.value = ''; }
   renderFilters(); renderPick();
 }
+const TRUST = [
+  ['<path d="M12 21c-5-3-8-7-8-11a8 8 0 0 1 16 0c0 4-3 8-8 11z"/><path d="M9 10.5l2 2 4-4"/>', 'Fresh daily'],
+  ['<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/>', 'Cash or QRIS'],
+  ['<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>', 'By Vurata']
+];
 function renderFilters() {
   const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + hw + '&text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
   const he = document.getElementById('heroCard'); if (he) { he.hidden = !cmode; if (cmode && he.dataset.l !== LANG) { he.dataset.l = LANG; const id = LID(), n = Math.floor(CATALOG.filter(i => !i.hidden).length / 10) * 10;
     he.innerHTML = '<picture><source media="(max-width: 699.98px)" srcset="assets/hero-m.jpg"><img src="assets/hero-1280.jpg" srcset="assets/hero-800.jpg 800w, assets/hero-1280.jpg 1376w" sizes="(min-width: 1180px) 760px, 100vw" alt="' + (id ? 'Buah, sayur, telur, ikan dan daging segar di atas meja jati di teras vila' : 'Fresh fruit, vegetables, eggs, fish and meat on a teak table on a villa terrace') + '" fetchpriority="high" decoding="async" draggable="false"></picture>' +
       '<div class="hero-tx"><span class="hero-k">' + (id ? 'Belanja harian di Bali' : 'Grocery delivery in Bali') + '</span><h1 id="heroH">' + (id ? 'Belanjaan segar, diantar ke vila Anda.' : 'Fresh groceries, delivered to your villa.') + '</h1>' +
       '<p>' + (id ? 'Buah & sayur, daging & seafood, beku dan bahan pokok. Lebih dari ' + n + ' barang, dipesan dalam beberapa ketukan.' : 'Fruit & veg, meat & seafood, frozen and pantry. ' + n + '+ items, ordered in a few taps.') + '</p>' +
-      '<button type="button" class="hero-go" data-act="herogo">' + (id ? 'Mulai belanja' : 'Start shopping') + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button></div>'; } }
-  const tr = document.getElementById('trustRow'); if (tr) { const on = cmode && !hist.length; tr.hidden = !on; if (on && !tr.innerHTML) tr.innerHTML = [
-    ['<path d="M12 21c-5-3-8-7-8-11a8 8 0 0 1 16 0c0 4-3 8-8 11z"/><path d="M9 10.5l2 2 4-4"/>', 'Fresh daily'],
-    ['<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/>', 'Cash or QRIS'],
-    ['<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>', 'By Vurata']
-  ].map(x => '<li><svg viewBox="0 0 24 24" aria-hidden="true">' + x[0] + '</svg><span>' + x[1] + '</span></li>').join(''); }
+      '<button type="button" class="hero-go" data-act="herogo">' + (id ? 'Mulai belanja' : 'Start shopping') + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>' +
+      '<ul class="hero-trust">' + TRUST.map(x => '<li><svg viewBox="0 0 24 24" aria-hidden="true">' + x[0] + '</svg><span>' + x[1] + '</span></li>').join('') + '</ul></div>'; } }
+  const tr = document.getElementById('trustRow'); if (tr) { const on = cmode && !hist.length && !document.getElementById('heroCard'); tr.hidden = !on; if (on && !tr.innerHTML) tr.innerHTML = TRUST.map(x => '<li><svg viewBox="0 0 24 24" aria-hidden="true">' + x[0] + '</svg><span>' + x[1] + '</span></li>').join(''); }
   const hw = document.getElementById('howCard'); if (hw) {
-    const show = cmode && LS.get('mumu-how') !== '1'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
+    const show = cmode && LS.get('mumu-how') === '0'; hw.hidden = !show; const cn = document.getElementById('cNote'); if (cn && cmode) cn.hidden = show;
     if (show) hw.innerHTML = BASK_ART + '<div class="howh"><b>How it works</b><button type="button" class="x" data-act="hidehow" aria-label="Got it, hide this">&times;</button></div><ol><li><i>1</i><span><b>Pick</b> what you want</span></li><li><i>2</i><span>Add your details in <b>My order</b></span></li><li><i>3</i><span>Tap <b>Send</b> to message your host</span></li></ol>' + (dlParts().length ? '<p class="hownote">' + dlParts().map(x => '<span class="snt">' + x + '</span>').join(' ') + '</p>' : '') + (cmode ? '<p class="hownote howcut"><span class="snt">We deliver the next day, <b>10 AM to 10 PM</b>.</span> <span class="snt">Order before <b>12 PM</b> for a morning delivery.</span></p>' : '');
   }
   const di = document.getElementById('dlInfo'); if (di) { const h = delStripHtml(); di.innerHTML = h; di.hidden = !h; } const ac = document.getElementById('asideCard'); if (ac) { const h = asideHtml(); ac.innerHTML = h; ac.hidden = !h; }
@@ -4956,7 +4961,7 @@ document.addEventListener('click', e => {
   else if (act === 'sentyes') { confirmSent(); }
   else if (act === 'sentdone') { sentBox().hidden = true; showView('pick'); window.scrollTo(0, 0); }
   else if (act === 'picksfromtop') { const top = topSellers(10); if (top.length) { const ids = new Set(top.map(x => x.it.id)); const ov = {}; CATALOG.forEach(it => { if (it.ft && !ids.has(it.id)) ov[it.id] = { ft: false }; }); top.forEach(x => { ov[x.it.id] = { ft: true }; }); saveLedger({ ov }); toast("Today's picks updated."); renderCustomers(); } }
-  else if (act === 'herogo') { const t = document.getElementById('supChips'); if (t) { const y = t.getBoundingClientRect().top + scrollY - ((document.getElementById('bar') || {}).offsetHeight || 0) - 8; window.scrollTo({ top: y, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } }
+  else if (act === 'herogo') { const t = document.querySelector('#pickList .baskets') || document.getElementById('supChips'); if (t) { const y = t.getBoundingClientRect().top + scrollY - ((document.getElementById('bar') || {}).offsetHeight || 0) - 8; window.scrollTo({ top: y, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } }
   else if (act === 'showhow') { LS.set('mumu-how', '0'); renderFilters(); }
   else if (act === 'hidehow') { LS.set('mumu-how', '1'); renderFilters(); }
   else if (act === 'pasteorder') { pasteOrder(); }
