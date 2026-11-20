@@ -4966,7 +4966,7 @@ document.addEventListener('click', e => {
   else if (act === 'sentyes') { confirmSent(); }
   else if (act === 'sentdone') { sentBox().hidden = true; showView('pick'); window.scrollTo(0, 0); }
   else if (act === 'picksfromtop') { const top = topSellers(10); if (top.length) { const ids = new Set(top.map(x => x.it.id)); const ov = {}; CATALOG.forEach(it => { if (it.ft && !ids.has(it.id)) ov[it.id] = { ft: false }; }); top.forEach(x => { ov[x.it.id] = { ft: true }; }); saveLedger({ ov }); toast("Today's picks updated."); renderCustomers(); } }
-  else if (act === 'herogo') { const t = document.querySelector('#pickList .baskets') || document.getElementById('supChips'); if (t) { const y = t.getBoundingClientRect().top + scrollY - ((document.getElementById('bar') || {}).offsetHeight || 0) - 8; window.scrollTo({ top: y, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } }
+  else if (act === 'herogo') { const t = document.querySelector('#pickList .baskets') || document.getElementById('supChips'); if (t) { const ss = document.querySelector('.ssearch'), y = t.getBoundingClientRect().top + scrollY - ((document.getElementById('bar') || {}).offsetHeight || 0) - (ss && t !== document.getElementById('supChips') ? ss.offsetHeight : 0) - 14; window.scrollTo({ top: y, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } }
   else if (act === 'showhow') { LS.set('mumu-how', '0'); renderFilters(); }
   else if (act === 'hidehow') { LS.set('mumu-how', '1'); renderFilters(); }
   else if (act === 'pasteorder') { pasteOrder(); }
