@@ -2005,7 +2005,7 @@ body { margin: 0; padding-inline: 8px; }
 @media (max-width: 699.98px) {
   .hero { display: block; min-height: 0; background: #121915; }
   .hero img { position: relative; inset: auto; display: block; height: auto; aspect-ratio: 16 / 10; object-position: 68% 60%; z-index: 0; object-position: 50% 50%; }
-  .hero img { -webkit-mask-image: linear-gradient(180deg, #000 52%, transparent 100%); mask-image: linear-gradient(180deg, #000 52%, transparent 100%); }
+  .hero img { -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent 100%); mask-image: linear-gradient(180deg, #000 62%, transparent 100%); }
   .hero::after { display: none; }
   .hero-tx { position: relative; z-index: 2; margin-top: -34px; padding: 0 18px 20px; gap: 7px; }
 }
@@ -3042,7 +3042,7 @@ function setListMode(m) {
 function renderFilters() {
   const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + hw + '&text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
   const he = document.getElementById('heroCard'); if (he) { he.hidden = !cmode; if (cmode && he.dataset.l !== LANG) { he.dataset.l = LANG; const id = LID(), n = Math.floor(CATALOG.filter(i => !i.hidden).length / 10) * 10;
-    he.innerHTML = '<picture><source media="(max-width: 699.98px)" srcset="assets/hero-m.jpg"><img src="assets/hero-1280.jpg" srcset="assets/hero-800.jpg 800w, assets/hero-1280.jpg 1280w" sizes="(min-width: 1180px) 760px, 100vw" alt="' + (id ? 'Buah, sayur, telur, ikan dan daging segar di atas meja jati di teras vila' : 'Fresh fruit, vegetables, eggs, fish and meat on a teak table on a villa terrace') + '" fetchpriority="high" decoding="async" draggable="false"></picture>' +
+    he.innerHTML = '<picture><source media="(max-width: 699.98px)" srcset="assets/hero-m.jpg"><img src="assets/hero-1280.jpg" srcset="assets/hero-800.jpg 800w, assets/hero-1280.jpg 1376w" sizes="(min-width: 1180px) 760px, 100vw" alt="' + (id ? 'Buah, sayur, telur, ikan dan daging segar di atas meja jati di teras vila' : 'Fresh fruit, vegetables, eggs, fish and meat on a teak table on a villa terrace') + '" fetchpriority="high" decoding="async" draggable="false"></picture>' +
       '<div class="hero-tx"><span class="hero-k">' + (id ? 'Belanja harian di Bali' : 'Grocery delivery in Bali') + '</span><h1 id="heroH">' + (id ? 'Belanjaan segar, diantar ke vila Anda.' : 'Fresh groceries, delivered to your villa.') + '</h1>' +
       '<p>' + (id ? 'Buah & sayur, daging & seafood, beku dan bahan pokok. Lebih dari ' + n + ' barang, dipesan dalam beberapa ketukan.' : 'Fruit & veg, meat & seafood, frozen and pantry. ' + n + '+ items, ordered in a few taps.') + '</p>' +
       '<button type="button" class="hero-go" data-act="herogo">' + (id ? 'Mulai belanja' : 'Start shopping') + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button></div>'; } }
