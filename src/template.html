@@ -646,6 +646,25 @@ body.has-bar .toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
 .ocut { display: none; margin: 8px 0 2px; padding: 8px 10px; border: 1px solid var(--warn-line); border-left-width: 3px; border-radius: 8px; background: var(--warn-t); color: var(--warn); font-size: 12.5px; line-height: 1.45; text-wrap: pretty; }
 .ocut b { font-weight: 700; } .opt.multi .price > .ocut { order: 4; } .opt.multi.on .ocut, .ln-nt .ocut { display: block; }
 .ln-nt .ocut { margin-top: 2px; }
+/* receipt-style variant rows */
+.opt.multi.rx { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 3px; align-items: baseline; }
+.opt.multi.rx > * { grid-column: 1 / -1; min-width: 0; }
+.opt.multi.rx > .ol { grid-column: 1; font-size: 14px; font-weight: 650; color: var(--ink); line-height: 1.3; text-wrap: balance; }
+.opt.multi.rx > .ol small { font-weight: 500; color: var(--muted); }
+.opt.multi.rx > .op { grid-column: 2; justify-self: end; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.opt.multi.rx > .op b.num { font-size: 14px; font-weight: 650; color: var(--ink); font-variant-numeric: tabular-nums; }
+.opt.multi.rx > .ohint { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--muted); text-wrap: pretty; }
+.opt.multi.rx > .p100, .opt.multi.rx > .custp { margin: 0; font-size: 12px; font-weight: 500; color: var(--muted); font-family: inherit; }
+.opt.multi.rx:not(.on) > :is(.ohint, .p100, .custp) { grid-column: 1; }
+.opt.multi.rx:not(.on) > .of { grid-column: 2; grid-row: 2; align-self: start; margin-top: 2px; min-height: 0; }
+.opt.multi.rx > .ocut { margin: 6px 0 0; }
+.opt.multi.rx.on > .ocut { display: block; }
+.opt.multi.rx > .of { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; min-height: 34px; }
+.opt.multi.rx .of .stepper { margin-left: auto; }
+.of .rxl { display: flex; flex-direction: column; gap: 1px; margin: 0; font-family: inherit; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.of .rxl:empty { display: none; }
+.of .rxl span { font-size: 12px; font-weight: 500; color: var(--muted); }
+.of .rxl b { font-size: 15px; font-weight: 700; color: var(--ink); }
 @media (hover: hover) { .opt.multi:not(.on):hover { background: color-mix(in srgb, var(--ink) 9%, transparent); } }
 @media (max-width: 520px) { .opt.multi { margin-left: 52px; padding: 8px 10px 8px 12px; gap: 8px; } }
 @media (max-width: 380px) { .opt.multi { margin-left: 40px; } }
@@ -2941,6 +2960,7 @@ function pickedByCat() {
   return m;
 }
 function itemPicked(it) { return it.o.some((o, i) => { const L = S.lines[keyOf(it.id, i)]; return L && L.q > 0; }); }
+const ltMulti = (o, q, key) => { const L = (key && S.lines[key]) || {}; const p = +L.p > 0 ? +L.p : (cmode ? o.sp : o.pr); return q > 0 && p ? '<span>' + fmtRp(p) + ' &times; ' + fmtQty(q) + '</span><b>' + fmtRp(p * q) + '</b>' : ''; };
 const ltText = (o, q, key) => { const L = (key && S.lines[key]) || {}; const p = +L.p > 0 ? +L.p : (cmode ? o.sp : o.pr); return q > 0 && p ? '= ' + fmtRp(p * q) : ''; };
 const imgSrc = id => /^(data:image\/|photos\/)/.test(id) ? id : window.SB.imgUrl(id);
 /* English name first in bold and the Indonesian one in grey, for customers and on staff screens. Messages and PDFs addressed to suppliers keep the supplier's own name. */
@@ -2985,9 +3005,12 @@ function itemHtml(it, showSup) {
       '<div class="opt' + (q ? ' on' : '') + '" data-key="' + esc(key) + '">' + stepperHtml(it, o, 0, q) + '</div>' +
       '<div class="price line">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div>' + pnote + '</article>';
   }
+  /* Variant rows read like a receipt line: name and unit price on top, guidance under it, then quantity with the running sum (price x qty = total) */
   const opts = it.o.map((o, i) => {
-    const key = keyOf(it.id, i); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
-    return '<div class="opt multi' + (q ? ' on' : '') + '" data-key="' + esc(key) + '"><div class="price">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + optHint(o) + '</div>' + stepperHtml(it, o, i, q) + '</div>';
+    const key = keyOf(it.id, i); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0; const up = cmode ? o.sp : o.pr;
+    const price = up ? '<b class="num">' + fmtRp(up) + '</b>' + pin : (cmode ? askLink(it, o) : '<b class="ask">Ask for price</b>');
+    return '<div class="opt multi rx' + (q ? ' on' : '') + '" data-key="' + esc(key) + '"><span class="ol">' + esc(optLabel(o)) + (o.mn ? ' <small>min ' + o.mn + '</small>' : '') + '</span><span class="op">' + price + '</span>' +
+      per100(it, o) + custPays(o) + optHint(o) + '<div class="of"><span class="lt rxl" data-lt="' + esc(key) + '" aria-live="polite">' + ltMulti(o, q, key) + '</span>' + stepperHtml(it, o, i, q) + '</div></div>';
   }).join('');
   return '<article class="item s-' + gs(it) + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '"><div class="head">' + thumb + '<div>' + title + pk + flags + '</div></div>' + opts + pnote + '</article>';
 }
@@ -3485,7 +3508,7 @@ function setQty(key, q, fromOrder) {
   let cap = QTY_MAX(o); if (pk) cap = Math.max(o.mn, Math.round(Math.floor(cap / pk + 1e-9) * pk * 100) / 100); if (q > cap) { q = cap; toast('The most we take online is ' + fmtQty(cap) + ' ' + (UNIT_EN[o.u] || o.u) + ' of one item. Need more? Message us on WhatsApp.'); }
   const cur = S.lines[key] || {}; if ((cur.q || 0) === q) return;
   patch({ lines: { [key]: q === 0 ? { q: 0, s: '', p: 0 } : { q: q } } });
-  if (!fromOrder) document.querySelectorAll('.opt[data-key="' + CSS.escape(key) + '"]').forEach(el => { el.classList.toggle('on', q > 0); const inp = el.querySelector('input'); if (inp !== document.activeElement) inp.value = fmtStep(q, o); const art = el.closest('.item'); if (art) { art.classList.toggle('on', itemPicked(it)); const lt = art.querySelector('.lt[data-lt="' + CSS.escape(key) + '"]'); if (lt) lt.textContent = ltText(o, q, key); } });
+  if (!fromOrder) document.querySelectorAll('.opt[data-key="' + CSS.escape(key) + '"]').forEach(el => { el.classList.toggle('on', q > 0); const inp = el.querySelector('input'); if (inp !== document.activeElement) inp.value = fmtStep(q, o); const art = el.closest('.item'); if (art) { art.classList.toggle('on', itemPicked(it)); const lt = art.querySelector('.lt[data-lt="' + CSS.escape(key) + '"]'); if (lt) { if (lt.classList.contains('rxl')) lt.innerHTML = ltMulti(o, q, key); else lt.textContent = ltText(o, q, key); } } });
   const comp = compute(S); chrome(comp); if (ui.view === 'order') renderOrderKeepFocus(comp);
   if (!fromOrder && q > (cur.q || 0)) bumpBar();
 }
