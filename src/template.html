@@ -642,6 +642,10 @@ body.has-bar .toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
 .opt.multi .price > span:not(.lt) { order: 1; font-size: 13.5px; font-weight: 600; color: var(--ink); }
 .opt.multi .price > b { order: 2; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
 .opt.multi .price > .lt { order: 3; margin-top: 2px; }
+.opt.multi .price > .ohint { order: 1; margin: 1px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--muted); text-wrap: pretty; }
+.ocut { display: none; margin: 8px 0 2px; padding: 8px 10px; border: 1px solid var(--warn-line); border-left-width: 3px; border-radius: 8px; background: var(--warn-t); color: var(--warn); font-size: 12.5px; line-height: 1.45; text-wrap: pretty; }
+.ocut b { font-weight: 700; } .opt.multi .price > .ocut { order: 4; } .opt.multi.on .ocut, .ln-nt .ocut { display: block; }
+.ln-nt .ocut { margin-top: 2px; }
 @media (hover: hover) { .opt.multi:not(.on):hover { background: color-mix(in srgb, var(--ink) 9%, transparent); } }
 @media (max-width: 520px) { .opt.multi { margin-left: 52px; padding: 8px 10px 8px 12px; gap: 8px; } }
 @media (max-width: 380px) { .opt.multi { margin-left: 40px; } }
@@ -2273,6 +2277,9 @@ const per100 = (it, o) => { if (!cmode || !(o.sp > 0)) return ''; const pk = per
 /* Staff only: next to the wholesale price, show what the customer pays with the current markup. */
 const custPays = o => (!cmode && o.sp > 0 && o.pr > 0) ? '<span class="p100 custp">Customers pay ' + fmtRp(o.sp) + '</span>' : '';
 function optLabel(o) { return o.lb || ('per ' + o.u); }
+/* Per-option guidance (e.g. whole vs easy-open coconut): a short hint, and a shelf-life note that shows once the option is picked */
+const cutNote = o => { if (!o.nt) return ''; const t = LID() && o.nti ? o.nti : o.nt; const i = t.indexOf('. '); return '<p class="ocut" role="note"><b>' + esc(t.slice(0, i + 1)) + '</b> ' + esc(t.slice(i + 2)) + '</p>'; };
+const optHint = o => (o.h ? '<p class="ohint">' + esc(LID() && o.hi ? o.hi : o.h) + '</p>' : '') + cutNote(o);
 const labelDup = (it, o) => { const m = optLabel(o).match(/^pack \((.+)\)$/i); if (!m) return false; const f = t => t.toLowerCase().replace(/\s+/g, '').replace(/,/g, '.').replace(/gr(?![a-z])/g, 'g'); return f(it.n + ' ' + (it.e || '')).includes(f(m[1])); };
 const plainLabel = o => /^(per (kg|pcs|pack|can|ltr|btl|jar)|pack|can)$/.test(optLabel(o));
 function needsCheck(it) { return !!(it.x && /confirm|not stated|blank|does not match/i.test(it.x)); }
@@ -2980,7 +2987,7 @@ function itemHtml(it, showSup) {
   }
   const opts = it.o.map((o, i) => {
     const key = keyOf(it.id, i); const L = S.lines[key]; const q = L && L.q > 0 ? L.q : 0;
-    return '<div class="opt multi' + (q ? ' on' : '') + '" data-key="' + esc(key) + '"><div class="price">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + '</div>' + stepperHtml(it, o, i, q) + '</div>';
+    return '<div class="opt multi' + (q ? ' on' : '') + '" data-key="' + esc(key) + '"><div class="price">' + priceLine(o) + '<span class="lt" data-lt="' + esc(key) + '">' + ltText(o, q, key) + '</span>' + per100(it, o) + custPays(o) + optHint(o) + '</div>' + stepperHtml(it, o, i, q) + '</div>';
   }).join('');
   return '<article class="item s-' + gs(it) + (picked ? ' on' : '') + (cmode && it.so ? ' so' : '') + '" data-item="' + it.id + '"><div class="head">' + thumb + '<div>' + title + pk + flags + '</div></div>' + opts + pnote + '</article>';
 }
@@ -3154,7 +3161,7 @@ function renderOrder(comp) {
       const unitTxt = ln.price ? fmtQty(ln.q) + ' x ' + fmtRp(ln.price) + (ln.listPrice && ln.price !== ln.listPrice ? ' (list ' + fmtRp(ln.listPrice) + ')' : '') : '';
       const priceBlock = cmode ? '<span class="pbtn" style="cursor:default">' + esc(unitTxt || 'price to be confirmed') + '</span>' : pe ? '<span class="pedit">Rp <input data-price="1" inputmode="numeric" value="' + (ln.price || '') + '" placeholder="list price" aria-label="Price per unit"></span>'
         : '<button type="button" class="pbtn" data-act="price"' + (canWrite ? '' : ' disabled') + '>' + (ln.st === 'x' ? 'not counted' : unitTxt ? esc(unitTxt) + ' <u>edit</u>' : '<u>Set price</u>') + '</button>';
-      const lnn = coldHtml(ln.it) + (arrTxt(ln.it, S.meta.need, LID()) ? '<p class="restnote">' + esc(arrTxt(ln.it, S.meta.need, LID())) + '</p>' : '');
+      const lnn = coldHtml(ln.it) + cutNote(ln.o) + (arrTxt(ln.it, S.meta.need, LID()) ? '<p class="restnote">' + esc(arrTxt(ln.it, S.meta.need, LID())) + '</p>' : '');
       return '<div class="ln' + (ln.st === 'x' ? ' out' : '') + (lnn ? ' has-nt' : '') + '" data-key="' + esc(ln.key) + '"><span class="ln-n" aria-hidden="true">' + (idx + 1) + '</span><span class="thumb sm s-' + gs(ln.it) + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="ln-a">' +
         '<div class="ln-name"><div class="nmrow"><b>' + esc(nm(ln.it).m) + '</b>' + (nm(ln.it).s ? '<p class="en">' + esc(nm(ln.it).s) + '</p>' : '') + '</div><p>' + esc(lb) + (ln.it.k && ln.it.k.length < 60 && !/pack|box|carton/.test(lb) ? ' - listed as ' + esc(ln.it.k) : '') + (o.est ? ' - sold by weight' : '') + '</p>' +
         (ln.it.x ? '<p class="' + (needsCheck(ln.it) ? 'chk' : '') + '">' + esc(ln.it.x) + '</p>' : '') +
