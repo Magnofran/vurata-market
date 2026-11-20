@@ -1653,6 +1653,8 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .cdpanel { border: 1px solid var(--line-dark); background: var(--surface-2); padding: 10px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; } .cdpanel > * { min-width: 0; }
 .cdrow { padding: 12px 14px; border: 1px solid var(--line); background: var(--surface); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 5%, transparent); } .cdrow.off, .cdrow.ended { opacity: .7; }
 .cdchip { display: inline-block; flex: none; padding: 1px 8px; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: var(--surface-2); color: var(--muted); }
+/* Ledger cards (baskets, delivery codes) stack vertically; the 3-column .cdrow grid is for customer contact lines only */
+.cdpanel > .cdrow { display: block; }
 .cdbar { position: relative; }
 .cdhead { position: relative; display: block; width: 100%; padding: 4px 2px 8px; background: transparent; border: 0; text-align: left; color: var(--ink); cursor: pointer; }
 .cdname { display: inline-block; vertical-align: middle; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 14px; margin-right: 8px; } .cdhead .cdchip { vertical-align: middle; line-height: 1.7; }
@@ -1661,7 +1663,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .cdbar .cdsw { position: absolute; top: 4px; right: 2px; z-index: 1; }
 .cdbody { margin-top: 4px; padding-top: 16px; border-top: 1px solid var(--line); display: grid; gap: 14px; } .cdbody .field, .cdbody .grid2 { margin: 0; } .cdbody .grid2 { gap: 14px; } .cdtop { margin-bottom: 4px; } .cdtop input { text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
 .cdfoot { margin-top: 16px; } .cdfoot .btn { width: 100%; min-height: 46px; }
-.btn.danger { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); } @media (hover: hover) { .btn.danger:hover { background: color-mix(in srgb, var(--warn) 8%, transparent); border-color: var(--warn); } }
+.btn.danger { background: transparent; color: var(--warn); border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); } @media (hover: hover) { .btn.danger:hover { background: color-mix(in srgb, var(--warn) 8%, transparent); border-color: var(--warn); } }
 /* On / Off segmented switch */
 .cdsw { position: relative; flex: none; display: inline-grid; grid-template-columns: 1fr 1fr; align-items: stretch; width: 88px; height: 36px; border: 1px solid var(--line-dark); background: var(--surface-2); cursor: pointer; overflow: hidden; }
 .cdsw span { display: grid; place-items: center; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; color: var(--muted); transition: background-color .16s ease, color .16s ease; }
