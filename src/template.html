@@ -2420,7 +2420,7 @@ const restDayNames = () => { const wd = [...new Set(Object.values(restOf()).flat
 const emB = t => esc(t).replace(/\u0001/g, '<b>').replace(/\u0002/g, '</b>'), dB = t => '\u0001' + t + '\u0002';
 const restNextName = () => { const wd = [...new Set(Object.values(restOf()).flat())]; const nx = [...new Set(wd.map(n => (n + 1) % 7))].filter(n => !wd.includes(n)); return nx.map(n => new Date(2026, 10, 1 + n).toLocaleDateString(LID() ? 'id-ID' : 'en-GB', { weekday: 'long' })).join(LID() ? ' atau ' : ' or '); };
 function delStripHtml() {
-  if (!cmode) return ''; const dd = delDays(); if (!dd) return ''; const { rs, a, b } = dd;
+  if (!cmode || !basketSids().length) return ''; const dd = delDays(); if (!dd) return ''; const { rs, a, b } = dd;
   const id = LID(), loc = id ? 'id-ID' : 'en-GB', fd = iso => new Date(iso + 'T12:00:00').toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'short' });
   const sfx = pm => pm ? (id ? ', mulai pukul 14.00' : ', from 2 PM') : '';
   const aT = fd(a) + sfx(dd.aPm), bT = fd(b) + sfx(dd.bPm);
@@ -3093,7 +3093,9 @@ function renderSide(comp) {
     '<div class="actions full"><button class="btn" data-view="order">Review order</button><button type="button" class="btn ghost" data-act="savedraft">Save for later</button><button type="button" class="btn ghost" data-act="clearall">Clear all</button></div></div>';
 }
 function chrome(comp) {
-  const dsx = document.getElementById('dlInfo'); if (dsx && cmode) { const h = delStripHtml(); if (dsx.innerHTML !== h) dsx.innerHTML = h; dsx.hidden = !h; } const acx = document.getElementById('asideCard'); if (acx && cmode) { const h = asideHtml(); if (acx.innerHTML !== h) acx.innerHTML = h; acx.hidden = !h; }
+  const dsx = document.getElementById('dlInfo'); if (dsx && cmode) { const h = delStripHtml(), h0 = dsx.hidden ? 0 : dsx.offsetHeight, hc = document.getElementById('heroCard'), above = hc && !hc.hidden ? hc.getBoundingClientRect().bottom < 0 : scrollY > 300; if (dsx.innerHTML !== h) dsx.innerHTML = h; dsx.hidden = !h;
+    /* The strip appears with the first item and goes with the last. If it sits above the screen, keep the list still under the finger (browsers without scroll anchoring, e.g. Safari). */
+    const dh = (dsx.hidden ? 0 : dsx.offsetHeight) - h0; if (dh && above && !(window.CSS && CSS.supports('overflow-anchor', 'auto'))) scrollBy(0, dh + (h0 && !dsx.hidden ? 0 : Math.sign(dh) * 16)); } const acx = document.getElementById('asideCard'); if (acx && cmode) { const h = asideHtml(); if (acx.innerHTML !== h) acx.innerHTML = h; acx.hidden = !h; }
   document.getElementById('bbTotal').textContent = fmtRp(comp.total);
   document.getElementById('bbSub').textContent = comp.count ? comp.count + ' line' + (comp.count > 1 ? 's' : '') + (fmtMeasure(comp.w, comp.v) ? ' - about ' + fmtMeasure(comp.w, comp.v) : '') : 'Nothing picked yet';
   const b = document.getElementById('nBadge'); const prevN = +b.dataset.n || 0; b.textContent = comp.count; b.dataset.n = comp.count; if (comp.count > prevN) { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
