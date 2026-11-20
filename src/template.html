@@ -1621,6 +1621,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .howlink[hidden] { display: none; } .howlink i { font-style: normal; font-size: 18px; font-weight: 400; letter-spacing: 0; color: var(--gold-text); }
 /* The banners sit at the top of the item column so the order panel starts level with them on wide screens. */
 .cols.two > div > .how, .cols.two > div > .dlinfo, .cols.two > div > .howlink { margin-top: 0 !important; margin-bottom: 16px; }
+.cols.two > div > .hero { margin-top: 0; margin-bottom: 16px; }
 /* Photo and text read as one row: the photo stretches to the full height of the text block, name on its top edge, price on its bottom edge. */
 .item.single > .thw { align-self: stretch; display: flex; flex-direction: column; } .item.single > .thw .thumb { height: auto; min-height: 54px; flex: 1; }
 .item.single > .main h4 { margin-top: -2px; } .item.single > .price.line { margin-bottom: -2px; align-self: end; }
@@ -1988,6 +1989,33 @@ body { margin: 0; padding-inline: 8px; }
 .login .brand small { flex-basis: 100%; margin-top: 16px; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
 .login .field { text-align: left; } .login .hint { text-align: center; margin: 0; }
  .login .brand { margin-bottom: 4px; }
+
+/* Hero (customers only): one photo of the groceries on a villa table, so a first-time visitor sees food before any text */
+.hero { position: relative; overflow: hidden; margin: 14px 0 14px; min-height: 340px; display: grid; align-items: end; background: #1d2a22; color: #fff; isolation: isolate; }
+.hero picture { display: contents; }
+.hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 72% 50%; z-index: -2; }
+.hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10,14,12,0) 22%, rgba(10,14,12,.55) 58%, rgba(10,14,12,.86) 100%); }
+.hero-tx { display: grid; gap: 8px; padding: 20px 18px 18px; max-width: 34em; }
+.hero-k { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #E7D3AE; }
+.hero h1 { font-size: clamp(26px, 7.4vw, 38px); line-height: 1.06; font-weight: 700; letter-spacing: -.022em; text-wrap: balance; color: #fff; }
+.hero p { font-size: 14.5px; line-height: 1.45; color: rgba(255,255,255,.88); text-wrap: pretty; max-width: 30em; }
+.hero-go { justify-self: start; margin-top: 6px; display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 20px; border: 0; background: #fff; color: #0F172A; font-weight: 600; font-size: 15px; }
+.hero-go svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hero-go:hover { background: #F3EBDD; } .hero-go:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+@media (max-width: 699.98px) {
+  .hero { display: block; min-height: 0; background: #121915; }
+  .hero img { position: relative; inset: auto; display: block; height: auto; aspect-ratio: 16 / 10; object-position: 68% 60%; z-index: 0; object-position: 50% 50%; }
+  .hero img { -webkit-mask-image: linear-gradient(180deg, #000 52%, transparent 100%); mask-image: linear-gradient(180deg, #000 52%, transparent 100%); }
+  .hero::after { display: none; }
+  .hero-tx { position: relative; z-index: 2; margin-top: -34px; padding: 0 18px 20px; gap: 7px; }
+}
+@media (min-width: 700px) {
+  .hero { min-height: 380px; align-items: center; }
+  .hero img { object-position: 60% 50%; }
+  .hero::after { background: linear-gradient(90deg, rgba(10,14,12,.86) 0%, rgba(10,14,12,.62) 38%, rgba(10,14,12,0) 70%); }
+  .hero-tx { padding: 32px 34px; max-width: 27em; gap: 10px; }
+  .hero h1 { font-size: 40px; }
+}
 </style>
 </head>
 <body>
@@ -2011,6 +2039,7 @@ body { margin: 0; padding-inline: 8px; }
   <section id="v-pick" aria-labelledby="t-pick">
     <div class="cols two">
       <div>
+        <section class="hero" id="heroCard" hidden aria-labelledby="heroH"></section>
         <div class="how" id="howCard" hidden></div>
         <div class="dstrip" id="dlInfo" hidden></div>
         <div class="asidecard" id="asideCard" hidden></div>
@@ -3012,6 +3041,11 @@ function setListMode(m) {
 }
 function renderFilters() {
   const hf = document.getElementById('helpFoot'); if (hf) { const hw = hostWA || LS.get('mumu-hostwa') || ''; hf.hidden = !(cmode && hw); if (cmode && hw) hf.innerHTML = '<a target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + hw + '&text=' + encodeURIComponent('Hi! I have a question about ordering.') + '">Questions? Chat with us on WhatsApp</a>'; }
+  const he = document.getElementById('heroCard'); if (he) { he.hidden = !cmode; if (cmode && he.dataset.l !== LANG) { he.dataset.l = LANG; const id = LID(), n = Math.floor(CATALOG.filter(i => !i.hidden).length / 10) * 10;
+    he.innerHTML = '<picture><source media="(max-width: 699.98px)" srcset="assets/hero-m.jpg"><img src="assets/hero-1280.jpg" srcset="assets/hero-800.jpg 800w, assets/hero-1280.jpg 1280w" sizes="(min-width: 1180px) 760px, 100vw" alt="' + (id ? 'Buah, sayur, telur, ikan dan daging segar di atas meja jati di teras vila' : 'Fresh fruit, vegetables, eggs, fish and meat on a teak table on a villa terrace') + '" fetchpriority="high" decoding="async" draggable="false"></picture>' +
+      '<div class="hero-tx"><span class="hero-k">' + (id ? 'Belanja harian di Bali' : 'Grocery delivery in Bali') + '</span><h1 id="heroH">' + (id ? 'Belanjaan segar, diantar ke vila Anda.' : 'Fresh groceries, delivered to your villa.') + '</h1>' +
+      '<p>' + (id ? 'Buah & sayur, daging & seafood, beku dan bahan pokok. Lebih dari ' + n + ' barang, dipesan dalam beberapa ketukan.' : 'Fruit & veg, meat & seafood, frozen and pantry. ' + n + '+ items, ordered in a few taps.') + '</p>' +
+      '<button type="button" class="hero-go" data-act="herogo">' + (id ? 'Mulai belanja' : 'Start shopping') + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button></div>'; } }
   const tr = document.getElementById('trustRow'); if (tr) { const on = cmode && !hist.length; tr.hidden = !on; if (on && !tr.innerHTML) tr.innerHTML = [
     ['<path d="M12 21c-5-3-8-7-8-11a8 8 0 0 1 16 0c0 4-3 8-8 11z"/><path d="M9 10.5l2 2 4-4"/>', 'Fresh daily'],
     ['<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/>', 'Cash or QRIS'],
@@ -4922,6 +4956,7 @@ document.addEventListener('click', e => {
   else if (act === 'sentyes') { confirmSent(); }
   else if (act === 'sentdone') { sentBox().hidden = true; showView('pick'); window.scrollTo(0, 0); }
   else if (act === 'picksfromtop') { const top = topSellers(10); if (top.length) { const ids = new Set(top.map(x => x.it.id)); const ov = {}; CATALOG.forEach(it => { if (it.ft && !ids.has(it.id)) ov[it.id] = { ft: false }; }); top.forEach(x => { ov[x.it.id] = { ft: true }; }); saveLedger({ ov }); toast("Today's picks updated."); renderCustomers(); } }
+  else if (act === 'herogo') { const t = document.getElementById('supChips'); if (t) { const y = t.getBoundingClientRect().top + scrollY - ((document.getElementById('bar') || {}).offsetHeight || 0) - 8; window.scrollTo({ top: y, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } }
   else if (act === 'showhow') { LS.set('mumu-how', '0'); renderFilters(); }
   else if (act === 'hidehow') { LS.set('mumu-how', '1'); renderFilters(); }
   else if (act === 'pasteorder') { pasteOrder(); }
