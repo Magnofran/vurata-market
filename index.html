@@ -646,6 +646,19 @@ body.has-bar .toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
 .ocut { display: none; margin: 8px 0 2px; padding: 8px 10px; border: 1px solid var(--warn-line); border-left-width: 3px; border-radius: 8px; background: var(--warn-t); color: var(--warn); font-size: 12.5px; line-height: 1.45; text-wrap: pretty; }
 .ocut b { font-weight: 700; } .opt.multi .price > .ocut { order: 4; } .opt.multi.on .ocut, .ln-nt .ocut { display: block; }
 .ln-nt .ocut { margin-top: 2px; }
+/* unavailable-item choice on Send, and the per-line No swaps toggle */
+.swapq { margin: 16px 0 18px; padding: 14px 0 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.swq-h { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.swseg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.swseg button { appearance: none; display: grid; gap: 2px; text-align: left; padding: 10px 12px; border: 1px solid var(--line-dark); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; transition: border-color .15s ease, background-color .15s ease; }
+.swseg button b { font-size: 13.5px; font-weight: 650; line-height: 1.25; }
+.swseg button span { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.swseg button[aria-checked="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.swq-n { margin: 8px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); text-wrap: pretty; }
+.swq-n b { color: var(--ink); font-weight: 600; }
+.nsw { appearance: none; margin-top: 6px; padding: 3px 9px; border: 1px solid var(--line-dark); border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; }
+.nsw[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.nsw[aria-pressed="true"]::before { content: "\2713  "; }
 /* receipt-style variant rows */
 .opt.multi.rx { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 3px; align-items: baseline; }
 .opt.multi.rx > * { grid-column: 1 / -1; min-width: 0; }
@@ -3191,6 +3204,7 @@ function renderOrder(comp) {
       return '<div class="ln' + (ln.st === 'x' ? ' out' : '') + (lnn ? ' has-nt' : '') + '" data-key="' + esc(ln.key) + '"><span class="ln-n" aria-hidden="true">' + (idx + 1) + '</span><span class="thumb sm s-' + gs(ln.it) + thumbCls(ln.it) + '">' + thumbIn(ln.it) + '</span><div class="ln-a">' +
         '<div class="ln-name"><div class="nmrow"><b>' + esc(nm(ln.it).m) + '</b>' + (nm(ln.it).s ? '<p class="en">' + esc(nm(ln.it).s) + '</p>' : '') + '</div><p>' + esc(lb) + (ln.it.k && ln.it.k.length < 60 && !/pack|box|carton/.test(lb) ? ' - listed as ' + esc(ln.it.k) : '') + (o.est ? ' - sold by weight' : '') + '</p>' +
         (ln.it.x ? '<p class="' + (needsCheck(ln.it) ? 'chk' : '') + '">' + esc(ln.it.x) + '</p>' : '') +
+        (cmode && S.meta.swap !== 'refund' ? '<button type="button" class="nsw" data-act="noswap" aria-pressed="' + !!(S.lines[ln.key] && S.lines[ln.key].ns) + '">' + (S.lines[ln.key] && S.lines[ln.key].ns ? (LID() ? 'Hanya barang ini' : 'Exact item only') : (LID() ? 'Jangan diganti' : 'Don\'t swap this')) + '</button>' : '') +
         (cmode ? '' : '<button type="button" class="stbtn st-' + (ln.st || 'n') + '" data-act="status"' + (canWrite ? '' : ' disabled') + '>' + stl + '</button>') + '</div>' +
         '<button type="button" class="x" data-act="rm" aria-label="Remove ' + esc(ln.it.n) + '">&times;</button></div>' + (lnn ? '<div class="ln-nt">' + lnn + '</div>' : '') +
         '<div class="ln-b"><div class="ln-total"><b>' + (ln.st === 'x' ? 'Out of stock' : ln.total != null ? fmtRp(ln.total) : 'Ask price') + '</b>' + priceBlock + '</div>' +
@@ -4131,14 +4145,21 @@ function customerMessage(state, comp) {
   row('Location', 'Lokasi', m.pin ? 'https://maps.google.com/?q=' + m.pin + (pinRough(m) ? L(' (approximate, about ', ' (perkiraan, sekitar ') + pinRough(m) + ' m)' : '') : link);
   row('Payment', 'Pembayaran', m.pay ? tr(m.pay) : '');
   row('Notes', 'Catatan', m.notes);
+  row('If unavailable', 'Jika kosong', m.swap === 'refund' ? L('leave it out and refund it', 'tidak usah diganti, uang dikembalikan') : L('swap for the closest match (never more; any difference refunded)', 'ganti dengan yang paling mirip (tidak lebih mahal; selisih dikembalikan)'));
   row('Found us on', 'Tahu dari', srcLabel());
   const many = comp.groups.length > 1;
-  comp.groups.forEach(g => { out.push('', '*' + tr(SUPS[g.sid].name).toUpperCase() + '*'); g.lines.forEach((ln, i) => { out.push((i + 1) + '. ' + lineText(ln, true, id ? 'id' : 'en')); if (ln.note) out.push('   ' + L('Note: ', 'Catatan: ') + ln.note); lineWa(ln.it, m.need, id).forEach(t => out.push(t)); }); if (many) out.push('Subtotal: ' + fmtRp(g.subtotal)); });
+  comp.groups.forEach(g => { out.push('', '*' + tr(SUPS[g.sid].name).toUpperCase() + '*'); g.lines.forEach((ln, i) => { out.push((i + 1) + '. ' + lineText(ln, true, id ? 'id' : 'en') + (m.swap !== 'refund' && state.lines[ln.key] && state.lines[ln.key].ns ? L(' (no swap)', ' (jangan diganti)') : '')); if (ln.note) out.push('   ' + L('Note: ', 'Catatan: ') + ln.note); lineWa(ln.it, m.need, id).forEach(t => out.push(t)); }); if (many) out.push('Subtotal: ' + fmtRp(g.subtotal)); });
   out.push('');
   if (hasDel(comp)) out.push(L('Delivery: ', 'Ongkir: ') + tr(delLine(comp)) + (comp.codeUsed ? ' (' + L('code ', 'kode ') + comp.codeUsed + ')' : (m.dcode ? ' (' + L('code ', 'kode ') + m.dcode + ')' : '')));
   out.push('*TOTAL: ' + fmtRp(comp.grand) + '*' + (hasDel(comp) && !comp.feeKnown ? L(' + delivery', ' + ongkir') : ''), '', L('Order code for our team (please leave as is):', 'Kode pesanan untuk tim kami (mohon jangan diubah):'), makeCode(state));
   return out.join('\n');
 }
+/* What happens if a supplier is out of something: one choice for the whole order, agreed before it is sent */
+function swapHtml() { const rf = S.meta.swap === 'refund';
+  const b = (k, en, sub) => '<button type="button" role="radio" data-act="swap" data-k="' + k + '" aria-checked="' + ((k === 'refund') === rf) + '"><b>' + en + '</b><span>' + sub + '</span></button>';
+  return '<div class="swapq"><p class="swq-h">If an item is unavailable</p><div class="swseg" role="radiogroup" aria-label="If an item is unavailable">' +
+    b('swap', 'Swap for the closest match', 'Same quality, similar size') + b('refund', 'Leave it out', 'Refund that item') + '</div>' +
+    '<p class="swq-n">' + (rf ? 'We\'ll let you know before delivery and refund anything we can\'t get.' : 'You never pay more, and if the swap costs less we refund the difference. We\'ll tell you about every swap. To keep a specific item as is, tap <b>Don\'t swap this</b> on it in My order.') + '</p></div>'; }
 function renderShareC(comp) {
   const host = document.getElementById('shareBody'); const hw = hostWA || LS.get('mumu-hostwa') || '';
   if (!comp.groups.length) { host.innerHTML = '<div class="card empty warm">' + BASK_ART + '<p class="inv-eye">Your basket</p><h3>Nothing to send yet</h3><div class="emptyin"><p>Pick items first. Your order and total are built from them.</p><button class="btn" data-view="pick">Pick items</button></div></div>' + histHtml(); return; }
@@ -4162,6 +4183,7 @@ function renderShareC(comp) {
     (S.meta.who ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Add your name in My order first, so your host knows who it is from.</p>') + (S.meta.pay ? '' : '<p class="hint" style="color:var(--warn);margin-bottom:10px">Choose how you will pay in My order: cash on delivery or QRIS.</p>') +
     (cmode && morningShut(S.meta.need) ? '<div class="cutnote"><b>Ordering after 12 PM.</b> Tomorrow\'s delivery is from 2 PM, so you have the afternoon or evening.</div>' : '') +
     '<div class="recapm">' + recapHtml + '</div>' +
+    swapHtml() +
     '<p class="choose">Choose <b>one</b> way to send it. Your host gets the same order whichever you pick.</p>' +
     (cmode ? '<div class="sendpick" role="group" aria-label="How to send">' + pick + '</div>' : '<div class="lseg three sendseg" role="group" aria-label="How to send">' + seg + '</div>') + '<div class="sendpanel">' + panel + '</div>' +
     (hw ? '' : '<div class="field" style="margin-top:14px"><label for="hostwa">Your host\'s WhatsApp number</label><input id="hostwa" inputmode="numeric" placeholder="e.g. 6281234567890"><span class="hint">Not needed if you open the link your host sent. Without it, WhatsApp asks who to send to.</span></div>') + '</div>';
@@ -5001,6 +5023,8 @@ document.addEventListener('click', e => {
   else if (act === 'ledit') { ui.ledit[b.dataset.id] = !ui.ledit[b.dataset.id]; renderLedgerList(); }
   else if (act === 'lhide') { saveLedger({ ov: { [b.dataset.id]: { hid: b.dataset.h === '1' } } }); }
   else if (act === 'lreset') { setPrice(b.dataset.id, +b.dataset.i, null); }
+  else if (act === 'swap') { patch({ meta: { swap: b.dataset.k === 'refund' ? 'refund' : '' } }); renderAll(false); }
+  else if (act === 'noswap') { const key = b.closest('[data-key]').dataset.key; const ns = !(S.lines[key] && S.lines[key].ns); patch({ lines: { [key]: { ns } } }); renderAll(false); if (ns) toast(LID() ? 'Kalau habis, kami kembalikan uangnya, tidak diganti.' : 'If it\'s unavailable, we\'ll refund it instead of swapping.'); }
   else if (act === 'sendopt') { ui.sendOpt = b.dataset.k; renderShare(compute(S)); }
   else if (act === 'tosend') { const cp = compute(S); if (missingReq(S.meta).length) fixFirst(); else if (minGap(cp) > 0) { toast('Minimum order is ' + fmtRp(dlNow().min) + '. Add ' + fmtRp(minGap(cp)) + ' more.'); showView('pick'); } else showView('share'); }
   else if (act === 'fix') { fixFirst(); }
