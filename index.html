@@ -1473,7 +1473,7 @@ html[lang="id"] .dmapbar::after, html[lang="id"] .sendpick::after { content: 'at
 .cnico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50% !important; background: color-mix(in srgb, var(--sc) 18%, var(--surface)); color: var(--sc); }
 .cnico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .cnow.ok .cnico { background: var(--sc); color: var(--on-sup, #fff); } .cnow.bad .cnico { background: var(--danger); color: #fff; }
-.cntx { display: grid; gap: 2px; min-width: 0; } .cntx b { font-size: 15px; } .cntx > span { font-size: 13px; color: var(--muted); } .cnow { position: relative; } .cntx .nowbar { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; margin: 0; background: color-mix(in srgb, var(--sc) 18%, transparent); } .cntx .nowbar i { transition: width .3s ease; }
+.cntx { display: grid; gap: 2px; min-width: 0; } .cntx b { font-size: 15px; } .cntx > span { font-size: 13px; color: var(--muted); } .cntx > span.neg { color: var(--danger); font-weight: 600; } .cnow { position: relative; } .cntx .nowbar { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; margin: 0; background: color-mix(in srgb, var(--sc) 18%, transparent); } .cntx .nowbar i { transition: width .3s ease; }
 /* staff: edit order details */
 .edbtn { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 2px; min-height: 34px; padding: 0 12px; border: 1px solid var(--line-dark); background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .edbtn[aria-expanded="true"] { display: flex; justify-content: center; width: 100%; min-height: 46px; margin-top: 10px; background: var(--ink); border-color: var(--ink); color: var(--bg); font-size: 14px; font-weight: 700; }
@@ -3724,14 +3724,14 @@ function paySelect(c) {
 }
 /* One labelled panel: where the order is (status steps) and how it is paid. Built so a new staff member reads it at a glance. */
 /* The messages for the current step sit right under the steps; everything else is one tap away under Other messages. */
-const STEP_MSGS = { new: ['bill', 'oos'], ordered: ['eta', 'late', 'pay'], delivered: ['done', 'pay'] };
-const STEP_SEND = { new: 'Check stock, then send', ordered: 'On delivery day, send', delivered: 'After delivery, send' };
+const STEP_MSGS = { new: ['ack'], ordered: ['bill', 'oos', 'eta', 'late'], delivered: ['done', 'pay'] };
+const STEP_SEND = { new: 'Within 1 hour, send', ordered: 'After collecting, send', delivered: 'After delivery, send' };
 const langTag = c => c.lang === 'id' ? '<em class="langtag">Bahasa</em>' : '';
 function msgDef(k) { for (const g of CMSG) for (const x of g.items) if (x[0] === k) return x; return null; }
 function stepMsgs(c, st) { const ph = digitsOf(c.phone); const unpaid = !c.paid && dueOf(c) > 0;
-  const keys = STEP_MSGS[st].filter(k => k !== 'pay' || unpaid); const mo = !!(ui.cmsgOpen && ui.cmsgOpen[c.id]);
+  const keys = (st === 'ordered' && c.cf ? ['eta', 'late', 'bill'] : STEP_MSGS[st]).filter(k => k !== 'pay' || unpaid); const mo = !!(ui.cmsgOpen && ui.cmsgOpen[c.id]);
   if (!ph) return '<p class="hint stepmsg-none">Add a WhatsApp number in Edit details to message ' + esc((c.name || 'the customer').split(' ')[0]) + '.</p>';
-  const row = (k, i) => { const x = msgDef(k); return '<a class="stepmsg' + (i === 0 ? ' main' : '') + '" target="_blank" rel="noopener"' + (k === 'bill' ? ' data-confsent="' + esc(c.id) + '"' : '') + ' href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span><i class="go" aria-hidden="true">' + ICO_MSG + '</i></a>'; };
+  const row = (k, i) => { const x = msgDef(k); return '<a class="stepmsg' + (i === 0 ? ' main' : '') + '" target="_blank" rel="noopener"' + sentAttr(k, c) + ' href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span><i class="go" aria-hidden="true">' + ICO_MSG + '</i></a>'; };
   return '<div class="stepmsgs"><span class="cplab"><span>' + STEP_SEND[st] + '</span>' + langTag(c) + '</span>' + keys.map(row).join('') +
     '<button type="button" class="linkbtn othermsg" data-act="cmsgtog" data-id="' + esc(c.id) + '" aria-expanded="' + mo + '">' + (mo ? 'Hide other messages' : 'Other messages') + '</button>' + (mo ? allMsgsMenu(c) : '') + '</div>'; }
 function statusPanel(c) { const ro = canWrite ? '' : ' disabled'; const order = ['new', 'ordered', 'delivered']; const cur = Math.max(0, order.indexOf(c.status || 'new'));
@@ -3766,12 +3766,14 @@ function fullCard(c, comp, date, open, det) {
     '<button type="button" data-act="osec" data-id="' + id + '" data-k="cust"' + (noteOn ? ' class="on"' : '') + '>' + ICO.note + '<span>' + (noteOn ? 'Note' : 'Details') + '</span></button></div>';
   /* now: only what this step needs */
   let now = '';
-  if (st === 'new') now = c.cf ? '<b>Order from suppliers</b><span>Confirmed. Buy it with the combined order, then mark it ordered.</span>' : '<b>Confirm the order</b><span>Check stock, then send the bill. ' + comp.count + ' item' + (comp.count === 1 ? '' : 's') + ' · ' + fmtRp(comp.grand) + '</span>';
-  else if (st === 'ordered') { const ps = packState(c, comp); now = '<b>Pack and deliver</b><span>' + (ps.n ? 'Packed ' + ps.done + ' of ' + ps.n + ' items' : 'Nothing to pack') + (hasPin ? '' : ' · no map pin yet') + '</span>' + (ps.n ? '<div class="nowbar"><i style="width:' + Math.round(ps.done / ps.n * 100) + '%"></i></div>' : ''); }
+  if (st === 'new') { const ag = ackAge(c); const cb = c.ak ? chgBy(c.ak) : 0; const open = cb && Date.now() < cb, grace = cb && !open && Date.now() < cb + 2 * 36e5;
+    now = acked(c) ? '<b>Order from suppliers</b><span>Confirmed. Buy it with the combined order, then mark it ordered.' + (open ? ' Changes open until ' + hmOf(cb) + '.' : grace ? ' Changes closed at ' + hmOf(cb) + '; a late change is your call.' : '') + '</span>'
+      : '<b>Send the acknowledgement</b><span' + (ag >= ACK_WARN ? ' class="neg"' : '') + '>Received ' + ageTxt(ag) + ' (working hours). Reply within 1 hour. No prices yet.</span>'; }
+  else if (st === 'ordered') { const ps = packState(c, comp); now = '<b>' + (c.cf ? 'Deliver' : 'Pack, then send the final bill') + '</b><span>' + (ps.n ? 'Packed ' + ps.done + ' of ' + ps.n + ' items' : 'Nothing to pack') + (c.cf ? ' · bill sent' : '') + (hasPin ? '' : ' · no map pin yet') + '</span>' + (ps.n ? '<div class="nowbar"><i style="width:' + Math.round(ps.done / ps.n * 100) + '%"></i></div>' : ''); }
   else now = due > 0 ? '<b>Collect payment</b><span>' + fmtRp(due) + ' still open' + (c.pay ? ' · ' + esc(c.pay) : '') + '</span>' : '<b>All done</b><span>Delivered and paid. Send a thank you if you have not.</span>';
   /* status row: one icon for what this step is, in the step colour */
   const NI = { send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/><path d="M11.5 13.5L20 4"/>', cart: '<path d="M3 4h2l2.4 11h10.2L20 8H6.3"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>', box: '<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>', pay: '<path d="M12 7v6"/><path d="M12 16.5v.5"/><circle cx="12" cy="12" r="9"/>', done: '<path d="M5 12.5l4.5 4.5L19 7.5"/>' };
-  const nk = st === 'new' ? (c.cf ? 'cart' : 'send') : st === 'ordered' ? 'box' : due > 0 ? 'pay' : 'done';
+  const nk = st === 'new' ? (acked(c) ? 'cart' : 'send') : st === 'ordered' ? 'box' : due > 0 ? 'pay' : 'done';
   const nowHtml = '<div class="cnow s-' + st + (st === 'delivered' && due > 0 ? ' bad' : '') + (nk === 'done' ? ' ok' : '') + '"><span class="cnico" aria-hidden="true"><svg viewBox="0 0 24 24">' + NI[nk] + '</svg></span><div class="cntx">' + now + '</div></div>';
   /* quiet rows + what opens under them */
   const pv = c.paid || due <= 0 ? '<b class="pos">Paid</b>' : '<b class="neg">' + fmtRp(due) + '</b>' + (c.pay ? ' · ' + esc(String(c.pay).split(' ')[0]) : '');
@@ -3837,20 +3839,22 @@ function flagsHtml(c, comp) { if (cmode || c.status === 'cancelled') return ''; 
 /* The single most urgent thing to do, with the button that does it */
 function nextAction() {
   const live = cust.filter(c => c.status !== 'cancelled'); const today = isoOf(baliNow());
-  const unconf = live.filter(c => c.status === 'new' && !c.cf && digitsOf(c.phone)).sort((a, b) => (a.need || '9').localeCompare(b.need || '9') || a.at - b.at);
-  const toOrder = live.filter(c => c.status === 'new' && c.cf && c.inc !== false);
+  const unconf = live.filter(c => c.status === 'new' && !acked(c) && digitsOf(c.phone)).sort((a, b) => (a.at || 0) - (b.at || 0));
+  const toOrder = live.filter(c => c.status === 'new' && acked(c) && c.inc !== false);
+  const toBill = live.filter(c => c.status === 'ordered' && !c.cf && digitsOf(c.phone)).sort((a, b) => (a.need || '9').localeCompare(b.need || '9') || 'maex'.indexOf(winOf(a.slot)) - 'maex'.indexOf(winOf(b.slot)));
   const run = live.filter(c => c.status === 'ordered' && c.need && c.need <= today).sort((a, b) => 'maex'.indexOf(winOf(a.slot)) - 'maex'.indexOf(winOf(b.slot)));
   const unpaid = live.filter(c => c.status === 'delivered' && dueOf(c) > 0 && digitsOf(c.phone));
-  const n = unconf.length + (toOrder.length ? 1 : 0) + run.length + unpaid.length;
-  if (unconf.length) { const c = unconf[0]; return { st: 'new', n, k: 'Confirm order', t: firstName(c) + ' · ' + orderNo(c), sub: (c.need ? shortDate(c.need) + (c.slot ? ', ' + WIN[winOf(c.slot)][1] : '') : 'No date yet') + ' · ' + fmtRp(compute(custState(c), 'sell').grand), btn: 'Send confirmation', href: waTo(c, 'bill'), conf: c.id, id: c.id }; }
+  const n = unconf.length + (toOrder.length ? 1 : 0) + toBill.length + run.length + unpaid.length;
+  if (unconf.length) { const c = unconf[0]; const ag = ackAge(c); return { st: ag >= ACK_WARN ? 'bad' : 'new', n, k: 'Acknowledge order', t: firstName(c) + ' · ' + orderNo(c), sub: 'Received ' + ageTxt(ag) + ' · ' + (c.need ? shortDate(c.need) + (c.slot ? ', ' + WIN[winOf(c.slot)][1] : '') : 'No date yet'), btn: 'Send acknowledgement', href: waTo(c, 'ack'), ack: c.id, id: c.id }; }
   if (toOrder.length) return { st: 'new', n, k: 'Order from suppliers', t: toOrder.length + ' confirmed order' + (toOrder.length > 1 ? 's' : '') + ' to buy', sub: 'Send each supplier one combined message', btn: 'Open combined order', go: '#combCard' };
+  if (toBill.length) { const c = toBill[0]; return { st: 'ordered', n, k: 'Send final bill', t: firstName(c) + ' · ' + orderNo(c), sub: (c.need ? shortDate(c.need) + (c.slot ? ', ' + WIN[winOf(c.slot)][1] : '') : 'No date yet') + ' · after collecting and packing', btn: 'Send final bill', href: waTo(c, 'bill'), conf: c.id, id: c.id }; }
   if (run.length) { const c = run[0]; const late = c.need < today; return { st: late ? 'bad' : 'ordered', n, k: late ? 'Overdue delivery' : 'Deliver today', t: firstName(c) + ' · ' + orderNo(c), sub: WIN[winOf(c.slot)][1] + ' · ' + (zoneLabel(c.zone) || 'no area') + (hasLoc(c) ? '' : ' · no map pin'), btn: 'On our way', href: waTo(c, 'eta'), id: c.id, open: 1 }; }
   if (unpaid.length) { const c = unpaid[0]; return { st: 'bad', n, k: 'Collect payment', t: fmtRp(dueOf(c)) + ' from ' + firstName(c), sub: orderNo(c) + ' · delivered', btn: 'Send reminder', href: waTo(c, 'pay'), id: c.id }; }
   return { st: 'delivered', n: 0, k: 'All caught up', t: 'Nothing is waiting on you', sub: live.length ? 'New orders show up here first' : 'Share your link to get your first order', btn: '' };
 }
 function nextBarHtml() { const ns = nextStep(); if (!myWA || !ledger.dl || !cust.length) return '';
   const a = nextAction();
-  const btn = !a.btn ? '' : a.href ? '<a class="nxbtn" target="_blank" rel="noopener" href="' + esc(a.href) + '"' + (a.conf ? ' data-confsent="' + esc(a.conf) + '"' : '') + '>' + esc(a.btn) + ' <span aria-hidden="true">&rarr;</span></a>' : '<button type="button" class="nxbtn" data-act="goto" data-t="' + a.go + '">' + esc(a.btn) + ' <span aria-hidden="true">&rarr;</span></button>';
+  const btn = !a.btn ? '' : a.href ? '<a class="nxbtn" target="_blank" rel="noopener" href="' + esc(a.href) + '"' + (a.conf ? ' data-confsent="' + esc(a.conf) + '"' : a.ack ? ' data-acksent="' + esc(a.ack) + '"' : '') + '>' + esc(a.btn) + ' <span aria-hidden="true">&rarr;</span></a>' : '<button type="button" class="nxbtn" data-act="goto" data-t="' + a.go + '">' + esc(a.btn) + ' <span aria-hidden="true">&rarr;</span></button>';
   return '<div class="nxbar s-' + a.st + '" role="status"><div class="nxmain"' + (a.id ? ' data-act="nxopen" data-id="' + esc(a.id) + '" title="Open this order"' : '') + '><span class="nxk">' + esc(a.k) + (a.n > 1 ? ' <em>1 of ' + a.n + '</em>' : '') + '</span><b class="nxt">' + esc(a.t) + '</b><span class="nxs">' + esc(a.sub) + '</span></div>' + btn + '</div>'; }
 /* Delivery day board: the next days with deliveries, split by time window */
 function boardHtml() {
@@ -4009,7 +4013,7 @@ function ccardHead(c, comp, date) {
     ['Received', esc(date)]
   ].filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('');
   const st = c.status || 'new'; const due = dueOf(c);
-  const stl = st === 'cancelled' ? 'Cancelled' : ({ new: c.cf ? 'Confirmed, to order' : 'New · waiting for you', ordered: 'Ordered · being packed', delivered: 'Delivered' })[st] + (st !== 'new' && due > 0 ? ' · unpaid' : c.paid ? ' · paid' : '');
+  const stl = st === 'cancelled' ? 'Cancelled' : ({ new: acked(c) ? 'Confirmed, to order' : 'New · waiting for you', ordered: 'Ordered · being packed', delivered: 'Delivered' })[st] + (st !== 'new' && due > 0 ? ' · unpaid' : c.paid ? ' · paid' : '');
   const when = [c.need ? fmtDate(c.need) : 'No date', c.slot ? WIN[winOf(c.slot)][1] : '', c.zone ? zoneLabel(c.zone).split(' / ')[0] : ''].filter(Boolean).join(' · ');
   const ed = ui.cedit && ui.cedit[c.id];
   /* 1. Band: who, how much, when and where, tinted in the status colour */
@@ -4219,7 +4223,8 @@ function billText(c, comp) {
   const fin = Object.keys(c.lines || {}).some(k => +((c.lines[k] || {}).aq) > 0); const f = (c.name || 'there').split(' ')[0];
   const due = c.paid ? 0 : Math.max(0, comp.grand - (+c.dep || 0)); const amt = fmtRp(due);
   /* 1. What to do, first */
-  const out = [(id ? 'Halo ' + f + ', pesanan ' + orderNo(c) + ' Anda sudah dikonfirmasi ✅' : 'Hi ' + f + ', your order ' + orderNo(c) + ' is confirmed ✅')].concat(payAsk(c, due));
+  const out = [(id ? 'Halo ' + f + ', semua barang untuk pesanan ' + orderNo(c) + ' sudah terkumpul ✅ Ini tagihan akhir Anda.' : 'Hi ' + f + ', everything for order ' + orderNo(c) + ' is collected ✅ Here is your final bill.')].concat(payAsk(c, due));
+  if (due > 0 && !/cafe/i.test(c.pay || '')) out.push(id ? '_Pesanan ditaruh di depan pintu atau pagar? Mohon bayar sebelum driver berangkat._' : '_Leaving it at the door or gate? Please pay before our driver sets off._');
   /* 2. When and where */
   const slot = c.slot ? (id ? (ID_SLOT[c.slot] || c.slot) : c.slot) : '';
   const when = [c.need ? '📅 ' + (id ? fmtDate(c.need, 'id') : fmtDate(c.need)) + (slot ? ', ' + slot : '') : '', addrOnly(c.addr) ? '📍 ' + addrOnly(c.addr) : ''].filter(Boolean);
@@ -4267,7 +4272,7 @@ function moneyLine() { const now = new Date(); const t0 = new Date(now.getFullYe
 const s1done = rows => rows.some(r => r.indexOf('rstep done') > -1);
 function routineHtml() {
   const day = runToday(); const dl = dlNow(); const stops = runStops(day);
-  const toConfirm = cust.filter(c => c.status === 'new' && !c.cf).length, toOrder = cust.filter(c => c.status === 'new' && c.inc !== false).length;
+  const toConfirm = cust.filter(c => c.status === 'new' && !acked(c)).length, toOrder = cust.filter(c => c.status === 'new' && c.inc !== false).length;
   const packed = stops.filter(c => { const ps = packState(c, compute(custState(c), 'sell')); return ps.n > 0 && ps.done === ps.n; }).length;
   const groups = drivers.length ? drivers.filter(d => stops.some(c => drvOf(c) === d.id)).map(d => d.id).concat(stops.some(c => !drvOf(c)) ? ['un'] : []) : (stops.length ? ['all'] : []);
   const dsent = dayStore('drvsent'); const drvLeft = groups.filter(g => !dsent[g]).length; const collect = cust.reduce((t, c) => t + dueOf(c), 0);
@@ -4303,11 +4308,11 @@ function repeatTag(c) { const ph = digitsOf(c.phone); if (!ph) return ''; const 
 function compactCard(c, comp, date) { if (c.status === 'cancelled') return '<div class="ccard compact cxd" data-st="cancelled" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b><i class="leader" aria-hidden="true"></i><s class="num ctot">' + fmtRp(comp.grand) + '</s></div>' + cancelledBanner(c) + '</div>';
   const st = c.status || 'new'; const order = ['new', 'ordered', 'delivered']; const cur = Math.max(0, order.indexOf(st)); const L = ['① New', '② Ordered', '③ Delivered'];
   const due = dueOf(c); const ps = packState(c, comp); const ready = st !== 'delivered' && ps.n > 0 && ps.done === ps.n;
-  const ph = digitsOf(c.phone); const keys = STEP_MSGS[st].filter(k => k !== 'pay' || (!c.paid && due > 0)); const k = keys[0]; const x = k && msgDef(k);
-  const meta = [repeatTag(c), c.zone ? zoneLabel(c.zone) : '', c.need ? shortDate(c.need) : '', c.paid || due <= 0 ? '<span class="pos">Paid</span>' : '<span class="neg">' + fmtRp(due) + ' to collect</span>', ready ? '<span class="rdy">Ready for driver</span>' : '', c.cf && st === 'new' ? '<span class="pos">Confirmed ✓</span>' : ''].filter(Boolean).join(' · ');
+  const ph = digitsOf(c.phone); const keys = (st === 'ordered' && c.cf ? ['eta'] : STEP_MSGS[st]).filter(k => k !== 'pay' || (!c.paid && due > 0)); const k = st === 'new' && acked(c) ? '' : keys[0]; const x = k && msgDef(k);
+  const meta = [repeatTag(c), c.zone ? zoneLabel(c.zone) : '', c.need ? shortDate(c.need) : '', c.paid || due <= 0 ? '<span class="pos">Paid</span>' : '<span class="neg">' + fmtRp(due) + ' to collect</span>', ready ? '<span class="rdy">Ready for driver</span>' : '', acked(c) && st === 'new' ? '<span class="pos">Confirmed ✓</span>' : st === 'new' && ackAge(c) >= ACK_WARN ? '<span class="neg">Reply waiting ' + ageTxt(ackAge(c)) + '</span>' : ''].filter(Boolean).join(' · ');
   return '<div class="ccard compact' + (ui.flash === c.id ? ' flash' : '') + '" data-st="' + esc(st) + '" data-cid="' + esc(c.id) + '"><div class="chead"><span class="ono">' + orderNo(c) + '</span><b class="cname">' + esc(c.name || 'Customer') + '</b>' + (c.lang === 'id' ? '<em class="langtag">ID</em>' : '') + '<i class="leader" aria-hidden="true"></i><span class="ctotw"><span class="num ctot">' + fmtRp(comp.grand) + '</span>' + profitTag(c) + '</span></div>' +
     '<div class="cmeta">' + flagsHtml(c, comp) + meta + '</div><div class="crow3"><span class="stpill st-' + st + '">' + L[cur] + '</span>' +
-    (x && ph ? '<a class="stepmsg main sm" target="_blank" rel="noopener"' + (k === 'bill' ? ' data-confsent="' + esc(c.id) + '"' : '') + ' href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b></span></a>' : '') +
+    (x && ph ? '<a class="stepmsg main sm" target="_blank" rel="noopener"' + sentAttr(k, c) + ' href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, k)) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b></span></a>' : '') +
     '<button type="button" class="cmore" data-act="cexp" data-id="' + esc(c.id) + '" aria-expanded="false">Details</button></div></div>'; }
 function renderCustomers() {
   const host = document.getElementById('custBody'); if (!host) return;
@@ -4347,7 +4352,7 @@ function renderCustomers() {
         '<div class="sumrow"><span>Delivery' + (c.zone ? ' <span class="hint">(' + esc(zoneLabel(c.zone)) + ')</span>' : '') + '</span><span class="lpr">Rp <input data-cfee="' + esc(c.id) + '" inputmode="numeric" value="' + (comp.feeKnown ? (comp.fee || '') : '') + '" placeholder="' + (comp.feeKnown ? 'none' : 'to confirm') + '" aria-label="Delivery fee"' + (canWrite ? '' : ' disabled') + '></span></div>' +
         '<div class="grand"><span>Total</span><b class="num">' + fmtRp(comp.grand) + '</b></div>' + (() => { const p = profitOf(custState(c)); return '<p class="hint" style="margin-top:6px">Your cost ' + fmtRp(p.cost) + ' - profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b></p>'; })() +
         '<textarea class="pre sm" id="bill-' + esc(c.id) + '" readonly>' + esc(billText(c, comp)) + '</textarea>' +
-        '<div class="actions billacts"><a class="btn" data-confsent="' + esc(c.id) + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">✅ Confirm and ask for payment</a><div class="billsub"><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button><button type="button" class="btn ghost" data-act="billpdf" data-id="' + esc(c.id) + '">Download PDF</button></div></div><p class="hint">The same message as under Order status. Send it once stock is checked. The PDF is the same bill, to attach in WhatsApp after any change.</p>' +
+        '<div class="actions billacts"><a class="btn" data-confsent="' + esc(c.id) + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(billText(c, comp)) + '">🧾 Send final bill</a><div class="billsub"><button type="button" class="btn ghost" data-act="copy" data-id="bill-' + esc(c.id) + '">Copy</button><button type="button" class="btn ghost" data-act="billpdf" data-id="' + esc(c.id) + '">Download PDF</button></div></div><p class="hint">The same message as under Order status. Send it once everything is collected and packed. The PDF is the same bill, to attach in WhatsApp after any change.</p>' +
         '<div class="hdel">' + (ui.custDel[c.id] ? '<span>Remove this order? You can restore it later.</span><button type="button" class="btn danger sm" data-act="cdelyes" data-id="' + esc(c.id) + '">Remove</button><button type="button" class="btn ghost sm" data-act="cdelno" data-id="' + esc(c.id) + '">Keep</button>' : '<button type="button" class="linkbtn" data-act="cdelask" data-id="' + esc(c.id) + '">Remove order</button>') + '</div></div>';
     }
     if (c.status !== 'cancelled' && !(ui.cedit && ui.cedit[c.id])) return fullCard(c, comp, date, open, det);
@@ -4436,14 +4441,27 @@ function offerStatusMsg(id, st) { return;
   setTimeout(() => toast('Let ' + first + ' know?', { label: 'Message on WhatsApp', fn: () => window.open('https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(msg), '_blank', 'noopener') }), 350);
 }
 const CMSG = [
-  { step: '① New · while checking stock', items: [['oos', '🔄', 'An item is unavailable', 'Ask if they want a replacement']] },
-  { step: '① New · to confirm', items: [['bill', '✅', 'Confirm order and ask for payment', 'Opens with how and what to pay, then the bill']] },
+  { step: '① New · within 1 hour', items: [['ack', '📥', 'Order received and confirmed', 'No prices yet. Sets up the final bill']] },
+  { step: '② Ordered · after collecting', items: [['bill', '🧾', 'Final bill and payment', 'Exact total once collected, then how to pay'], ['oos', '🔄', 'An item is unavailable', 'Only if you need to tell them before the bill']] },
   { step: '② Ordered · delivery day', items: [['eta', '🛵', 'On our way', ''], ['late', '⏰', 'Running a little late', '']] },
   { step: '③ Delivered', items: [['done', '🙏', 'Thank you', 'Delivered, thanks for ordering']] },
   { step: 'Anytime', items: [['pay', '💳', 'Payment reminder', 'Total and how to pay']] }];
-const nextMsg = c => c.status === 'delivered' ? (c.paid ? 'done' : 'pay') : c.status === 'ordered' ? 'eta' : 'bill';
+const nextMsg = c => c.status === 'delivered' ? (c.paid ? 'done' : 'pay') : c.status === 'ordered' ? (c.cf ? 'eta' : 'bill') : acked(c) ? 'bill' : 'ack';
 function custMsgTxt(c, kind) { const f = (c.name || 'there').split(' ')[0]; const n = orderNo(c); const comp = compute(custState(c), 'sell'); const tot = fmtRp(comp.grand); const id = c.lang === 'id';
   const swd0 = new Set(swapPairs(c).map(x => x.from)); const gone = removedLines(c).filter(r => !swd0.has(r.key)).map(r => nameIn(r.it, id ? 'id' : 'en')); const prs = swapPairs(c).map(x => nameIn(BY_ID[x.from.split('|')[0]], id ? 'id' : 'en') + ' → ' + nameIn(BY_ID[x.k.split('|')[0]], id ? 'id' : 'en')); const ask = !swapRule(c); const due = c.paid ? 0 : Math.max(0, comp.grand - (+c.dep || 0)); const cash = !c.paid && comp.grand && /cash/i.test(c.pay || '');
+  const exact = Object.keys(c.lines || {}).filter(k => { const L = c.lines[k]; return L && L.q > 0 && L.ns; }).map(k => BY_ID[k.split('|')[0]]).filter(Boolean).map(it => nameIn(it, id ? 'id' : 'en'));
+  const exList = exact.length > 1 ? exact.slice(0, -1).join(', ') + (id ? ' dan ' : ' and ') + exact[exact.length - 1] : exact[0];
+  const slot = c.slot ? (id ? (ID_SLOT[c.slot] || c.slot) : c.slot) : ''; const whenTx = c.need ? (id ? fmtDate(c.need, 'id') : fmtDate(c.need)) + (slot ? ', ' + slot : '') : '';
+  const by = hmOf(chgBy(c.ak || Date.now()), id); const cafe = /cafe/i.test(c.pay || ''); const rule = swapRule(c);
+  const ackTx = id ? ['Halo ' + f + ', terima kasih! Pesanan ' + n + ' Anda *sudah kami terima dan konfirmasi* ✅', (whenTx ? 'Pesanan sudah masuk antrean untuk *' + whenTx + '*, dan k' : 'Pesanan sudah masuk antrean, dan k') + 'ami mulai mengumpulkan barang Anda dari pemasok kami.', '',
+      'Semua barang kami ambil segar untuk setiap pesanan, jadi kadang ada yang tidak tersedia (panen kurang bagus, atau sedang tidak musim). ' + (rule === 'refund' ? 'Jika begitu, barang itu tidak kami kirim, sesuai pilihan Anda, dan tidak ditagih.' : rule === 'swap' ? 'Jika begitu, kami ganti dengan yang paling mirip, sesuai pilihan Anda, dan Anda tidak membayar lebih.' + (exact.length ? ' *' + exList + '* tetap persis: jika tidak ada, tidak kami kirim.' : '') : 'Jika begitu, kami kabari.'), '',
+      'Mau menambah atau mengubah sesuatu? Cukup balas di sini sebelum pukul *' + by + '*.', '',
+      '*Selanjutnya:* setelah semua barang terkumpul dan dikemas, kami kirim tagihan akhir dengan total pastinya. ' + (cafe ? 'Totalnya ditambahkan ke pesanan kafe.' : 'Anda bisa bayar saat itu lewat transfer atau QRIS, atau tunai ke driver saat pesanan sampai. Jika tidak ada orang di rumah dan pesanan ingin ditaruh di depan pintu atau pagar, mohon bayar sebelum driver berangkat.')].join('\n')
+    : ['Hi ' + f + ', thank you! Your order ' + n + ' is *received and confirmed* ✅', (whenTx ? 'It\'s in our queue for *' + whenTx + '*, and we\'ve' : 'It\'s in our queue, and we\'ve') + ' started collecting your items from our suppliers.', '',
+      'Everything is sourced fresh for each order, so now and then an item isn\'t available (a poor harvest, or out of season). ' + (rule === 'refund' ? 'If that happens, we\'ll leave it out, as you asked, and you won\'t be charged for it.' : rule === 'swap' ? 'If that happens, we\'ll swap it for the closest match, as you asked, and you never pay more.' + (exact.length ? ' *' + exList + '* ' + (exact.length > 1 ? 'stay' : 'stays') + ' exact: if ' + (exact.length > 1 ? 'one isn\'t' : 'it isn\'t') + ' available, we\'ll leave it out.' : '') : 'If that happens, we\'ll let you know.'), '',
+      'Want to add or change something? Just reply here by *' + by + '*.', '',
+      '*What\'s next:* once everything is collected and packed, we\'ll send your final bill with the exact total. ' + (cafe ? 'It is added to the cafe order.' : 'You can pay then by transfer or QRIS, or in cash to our driver at the door. If no one will be home and you\'d like it left at the door or gate, please pay before our driver sets off.')].join('\n');
+  if (kind === 'ack') return ackTx;
   if (id) return ({
     bill: billText(c, comp),
     oos: ask ? 'Halo ' + f + ', ada pertanyaan soal pesanan ' + n + ':\n*' + (gone.length ? gone.join(', ') + ' sedang tidak tersedia hari ini.' : 'Salah satu barang Anda sedang tidak tersedia hari ini.') + '*\n\nMau diganti dengan yang lain, atau tidak usah? Cukup balas di sini.'
@@ -4469,6 +4487,19 @@ const ICO_BILL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v1
 /* Swaps staff made for unavailable items: new line key -> the removed line it replaces */
 const swapPairs = c => Object.keys(c.lines || {}).filter(k => { const L = c.lines[k]; return L && L.q > 0 && L.sw && c.lines[L.sw]; }).map(k => ({ k, from: c.lines[k].sw }));
 const swapRule = c => c.swap === 'refund' ? 'refund' : c.swap === 'swap' ? 'swap' : '';
+/* Reply promise: acknowledge within 1 working hour, 07:00-21:00 Bali time */
+const WH = [7, 21], ACK_WARN = 45, CHG_H = 2;
+const baliOf = t => new Date(new Date(t).toLocaleString('en-US', { timeZone: 'Asia/Makassar' }));
+function workMins(t0, t1) { const a = baliOf(t0), b = baliOf(t1); let m = 0;
+  for (let i = 0; i < 14; i++) { const d0 = new Date(a.getFullYear(), a.getMonth(), a.getDate() + i, WH[0]), d1 = new Date(a.getFullYear(), a.getMonth(), a.getDate() + i, WH[1]); if (d0 > b) break; const s0 = Math.max(a, d0), e0 = Math.min(b, d1); if (e0 > s0) m += (e0 - s0) / 6e4; }
+  return Math.floor(m); }
+const acked = c => !!(c.ak || c.cf);
+const ackAge = c => workMins(c.at || Date.now(), Date.now());
+const ageTxt = m => m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm ago';
+const hmOf = (t, id) => { const d = baliOf(t); const p = n => String(n).padStart(2, '0'); return p(d.getHours()) + (id ? '.' : ':') + p(d.getMinutes()); };
+/* changes window: 2 hours from the acknowledgement, rounded up to the next quarter hour */
+const chgBy = t => Math.ceil((t + CHG_H * 36e5) / 9e5) * 9e5;
+const sentAttr = (k, c) => k === 'bill' ? ' data-confsent="' + esc(c.id) + '"' : k === 'ack' ? ' data-acksent="' + esc(c.id) + '"' : '';
 function removedLines(c) { return Object.keys(c.lines || {}).filter(k => { const L = c.lines[k]; return L && !(L.q > 0) && +L.oq > 0; }).map(k => { const p = k.split('|'); const it = BY_ID[p[0]]; const o = it && it.o[+p[1]]; if (!o) return null;
   const g = compute({ meta: {}, lines: { [k]: { q: c.lines[k].oq } }, sup: {} }, 'sell').groups[0]; return { key: k, it, o, oq: +c.lines[k].oq, sid: g ? g.sid : '' }; }).filter(Boolean); }
 function addItemHtml(c) { if (!canWrite) return ''; const on = ui.addFor === c.id;
@@ -4481,7 +4512,7 @@ function addItemHtml(c) { if (!canWrite) return ''; const on = ui.addFor === c.i
     (q.length < 2 ? '<p class="hint">Type at least 2 letters.</p>' : rows ? '<div class="addhits">' + rows + '</div>' : '<p class="hint">No product matches.</p>') +
     '<button type="button" class="linkbtn" data-act="additem" data-id="' + esc(c.id) + '">Done adding</button></div>'; }
 function allMsgsMenu(c) { const ph = digitsOf(c.phone); const nx = nextMsg(c);
-  return '<div class="cmsgmenu">' + CMSG.map(g => '<div class="cmsgstep">' + g.step + '</div>' + g.items.map(x => '<a class="cmsgopt' + (x[0] === nx ? ' next' : '') + '" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span></a>').join('')).join('') + '</div>'; }
+  return '<div class="cmsgmenu">' + CMSG.map(g => '<div class="cmsgstep">' + g.step + '</div>' + g.items.map(x => '<a class="cmsgopt' + (x[0] === nx ? ' next' : '') + '"' + sentAttr(x[0], c) + ' target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=' + ph + '&text=' + encodeURIComponent(custMsgTxt(c, x[0])) + '"><span class="ce">' + x[1] + '</span><span class="ct"><b>' + x[2] + '</b>' + (x[3] ? '<small>' + x[3] + '</small>' : '') + '</span></a>').join('')).join('') + '</div>'; }
 function cmdBar(c, open) { const comp = compute(custState(c), 'sell'); const p = profitOf(custState(c));
   return '<div class="csec crow"><button type="button" class="csum" data-act="cview" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"><span class="csl">Bill · ' + comp.count + ' item' + (comp.count === 1 ? '' : 's') + '</span><span class="csv">' + (p.rev ? 'Profit <b class="' + (p.profit > 0 ? 'pos' : 'neg') + '">' + fmtRp(p.profit) + '</b> · +' + (p.cost > 0 ? Math.round(p.profit / p.cost * 100) : 0) + '%' : 'Edit items') + '</span><i class="chev" aria-hidden="true"></i></button></div>'; }
 function updCust(id, p) { if (!cmode) { ui.keep = ui.keep || {}; ui.keep[id] = 1; }
@@ -5277,6 +5308,7 @@ document.addEventListener('change', e => {
     const c = cust.find(x => x.id === t.dataset.cmsg); const kind = t.value; t.value = ''; if (!c || !kind) return;
     if (!digitsOf(c.phone)) { toast('This customer has no WhatsApp number.'); return; }
     window.open('https://api.whatsapp.com/send?phone=' + digitsOf(c.phone) + '&text=' + encodeURIComponent(custMsgTxt(c, kind)), '_blank', 'noopener');
+    if (kind === 'ack') updCust(c.id, { ak: Date.now() }); else if (kind === 'bill') updCust(c.id, { cf: Date.now() });
   }
   else if (t.matches('input[data-hren]')) { renameHist(t.dataset.hren, t.value); }
   else if (t.matches('input[data-chn]')) { updCust(t.dataset.chn, { hn: t.value.trim().slice(0, 200) }); }
@@ -5377,6 +5409,7 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest || !e.targ
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#langBtn')) { try { localStorage.setItem('vm-lang', LANG === 'id' ? 'en' : 'id'); } catch (x) {} location.reload(); } });
 document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('[data-sentsup]'); if (!t || cmode) return; const sid = t.dataset.sentsup; setTimeout(() => { patch({ meta: { sent: { [sid]: Date.now() } } }); if (ui.view === 'share') renderShare(compute(S)); }, 60); }, true);
 document.addEventListener('click', e => { if (cmode || !e.target.closest) return;
+  const ak = e.target.closest('[data-acksent]'); if (ak) { const id = ak.dataset.acksent; setTimeout(() => updCust(id, { ak: Date.now() }), 60); return; }
   const cf = e.target.closest('[data-confsent]'); if (cf) { const id = cf.dataset.confsent; setTimeout(() => updCust(id, { cf: Date.now() }), 60); return; }
   const cs = e.target.closest('[data-combsup]'); if (cs) { daySet('combsent', cs.dataset.combsup); setTimeout(() => { renderCustomers(); const sids = combinedData().state ? compute(combinedData().state, 'cost').groups.map(g => g.sid) : []; const sent = dayStore('combsent'); const nNew = cust.filter(c => c.inc !== false && c.status === 'new').length;
       if (nNew && sids.length && sids.every(x => sent[x])) toast('Every supplier has the combined order. Move ' + nNew + ' new order' + (nNew === 1 ? '' : 's') + ' to Ordered?', { label: 'Move them', fn: () => { const btn = document.querySelector('[data-act="markordered"]'); if (btn) btn.click(); } }); }, 80); return; }
