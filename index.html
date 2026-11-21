@@ -3766,9 +3766,9 @@ function fullCard(c, comp, date, open, det) {
     '<button type="button" data-act="osec" data-id="' + id + '" data-k="cust"' + (noteOn ? ' class="on"' : '') + '>' + ICO.note + '<span>' + (noteOn ? 'Note' : 'Details') + '</span></button></div>';
   /* now: only what this step needs */
   let now = '';
-  if (st === 'new') { const ag = ackAge(c); const cb = c.ak ? chgBy(c.ak) : 0; const open = cb && Date.now() < cb, grace = cb && !open && Date.now() < cb + 2 * 36e5;
-    now = acked(c) ? '<b>Order from suppliers</b><span>Confirmed. Buy it with the combined order, then mark it ordered.' + (open ? ' Changes open until ' + hmOf(cb) + '.' : grace ? ' Changes closed at ' + hmOf(cb) + '; a late change is your call.' : '') + '</span>'
-      : '<b>Send the acknowledgement</b><span' + (ag >= ACK_WARN ? ' class="neg"' : '') + '>Received ' + ageTxt(ag) + ' (working hours). Reply within 1 hour. No prices yet.</span>'; }
+  if (st === 'new') { const ag = ackAge(c); const dp = depAsk(c, comp.grand);
+    now = acked(c) ? (dp ? '<b>Waiting for the deposit</b><span class="neg">' + fmtRp(dp) + ' (50%) asked before buying. Record it under Payment when it arrives.</span>' : '<b>Order from suppliers</b><span>Confirmed. Buy it with the combined order, then mark it ordered.' + (dlNow().cutoff ? ' Changes accepted until ' + cutLabel(dlNow().cutoff) + '.' : '') + '</span>')
+      : '<b>Send the acknowledgement</b><span' + (ag >= ACK_WARN ? ' class="neg"' : '') + '>Received ' + ageTxt(ag) + ' (working hours). Reply within 1 hour. No prices yet.' + (depAsk(c, comp.grand) ? ' Asks for a ' + fmtRp(depAsk(c, comp.grand)) + ' deposit (over ' + fmtRp(DEP_MIN) + ').' : '') + '</span>'; }
   else if (st === 'ordered') { const ps = packState(c, comp); now = '<b>' + (c.cf ? 'Deliver' : 'Pack, then send the final bill') + '</b><span>' + (ps.n ? 'Packed ' + ps.done + ' of ' + ps.n + ' items' : 'Nothing to pack') + (c.cf ? ' · bill sent' : '') + (hasPin ? '' : ' · no map pin yet') + '</span>' + (ps.n ? '<div class="nowbar"><i style="width:' + Math.round(ps.done / ps.n * 100) + '%"></i></div>' : ''); }
   else now = due > 0 ? '<b>Collect payment</b><span>' + fmtRp(due) + ' still open' + (c.pay ? ' · ' + esc(c.pay) : '') + '</span>' : '<b>All done</b><span>Delivered and paid. Send a thank you if you have not.</span>';
   /* status row: one icon for what this step is, in the step colour */
@@ -4452,15 +4452,17 @@ function custMsgTxt(c, kind) { const f = (c.name || 'there').split(' ')[0]; cons
   const exact = Object.keys(c.lines || {}).filter(k => { const L = c.lines[k]; return L && L.q > 0 && L.ns; }).map(k => BY_ID[k.split('|')[0]]).filter(Boolean).map(it => nameIn(it, id ? 'id' : 'en'));
   const exList = exact.length > 1 ? exact.slice(0, -1).join(', ') + (id ? ' dan ' : ' and ') + exact[exact.length - 1] : exact[0];
   const slot = c.slot ? (id ? (ID_SLOT[c.slot] || c.slot) : c.slot) : ''; const whenTx = c.need ? (id ? fmtDate(c.need, 'id') : fmtDate(c.need)) + (slot ? ', ' + slot : '') : '';
-  const by = hmOf(chgBy(c.ak || Date.now()), id); const cafe = /cafe/i.test(c.pay || ''); const rule = swapRule(c);
+  const cday = chgDay(c.ak || Date.now()), cut = dlNow().cutoff; const cafe = /cafe/i.test(c.pay || ''); const rule = swapRule(c); const dep = depAsk(c, comp.grand);
+  const depTx = !dep ? [] : id ? ['', 'Karena pesanan ini di atas ' + fmtRp(DEP_MIN) + ', kami minta *DP 50%: ' + fmtRp(dep) + '* sebelum kami belanja ke pemasok. Bisa lewat transfer atau QRIS:', bankTxt || 'Balas di sini, kami kirimkan detail rekening kami.', 'QRIS: ' + QRIS_URL, 'Kirim screenshot ke sini setelah selesai.']
+    : ['', 'As this order is over ' + fmtRp(DEP_MIN) + ', we ask for a *50% deposit of ' + fmtRp(dep) + '* before we buy from our suppliers. You can pay by transfer or QRIS:', bankTxt || 'Reply here and we will send our bank details.', 'QRIS: ' + QRIS_URL, 'Send us a screenshot here when it is done.'];
   const ackTx = id ? ['Halo ' + f + ', terima kasih! Pesanan ' + n + ' Anda *sudah kami terima dan konfirmasi* ✅', (whenTx ? 'Pesanan sudah masuk antrean untuk *' + whenTx + '*, dan k' : 'Pesanan sudah masuk antrean, dan k') + 'ami mulai mengumpulkan barang Anda dari pemasok kami.', '',
       'Semua barang kami ambil segar untuk setiap pesanan, jadi kadang ada yang tidak tersedia (panen kurang bagus, atau sedang tidak musim). ' + (rule === 'refund' ? 'Jika begitu, barang itu tidak kami kirim, sesuai pilihan Anda, dan tidak ditagih.' : rule === 'swap' ? 'Jika begitu, kami ganti dengan yang paling mirip, sesuai pilihan Anda, dan Anda tidak membayar lebih.' + (exact.length ? ' *' + exList + '* tetap persis: jika tidak ada, tidak kami kirim.' : '') : 'Jika begitu, kami kabari.'), '',
-      'Mau menambah atau mengubah sesuatu? Cukup balas di sini sebelum pukul *' + by + '*.', '',
-      '*Selanjutnya:* setelah semua barang terkumpul dan dikemas, kami kirim tagihan akhir dengan total pastinya. ' + (cafe ? 'Totalnya ditambahkan ke pesanan kafe.' : 'Anda bisa bayar saat itu lewat transfer atau QRIS, atau tunai ke driver saat pesanan sampai. Jika tidak ada orang di rumah dan pesanan ingin ditaruh di depan pintu atau pagar, mohon bayar sebelum driver berangkat.')].join('\n')
+      ...(cut ? ['Mau menambah atau mengubah sesuatu? Cukup balas di sini sebelum pukul *' + cutId(cut) + ' ' + (cday === 'today' ? 'hari ini' : 'besok') + '*.', ''] : []), ...(depTx.length ? depTx.slice(1).concat('') : []),
+      '*Selanjutnya:* setelah semua barang terkumpul dan dikemas, kami kirim tagihan akhir dengan total pastinya' + (dep ? ' dan sisa yang perlu dibayar' : '') + '. ' + (cafe ? 'Totalnya ditambahkan ke pesanan kafe.' : 'Anda bisa bayar saat itu lewat transfer atau QRIS, atau tunai ke driver saat pesanan sampai. Jika tidak ada orang di rumah dan pesanan ingin ditaruh di depan pintu atau pagar, mohon bayar sebelum driver berangkat.')].join('\n')
     : ['Hi ' + f + ', thank you! Your order ' + n + ' is *received and confirmed* ✅', (whenTx ? 'It\'s in our queue for *' + whenTx + '*, and we\'ve' : 'It\'s in our queue, and we\'ve') + ' started collecting your items from our suppliers.', '',
       'Everything is sourced fresh for each order, so now and then an item isn\'t available (a poor harvest, or out of season). ' + (rule === 'refund' ? 'If that happens, we\'ll leave it out, as you asked, and you won\'t be charged for it.' : rule === 'swap' ? 'If that happens, we\'ll swap it for the closest match, as you asked, and you never pay more.' + (exact.length ? ' *' + exList + '* ' + (exact.length > 1 ? 'stay' : 'stays') + ' exact: if ' + (exact.length > 1 ? 'one isn\'t' : 'it isn\'t') + ' available, we\'ll leave it out.' : '') : 'If that happens, we\'ll let you know.'), '',
-      'Want to add or change something? Just reply here by *' + by + '*.', '',
-      '*What\'s next:* once everything is collected and packed, we\'ll send your final bill with the exact total. ' + (cafe ? 'It is added to the cafe order.' : 'You can pay then by transfer or QRIS, or in cash to our driver at the door. If no one will be home and you\'d like it left at the door or gate, please pay before our driver sets off.')].join('\n');
+      ...(cut ? ['Want to add or change something? Just reply here before *' + cutLabel(cut) + ' ' + cday + '*.', ''] : []), ...(depTx.length ? depTx.slice(1).concat('') : []),
+      '*What\'s next:* once everything is collected and packed, we\'ll send your final bill with the exact total' + (dep ? ' and the balance left to pay' : '') + '. ' + (cafe ? 'It is added to the cafe order.' : 'You can pay then by transfer or QRIS, or in cash to our driver at the door. If no one will be home and you\'d like it left at the door or gate, please pay before our driver sets off.')].join('\n');
   if (kind === 'ack') return ackTx;
   if (id) return ({
     bill: billText(c, comp),
@@ -4488,7 +4490,7 @@ const ICO_BILL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v1
 const swapPairs = c => Object.keys(c.lines || {}).filter(k => { const L = c.lines[k]; return L && L.q > 0 && L.sw && c.lines[L.sw]; }).map(k => ({ k, from: c.lines[k].sw }));
 const swapRule = c => c.swap === 'refund' ? 'refund' : c.swap === 'swap' ? 'swap' : '';
 /* Reply promise: acknowledge within 1 working hour, 07:00-21:00 Bali time */
-const WH = [7, 21], ACK_WARN = 45, CHG_H = 2;
+const WH = [7, 21], ACK_WARN = 45;
 const baliOf = t => new Date(new Date(t).toLocaleString('en-US', { timeZone: 'Asia/Makassar' }));
 function workMins(t0, t1) { const a = baliOf(t0), b = baliOf(t1); let m = 0;
   for (let i = 0; i < 14; i++) { const d0 = new Date(a.getFullYear(), a.getMonth(), a.getDate() + i, WH[0]), d1 = new Date(a.getFullYear(), a.getMonth(), a.getDate() + i, WH[1]); if (d0 > b) break; const s0 = Math.max(a, d0), e0 = Math.min(b, d1); if (e0 > s0) m += (e0 - s0) / 6e4; }
@@ -4496,9 +4498,12 @@ function workMins(t0, t1) { const a = baliOf(t0), b = baliOf(t1); let m = 0;
 const acked = c => !!(c.ak || c.cf);
 const ackAge = c => workMins(c.at || Date.now(), Date.now());
 const ageTxt = m => m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm ago';
-const hmOf = (t, id) => { const d = baliOf(t); const p = n => String(n).padStart(2, '0'); return p(d.getHours()) + (id ? '.' : ':') + p(d.getMinutes()); };
-/* changes window: 2 hours from the acknowledgement, rounded up to the next quarter hour */
-const chgBy = t => Math.ceil((t + CHG_H * 36e5) / 9e5) * 9e5;
+/* changes deadline = the supplier cutoff (Ledger > Delivery): today if acknowledged before it, else tomorrow */
+const chgDay = t => { const cut = dlNow().cutoff; if (!cut) return ''; const d = baliOf(t); return d.getHours() + d.getMinutes() / 60 < cut ? 'today' : 'tomorrow'; };
+const cutId = h => String(Math.floor(h)).padStart(2, '0') + '.' + String(Math.round((h % 1) * 60)).padStart(2, '0');
+/* deposit: orders over Rp 1.5 million pay half before we buy from suppliers */
+const DEP_MIN = 1500000, DEP_PCT = 0.5;
+const depAsk = (c, grand) => (!c.paid && !(+c.dep > 0) && grand > DEP_MIN && !/cafe/i.test(c.pay || '')) ? Math.ceil(grand * DEP_PCT / 1000) * 1000 : 0;
 const sentAttr = (k, c) => k === 'bill' ? ' data-confsent="' + esc(c.id) + '"' : k === 'ack' ? ' data-acksent="' + esc(c.id) + '"' : '';
 function removedLines(c) { return Object.keys(c.lines || {}).filter(k => { const L = c.lines[k]; return L && !(L.q > 0) && +L.oq > 0; }).map(k => { const p = k.split('|'); const it = BY_ID[p[0]]; const o = it && it.o[+p[1]]; if (!o) return null;
   const g = compute({ meta: {}, lines: { [k]: { q: c.lines[k].oq } }, sup: {} }, 'sell').groups[0]; return { key: k, it, o, oq: +c.lines[k].oq, sid: g ? g.sid : '' }; }).filter(Boolean); }
